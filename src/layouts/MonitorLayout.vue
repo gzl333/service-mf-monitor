@@ -21,7 +21,7 @@ const tc = i18n.global.tc
 
 const route = useRoute()
 const paths = route.path.split('/')
-const activeItem = ref(paths[3] || 'personal') // keep selection when reloading
+const activeItem = ref(paths[3] || 'meeting') // keep selection when reloading
 
 const releaseTime = process.env.releaseTime
 </script>
