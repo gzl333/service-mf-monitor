@@ -37,7 +37,7 @@ const releaseTime = process.env.releaseTime
           <q-list>
 
             <q-item>
-              <q-item-section class="column items-center q-py-sm text-weight-bold text-grey-8">
+              <q-item-section class="column items-center q-py-sm text-center text-weight-bold text-grey-8">
                 {{ tc('综合监控') }}
               </q-item-section>
             </q-item>
