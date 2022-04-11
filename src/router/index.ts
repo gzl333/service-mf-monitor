@@ -41,8 +41,8 @@ export default route(function (/* { store, ssrContext } */) {
     // console.log('@cnic/monitor ', 'from:', from.fullPath, ' to:', to.fullPath)
     const store = useStore()
 
-    // 根据当前path更新store.items.currentPath，保证左侧导航栏保持正确选择
-    store.items.currentPath = to.path.split('/')[3] || 'meeting'
+    // 根据当前path更新store.items.currentPath
+    store.items.currentPath = to.path.split('/').slice(3)
 
     next()
   })
