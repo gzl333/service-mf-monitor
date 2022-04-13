@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
-import MapChart from 'components/MapChart.vue'
-import { $api } from '../api/monitor'
+import monitor from '../api/index'
+import MapChart from 'components/Chart/MapChart.vue'
 // import { navigateToUrl } from 'single-spa'
 // import { useStore } from 'stores/store'
 // import { useRoute, useRouter } from 'vue-router'
@@ -20,7 +20,6 @@ import { $api } from '../api/monitor'
 // const route = useRoute()
 // const router = useRouter()
 // const tc = i18n.global.tc
-// console.log(monitor.monitor)
 const statusData = ref([])
 const pingData = ref([])
 // 表格数据
@@ -310,7 +309,7 @@ const getStatusData = async () => {
     }
   }
   let response: any = []
-  await $api.api.getMonitorVideoQuery(config).then((res: any) => {
+  await monitor.monitor.api.getMonitorVideoQuery(config).then((res: any) => {
     response = res.data
   })
   return response
@@ -322,7 +321,7 @@ const getDelayData = async () => {
     }
   }
   let response: any = []
-  await $api.api.getMonitorVideoQuery(config).then((res: any) => {
+  await monitor.monitor.api.getMonitorVideoQuery(config).then((res: any) => {
     response = res.data
   })
   return response
@@ -421,9 +420,9 @@ watch(tableData, () => {
 </script>
 
 <template>
-  <div class="FederationMonitorVideoMeeting">
+  <div class="MeetingPage">
     <q-card flat bordered class="row">
-      <map-chart :option="countryOption" style="width: 1228px; height: 600px"></map-chart>
+      <map-chart :option="countryOption" style="width: 1350px; height: 600px"></map-chart>
     </q-card>
     <q-card flat class="q-mt-lg">
       <div class="row justify-between q-mt-md">

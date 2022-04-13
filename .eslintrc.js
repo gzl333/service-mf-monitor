@@ -87,7 +87,7 @@ module.exports = {
     'import/named': 'off',
 
     'prefer-promise-reject-errors': 'off',
-
+    camelcase: 'off',
     quotes: ['warn', 'single', { avoidEscape: true }],
 
     // this rule, if on, would require explicit return type on the `render` function

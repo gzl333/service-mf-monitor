@@ -15,6 +15,7 @@ import { i18n } from 'boot/i18n'
 // const emits = defineEmits(['change', 'delete'])
 
 const store = useStore()
+void store.loadAllTables()
 // const route = useRoute()
 // const route = useRoute()
 // const router = useRouter()
@@ -23,6 +24,7 @@ const tc = i18n.global.tc
 const activeItem = computed(() => store.items.currentPath[0])
 
 const releaseTime = process.env.releaseTime
+
 </script>
 
 <template>
@@ -84,11 +86,12 @@ const releaseTime = process.env.releaseTime
         </q-scroll-area>
       </div>
     </q-drawer>
-
     <q-page-container>
-      <q-scroll-area style="height: 100vh">
+      <q-scroll-area style="height: 92vh">
         <q-page class="row justify-center q-mt-xl">
-          <router-view/>
+          <div class="col-9">
+            <router-view/>
+          </div>
         </q-page>
       </q-scroll-area>
     </q-page-container>
