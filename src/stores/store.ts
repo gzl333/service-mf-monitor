@@ -59,7 +59,6 @@ export const useStore = defineStore('monitor', {
   }),
   getters: {},
   actions: {
-
     loadAllTables () {
       if (!this.tables.dataCenterTable.isLoaded) {
         void this.loadDataCenterTable().then(() => { // 1. 基础依赖

@@ -19,9 +19,6 @@ const store = useStore()
 // const route = useRoute()
 // const router = useRouter()
 // const tc = i18n.global.tc
-// console.log(store.loadAllTables)
-// store.loadAllTables()
-// void store.loadAllTables()
 const services = computed(() => store.tables.serviceTable.allIds)
 const isShow = ref(true)
 const filterSelection = ref({

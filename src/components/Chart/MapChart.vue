@@ -69,7 +69,7 @@ onUnmounted(() => {
 
 </script>
 <template>
-  <div class="CountryMeetingMap row">
+  <div class="MapChart row">
     <div ref="container" style="width: 95%; height: 100%;"/>
     <div style="background-color: #FAFAFA; width: 5%;" class="row column justify-end">
       <q-btn outline color="white" text-color="black" icon="add" class="q-mb-md" @click="roamMap(0)"/>
@@ -78,6 +78,6 @@ onUnmounted(() => {
   </div>
 </template>
 <style lang="scss" scoped>
-.CountryMeetingMap {
+.MapChart {
 }
 </style>

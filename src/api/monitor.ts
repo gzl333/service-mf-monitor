@@ -30,21 +30,6 @@ export default {
       }
       return axiosMonitor.get('/monitor/ceph/query', config)
     },
-    getMonitorCephQueryRange (payload: {
-      query: {
-        service_id: string;
-        query: string;
-        start: number;
-        end?: number;
-        step?: number
-      }
-    }) {
-      const config = {
-        params: payload.query
-      }
-      return axiosMonitor.get('/monitor/ceph/query/range', config)
-    },
-
     getMonitorServerQuery (payload: { query: { service_id: string; query: string } }) {
       const config = {
         params: payload.query
@@ -60,8 +45,3 @@ export default {
     }
   }
 }
-
-// 此处只是挂载成全局属性。$api在前面导出使用。
-// export default boot(({ app }) => {
-//   app.config.globalProperties.$api = $api // 封装了baseUrl的全部api函数，可直接调用
-// })

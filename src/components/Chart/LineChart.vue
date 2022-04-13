@@ -64,11 +64,11 @@ onMounted(() => {
 
 <template>
   <div class="LineChart">
-    <div ref="container" :style="{ width: '205px', height: '40px' }"></div>
+    <div ref="container" :style="{ width: '224px', height: '40px' }"></div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.StoragePage {
+.LineChart {
 }
 </style>
