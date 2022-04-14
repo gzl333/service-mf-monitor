@@ -81,7 +81,7 @@ const releaseTime = process.env.releaseTime
 
           </q-list>
 
-          <div class="text-grey text-body2 text-center q-pt-xl">v0.3.1</div>
+          <div class="text-grey text-body2 text-center q-pt-xl">v0.3.2</div>
           <div class="text-grey text-body2 text-center">{{ new Date(releaseTime).toLocaleString() }}</div>
         </q-scroll-area>
       </div>

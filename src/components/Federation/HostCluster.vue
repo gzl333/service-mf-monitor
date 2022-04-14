@@ -173,7 +173,7 @@ onMounted(() => {
 
 <template>
   <div class="HostCluster">
-    <div class="q-mt-sm" v-for="(item, index) in hostData" :key="index">
+    <div class="q-mt-sm q-pb-xl" v-for="(item, index) in hostData" :key="index">
       <div class="text-subtitle1 text-weight-bold">{{ item.name }}</div>
       <div class="row q-mt-sm">
         <div class="col-2">

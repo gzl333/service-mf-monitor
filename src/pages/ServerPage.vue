@@ -78,8 +78,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="ServerPage">
-    <div class="row justify-end q-mt-xs">
+  <div class="ServerPage" style="min-width: 1000px">
+    <div class="row justify-end q-mt-xs q-pb-xl">
       <q-icon class="col-1" name="refresh" size="md" v-show="isShow" @click="refresh"/>
       <q-select outlined dense v-model="filterSelection" :options="filterOptions" label="刷新时间" class="col-3"/>
     </div>
