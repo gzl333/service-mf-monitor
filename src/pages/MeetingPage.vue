@@ -422,7 +422,7 @@ watch(tableData, () => {
 <template>
   <div class="MeetingPage">
     <q-card flat bordered class="row">
-      <map-chart :option="countryOption" style="width: 1350px; height: 600px"></map-chart>
+      <map-chart :option="countryOption"></map-chart>
     </q-card>
     <q-card flat class="q-mt-lg">
       <div class="row justify-between q-mt-md">

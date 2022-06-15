@@ -69,7 +69,7 @@ onUnmounted(() => {
 
 </script>
 <template>
-  <div class="MapChart row">
+  <div class="MapChart row" style="width: 100%; height: 600px">
     <div ref="container" style="width: 95%; height: 100%;"/>
     <div style="background-color: #FAFAFA; width: 5%;" class="row column justify-end">
       <q-btn outline color="white" text-color="black" icon="add" class="q-mb-md" @click="roamMap(0)"/>
