@@ -22,6 +22,7 @@ import MapChart from 'components/Chart/MapChart.vue'
 // const tc = i18n.global.tc
 const statusData = ref([])
 const pingData = ref([])
+const mapRef: any = ref(null)
 // 表格数据
 const tableRow = ref([])
 // 刷新相关数据
@@ -147,6 +148,33 @@ const countryOption = computed(() => ({
     left: 'center',
     textStyle: {
       color: '#000000'
+    }
+  },
+  toolbox: {
+    bottom: 30,
+    right: 30,
+    itemSize: 41,
+    orient: 'vertical',
+    itemGap: 8,
+    iconStyle: {
+      color: '#5B5B5B',
+      borderWidth: 0
+    },
+    feature: {
+      myEnlarge: {
+        show: true,
+        icon: 'path://M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z',
+        onclick: function () {
+          mapRef.value.roamMap(0)
+        }
+      },
+      myNarrow: {
+        show: true,
+        icon: 'path://M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z',
+        onclick: function () {
+          mapRef.value.roamMap(1)
+        }
+      }
     }
   },
   tooltip: {
@@ -421,13 +449,12 @@ watch(tableData, () => {
 
 <template>
   <div class="MeetingPage">
-    <q-card flat bordered class="row">
-      <map-chart :option="countryOption"></map-chart>
-    </q-card>
+    <map-chart :option="countryOption" ref="mapRef"></map-chart>
     <q-card flat class="q-mt-lg">
       <div class="row justify-between q-mt-md">
         <div class="col-6 row">
-          <q-select outlined dense v-model="searchQuery.status" :options="statusOptions" map-options option-value="value" label="状态" class="col-2" @update:model-value="change"/>
+          <q-select outlined dense v-model="searchQuery.status" :options="statusOptions" map-options
+                    option-value="value" label="状态" class="col-2" @update:model-value="change"/>
           <q-input outlined dense v-model="searchQuery.name" placeholder="筛选单位名称或IP地址" class="col-6  q-ml-md">
             <template v-slot:append v-if="searchQuery.name !== ''">
               <q-icon name="close" @click="searchQuery.name = ''" class="cursor-pointer"/>
@@ -436,8 +463,10 @@ watch(tableData, () => {
         </div>
         <div class="col-6 row justify-end">
           <q-icon name="refresh" size="md" v-show="isRefresh" @click="refresh" class="col-2"/>
-          <q-btn color="primary" :label="disable === true ? '打开自动刷新' : '关闭自动刷新'" class="col-2 q-mr-md q-pa-none" @click="openOrClose" unelevated/>
-          <q-select outlined dense v-model="refreshSelection" :options="refreshOptions" label="刷新时间" class="col-5" :disable = "disable"/>
+          <q-btn color="primary" :label="disable === true ? '打开自动刷新' : '关闭自动刷新'"
+                 class="col-2 q-mr-md q-pa-none" @click="openOrClose" unelevated/>
+          <q-select outlined dense v-model="refreshSelection" :options="refreshOptions" label="刷新时间" class="col-5"
+                    :disable="disable"/>
         </div>
       </div>
       <q-table

@@ -29,6 +29,7 @@ const roamMap = (flag: number) => {
     })
   }
 }
+defineExpose({ roamMap })
 onMounted(() => {
   const chart: any = echarts.init(container.value!)
   myChart = chart
@@ -69,13 +70,13 @@ onUnmounted(() => {
 
 </script>
 <template>
-  <div class="MapChart row" style="width: 100%; height: 600px">
-    <div ref="container" style="width: 95%; height: 100%;"/>
-    <div style="background-color: #FAFAFA; width: 5%;" class="row column justify-end">
-      <q-btn outline color="white" text-color="black" icon="add" class="q-mb-md" @click="roamMap(0)"/>
-      <q-btn outline color="white" text-color="black" icon="remove" @click="roamMap(1)"/>
-    </div>
-  </div>
+  <q-card flat bordered class="row">
+    <div ref="container" class="col-12" style="height: 600px"/>
+  </q-card>
+  <!--    <div style="background-color: #FAFAFA; width: 5%;" class="row column justify-end">-->
+  <!--      <q-btn outline color="white" text-color="black" icon="add" class="q-mb-md" @click="roamMap(0)"/>-->
+  <!--      <q-btn outline color="white" text-color="black" icon="remove" @click="roamMap(1)"/>-->
+  <!--    </div>-->
 </template>
 <style lang="scss" scoped>
 .MapChart {
