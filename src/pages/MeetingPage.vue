@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed, Ref } from 'vue'
 import monitor from '../api/index'
 import MapChart from 'components/Chart/MapChart.vue'
 // import { navigateToUrl } from 'single-spa'
 // import { useStore } from 'stores/store'
 // import { useRoute, useRouter } from 'vue-router'
-// import { i18n } from 'boot/i18n'
+import { i18n } from 'boot/i18n'
 
 // const props = defineProps({
 //   foo: {
@@ -19,10 +19,18 @@ import MapChart from 'components/Chart/MapChart.vue'
 // const store = useStore()
 // const route = useRoute()
 // const router = useRouter()
-// const tc = i18n.global.tc
-const statusData = ref([])
-const pingData = ref([])
-const mapRef: any = ref(null)
+interface StatusDataInterface {
+  monitor: {
+    job_tag: string
+    name: string
+    name_en: string
+  }
+  value: []
+}
+const { tc } = i18n.global
+const statusData: Ref = ref([])
+const pingData: Ref = ref([])
+const mapRef: Ref = ref(null)
 // 表格数据
 const tableRow = ref([])
 // 刷新相关数据
@@ -30,18 +38,56 @@ const isRefresh = ref(true)
 const disable = ref(false)
 // 全国地图需要的数据
 const countryFilterData = ref([])
-const countrySeries: any = ref([])
+const countrySeries: Ref = ref([])
 // 全国数据
-const nationalData: any = ref([])
+const nationalData: Ref = ref([])
 // 所有服务经纬度数据
-const coordinateData: Record<string, any> = ref({})
+const coordinateData: Ref = ref({})
 // 搜索过滤后的数据
-const searchFilterData: any = ref([])
+const searchFilterData: Ref = ref([])
 // 搜索条件
 const searchQuery = ref({
   status: '2',
   name: ''
 })
+const translationMapping = {
+  北京市: 'Beijing',
+  天津市: 'Tianjin',
+  河北省: 'Hebei',
+  山西省: 'Shanxi',
+  内蒙古自治区: 'Inner Mongoria',
+  辽宁省: 'Liaoning',
+  吉林省: 'Jilin',
+  黑龙江省: 'Heilongjiang',
+  上海市: 'Shanghai',
+  江苏省: 'Jiangsu',
+  浙江省: 'Zhejiang',
+  安徽省: 'Anhui',
+  福建省: 'Fujian',
+  江西省: 'Jiangxi',
+  山东省: 'Shandong',
+  台湾省: 'Taiwan',
+  河南省: 'Henan',
+  湖北省: 'Hubei',
+  湖南省: 'Hunan',
+  广东省: 'Guangdong',
+  广西壮族自治区: 'Guangxi',
+  海南省: 'Hainan',
+  香港特别行政区: 'Hong Kong',
+  澳门特别行政区: 'Macao',
+  重庆市: 'Chongqing',
+  四川省: 'Sichuan',
+  贵州省: 'Guizhou',
+  云南省: 'Yunnan',
+  西藏自治区: 'Tibet',
+  陕西省: 'Shaanxi',
+  甘肃省: 'Gansu',
+  青海省: 'Qinghai',
+  宁夏回族自治区: 'Ningxia',
+  新疆维吾尔自治区: 'Xinjiang',
+  南海诸岛: 'South China Sea Islands'
+}
+// 筛选表格数据
 const tableData = computed(() => {
   if (searchQuery.value.name !== '' && searchQuery.value.status !== '2') {
     return tableRow.value.filter((item: Record<string, any>) => item.status === searchQuery.value.status && (item.name.toLowerCase().includes(searchQuery.value.name.toLowerCase()) || item.ipv4.toString().indexOf(searchQuery.value.name.trim()) !== -1))
@@ -59,92 +105,102 @@ const initialPagination = ref({
 const statusOptions = [
   {
     value: '2',
-    label: '全部'
+    label: '全部',
+    labelEn: 'All'
   },
   {
     value: '1',
-    label: '在线'
+    label: '在线',
+    labelEn: 'Online'
   },
   {
     value: '0',
-    label: '离线'
+    label: '离线',
+    labelEn: 'Offline'
   }
 ]
 const refreshSelection = ref({
   label: '每30s刷新',
+  labelEn: 'Refresh every 30 seconds',
   value: 30
 })
 const refreshOptions = [
   {
     label: '每30s刷新',
+    labelEn: 'Refresh every 30 seconds',
     value: 30
   },
   {
     label: '每1min刷新',
+    labelEn: 'Refresh every 1 minute',
     value: 60
   },
   {
     label: '每10min刷新',
+    labelEn: 'Refresh every 10 minutes',
     value: 600
   },
   {
     label: '每30min刷新',
+    labelEn: 'Refresh every 30 minutes',
     value: 1800
   },
   {
     label: '每1h刷新',
+    labelEn: 'Refresh every 1 hour',
     value: 3600
   }
 ]
-const columns = [
+const columns = computed(() => [
   {
     name: 'name',
     required: true,
-    label: '名称',
+    label: (() => tc('名称'))(),
     align: 'center',
     field: 'name'
   },
   {
     name: 'ipv4',
     align: 'center',
-    label: 'ip地址',
+    label: (() => tc('ip地址'))(),
     field: 'ipv4',
     style: 'width: 200px'
   },
   {
     name: 'status',
     align: 'center',
-    label: '状态',
+    label: (() => tc('状态'))(),
     field: 'status',
     style: 'width: 50px'
   },
   {
     name: 'ping',
     align: 'center',
-    label: 'ping',
+    label: 'Ping',
     field: 'ping',
     style: 'width: 200px'
   },
   {
     name: 'longitude',
     align: 'center',
-    label: '经度',
+    label: (() => tc('经度'))(),
     field: 'longitude',
     style: 'width: 150px'
   },
   {
     name: 'latitude',
     align: 'center',
-    label: '纬度',
+    label: (() => tc('纬度'))(),
     field: 'latitude',
     style: 'width: 150px'
   }
-]
+])
+
 // const style = 'path://M807.4 938.5c-139.5-8-250.2-31.7-250.2-173.2v-95.5c0-35.5 72.5-64.3 108-64.3h0.3l0.9-152.4c0-8.5-6.9-15.4-15.4-15.4H373.2c-8.5 0-15.4 6.9-15.4 15.4l0.6 148.7c33.6 2.1 103.8 30 103.8 64.1v95.5c0 142.2-111.8 168.4-252.3 175.3l-0.1 0.3 0.9 71.5c0 8.5 6.9 15.4 15.4 15.4h568.1c8.5 0 15.4-6.9 15.4-15.4l-0.8-69.8-1.4-0.2zM598.2 64.5V18.6c0-8.5-6.9-15.4-15.4-15.4H428.6c-8.5 0-15.4 6.9-15.4 15.4V67C212.1 111.8 61.7 291.3 61.7 506c0 153.6 77 289.2 194.4 370.3l42.7-136.7C236 681 196.7 597.4 196.7 504.7c0-177.4 143.8-321.3 321.3-321.3s321.3 143.8 321.3 321.3c0 97.9-43.8 185.5-112.8 244.5l40.1 127.4C884.2 795.4 961.4 659.7 961.4 506c0-218.8-156.2-401.1-363.2-441.5z'
 const countryOption = computed(() => ({
   backgroundColor: '#FAFAFA',
   title: {
-    text: '视频会议节点网络状态-全国',
+    text: tc('视频会议节点网络状态-全国'),
     left: 'center',
     textStyle: {
       color: '#000000'
@@ -222,7 +278,8 @@ const countryOption = computed(() => ({
       emphasis: {
         areaColor: '#F5A9A9'
       }
-    }
+    },
+    nameMap: i18n.global.locale === 'en' ? translationMapping : ''
   },
   series: countrySeries.value
 }))
@@ -336,8 +393,8 @@ const getStatusData = async () => {
       query: 'node_status'
     }
   }
-  let response: any = []
-  await monitor.monitor.api.getMonitorVideoQuery(config).then((res: any) => {
+  let response: StatusDataInterface[] = []
+  await monitor.monitor.api.getMonitorVideoQuery(config).then((res) => {
     response = res.data
   })
   return response
@@ -348,15 +405,15 @@ const getDelayData = async () => {
       query: 'node_lantency'
     }
   }
-  let response: any = []
-  await monitor.monitor.api.getMonitorVideoQuery(config).then((res: any) => {
+  let response: StatusDataInterface[] = []
+  await monitor.monitor.api.getMonitorVideoQuery(config).then((res) => {
     response = res.data
   })
   return response
 }
 const handleStatusData = () => {
   const startObj = {
-    name: '信息化大厦'
+    name: tc('信息化大厦')
   }
   statusData.value.forEach((item: Record<string, any>) => {
     item.value.forEach((item1: Record<string, any>) => {
@@ -453,9 +510,9 @@ watch(tableData, () => {
     <q-card flat class="q-mt-lg">
       <div class="row justify-between q-mt-md">
         <div class="col-6 row">
-          <q-select outlined dense v-model="searchQuery.status" :options="statusOptions" map-options
-                    option-value="value" label="状态" class="col-2" @update:model-value="change"/>
-          <q-input outlined dense v-model="searchQuery.name" placeholder="筛选单位名称或IP地址" class="col-6  q-ml-md">
+          <q-select outlined dense v-model="searchQuery.status"  map-options :options="statusOptions" :label="tc('状态')" class="col-2" @update:model-value="change"
+                    :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'"/>
+          <q-input outlined dense v-model="searchQuery.name" :placeholder="tc('筛选单位名称或IP地址')" class="col-6  q-ml-md">
             <template v-slot:append v-if="searchQuery.name !== ''">
               <q-icon name="close" @click="searchQuery.name = ''" class="cursor-pointer"/>
             </template>
@@ -463,10 +520,8 @@ watch(tableData, () => {
         </div>
         <div class="col-6 row justify-end">
           <q-icon name="refresh" size="md" v-show="isRefresh" @click="refresh" class="col-2"/>
-          <q-btn color="primary" :label="disable === true ? '打开自动刷新' : '关闭自动刷新'"
-                 class="col-2 q-mr-md q-pa-none" @click="openOrClose" unelevated/>
-          <q-select outlined dense v-model="refreshSelection" :options="refreshOptions" label="刷新时间" class="col-5"
-                    :disable="disable"/>
+          <q-btn no-caps color="primary" :label="disable === true ? tc('打开自动刷新') : tc('关闭自动刷新')" class="q-mr-md" @click="openOrClose" unelevated/>
+          <q-select outlined dense v-model="refreshSelection" :options="refreshOptions" :label="tc('刷新时间')" class="col-5" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :disable="disable"/>
         </div>
       </div>
       <q-table
@@ -476,6 +531,7 @@ watch(tableData, () => {
         :columns="columns"
         :rows-per-page-options="[10, 15, 20, 25, 50, 0]"
         v-model:pagination="initialPagination"
+        :no-data-label="tc('暂无数据')"
       >
         <template v-slot:body="props">
           <q-tr :props="props">
@@ -486,7 +542,7 @@ watch(tableData, () => {
               <span v-for="(item, index) in props.row.ipv4" :key="index">{{ item }}</span>
             </q-td>
             <q-td key="status" :props="props" :class="props.row.status === '0' ? 'text-negative' : 'text-positive'">
-              {{ props.row.status === '0' ? '离线' : '在线' }}
+              {{ props.row.status === '0' ? tc('离线') : tc('在线') }}
             </q-td>
             <q-td key="ping" :props="props" :class="parseFloat(props.row.ping) > 1 ? 'text-red' : ''">
               {{ (parseFloat(props.row.ping) * 1000).toFixed(3) }}ms

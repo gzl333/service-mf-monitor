@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, Ref } from 'vue'
 import monitor from '../../api/index'
 import LineChart from 'components/Chart/LineChart.vue'
+import { i18n } from 'boot/i18n'
 
 const props = defineProps({
   id: {
@@ -11,8 +12,9 @@ const props = defineProps({
 })
 
 const emits = defineEmits(['is-emit'])
+const { tc } = i18n.global
 
-const hostData: any = ref([])
+const hostData: Ref = ref([])
 const divNodesCpu = ref<typeof LineChart[]>([])
 const divNodesMem = ref<typeof LineChart[]>([])
 const divNodesDisk = ref<typeof LineChart[]>([])
@@ -179,25 +181,25 @@ onMounted(() => {
         <div class="col-2">
           <q-card flat bordered class="no-border-radius q-pb-sm">
             <div class="row q-pb-lg">
-              <div class="col-11 text-center">主机数</div>
+              <div class="col-11 text-center">{{ tc('主机数') }}</div>
               <q-icon name="loop" class="col-1" size="xs" v-show="item.isShowHost"
                       @click="refresh({ service_id: item.service_id, type: 'host', num: index })"/>
             </div>
             <div :class="!item.host_count ? 'text-center text-h5 q-mt-sm q-py-sm' : 'text-center text-h4 q-mt-sm q-py-sm'">
-              {{ !item.host_count ? '暂无数据' : item.host_count }}
+              {{ !item.host_count ? tc('暂无数据') : item.host_count }}
             </div>
           </q-card>
           <div class="row q-mt-xs">
             <q-card flat bordered class="no-border-radius col-6">
-              <div class="col-11 text-center">在线</div>
+              <div class="col-11 text-center">{{ tc('在线') }}</div>
               <div :class="!item.host_up_count ? 'text-center text-h6 q-mt-sm q-pa-sm q-pb-md' : 'text-center text-h4 text-positive q-mt-sm q-py-sm'">
-                {{ !item.host_up_count ? '暂无数据' : item.host_up_count }}
+                {{ !item.host_up_count ? tc('暂无数据') : item.host_up_count }}
               </div>
             </q-card>
             <q-card flat bordered class="no-border-radius col-6">
-              <div class="col-11 text-center">掉线</div>
+              <div class="col-11 text-center">{{ tc('掉线') }}</div>
               <div :class="!item.host_count || !item.host_up_count ? 'text-center text-h6 q-mt-sm q-pa-sm q-pb-md' : 'text-center text-h4 text-negative q-mt-sm q-py-sm'">
-                {{ !item.host_count || !item.host_up_count ? '暂无数据' : (parseFloat(item.host_count) - parseFloat(item.host_up_count)) }}
+                {{ !item.host_count || !item.host_up_count ? tc('暂无数据') : (parseFloat(item.host_count) - parseFloat(item.host_up_count)) }}
               </div>
             </q-card>
           </div>
@@ -205,40 +207,40 @@ onMounted(() => {
         <div class="col-2 q-ml-md">
           <q-card flat bordered class="no-border-radius q-pb-lg">
             <div class="row q-pb-xs">
-              <div class="col-11 text-center">集群状态</div>
+              <div class="col-11 text-center">{{ tc('集群状态') }}</div>
               <q-icon name="loop" class="col-1" size="xs" v-show="item.isShowStatus"
                       @click="refresh({ service_id: item.service_id, type: 'healthy', num: index })"/>
             </div>
             <div :class="!item.health_status ? 'text-center text-h5 q-mt-lg q-py-xl' : item.health_status === '0' ? 'text-positive text-center text-h4 text-weight-bold q-mt-lg q-py-xl' :
             item.health_status === '1' ? 'text-warning text-center text-h4 text-weight-bold q-mt-lg q-pa-xl q-pb-md' :
             'text-negative text-center text-h4 text-weight-bold q-mt-lg q-pa-xl q-pb-md'">
-              {{ !item.health_status ? '暂无数据' : item.health_status === '0' ? 'Healthy' : item.health_status === '1' ? 'Warning' : 'Fatal' }}
+              {{ !item.health_status ? tc('暂无数据') : item.health_status === '0' ? 'Healthy' : item.health_status === '1' ? 'Warning' : 'Fatal' }}
             </div>
           </q-card>
         </div>
         <div class="col-2 q-ml-md">
           <q-card flat bordered class="no-border-radius">
             <div class="row">
-              <div class="col-11 text-center">平均CPU使用率</div>
+              <div class="col-11 text-center">{{ tc('平均CPU使用率') }}</div>
               <q-icon name="loop" class="col-1" size="xs" v-show="item.isShowCpu"
                       @click="refresh({ service_id: item.service_id, type: 'cpu', num: index})"/>
             </div>
             <div :class="!item.cpu_usage ? 'text-center text-h5 q-mt-md' : 'text-center text-h4 q-mt-md'">
-              {{ !item.cpu_usage ? '暂无数据' : (parseFloat(item.cpu_usage).toFixed(2) + '%') }}
+              {{ !item.cpu_usage ? tc('暂无数据') : (parseFloat(item.cpu_usage).toFixed(2) + '%') }}
             </div>
             <line-chart :ref="el=>{divNodesCpu[index] = el}" :chartData="[item.cpu_usage, item.min_cpu_usage, item.max_cpu_usage]"></line-chart>
           </q-card>
           <div class="row q-mt-xs">
             <q-card flat bordered class="no-border-radius col-6">
-              <div class="col-11 text-center">最大</div>
+              <div class="col-11 text-center">{{ tc('最大') }}</div>
               <div :class="!item.max_cpu_usage ? 'text-center text-h6 q-mt-md q-py-sm' : 'text-center text-h5 q-mt-md q-py-sm'">
-                {{ !item.max_cpu_usage ? '暂无数据' : (parseFloat(item.max_cpu_usage).toFixed(2) + '%') }}
+                {{ !item.max_cpu_usage ? tc('暂无数据') : (parseFloat(item.max_cpu_usage).toFixed(2) + '%') }}
               </div>
             </q-card>
             <q-card flat bordered class="no-border-radius col-6">
-              <div class="col-11 text-center">最小</div>
+              <div class="col-11 text-center">{{ tc('最小') }}</div>
               <div :class="!item.min_cpu_usage ? 'text-center text-h6 q-mt-md q-py-sm' : 'text-center text-h5 q-mt-md q-py-sm'">
-                {{ !item.min_cpu_usage ? '暂无数据' : (parseFloat(item.min_cpu_usage).toFixed(2) + '%') }}
+                {{ !item.min_cpu_usage ? tc('暂无数据') : (parseFloat(item.min_cpu_usage).toFixed(2) + '%') }}
               </div>
             </q-card>
           </div>
@@ -246,26 +248,26 @@ onMounted(() => {
         <div class="col-2 q-ml-md">
           <q-card flat bordered class="no-border-radius">
             <div class="row">
-              <div class="col-11 text-center">平均内存使用率</div>
+              <div class="col-11 text-center">{{ tc('平均内存使用率') }}</div>
               <q-icon name="loop" class="col-1" size="xs" v-show="item.isShowMem"
                       @click="refresh({ service_id: item.service_id, type: 'mem', num: index})"/>
             </div>
             <div :class="!item.mem_usage ? 'text-center text-h5 q-mt-md' : 'text-center text-h4 q-mt-md'">
-              {{ !item.mem_usage ? '暂无数据' : (parseFloat(item.mem_usage).toFixed(2) + '%') }}
+              {{ !item.mem_usage ? tc('暂无数据') : (parseFloat(item.mem_usage).toFixed(2) + '%') }}
             </div>
             <line-chart :ref="el=>{divNodesMem[index] = el}" :chartData="[item.mem_usage, item.min_mem_usage, item.max_mem_usage]"></line-chart>
           </q-card>
           <div class="row q-mt-xs">
             <q-card flat bordered class="no-border-radius col-6">
-              <div class="col-11 text-center">最大</div>
+              <div class="col-11 text-center">{{ tc('最大') }}</div>
               <div :class="!item.max_mem_usage ? 'text-center text-h6 q-mt-md q-py-sm' : 'text-center text-h5 q-mt-md q-py-sm'">
-                {{ !item.max_mem_usage ? '暂无数据' : (parseFloat(item.max_mem_usage).toFixed(2) + '%') }}
+                {{ !item.max_mem_usage ? tc('暂无数据') : (parseFloat(item.max_mem_usage).toFixed(2) + '%') }}
               </div>
             </q-card>
             <q-card flat bordered class="no-border-radius col-6">
-              <div class="col-11 text-center">最小</div>
+              <div class="col-11 text-center">{{ tc('最小') }}</div>
               <div :class="!item.min_mem_usage ? 'text-center text-h6 q-mt-md q-py-sm' : 'text-center text-h5 q-mt-md q-py-sm'">
-                {{ !item.min_mem_usage ? '暂无数据' : (parseFloat(item.min_mem_usage).toFixed(2) + '%') }}
+                {{ !item.min_mem_usage ? tc('暂无数据') : (parseFloat(item.min_mem_usage).toFixed(2) + '%') }}
               </div>
             </q-card>
           </div>
@@ -273,26 +275,26 @@ onMounted(() => {
         <div class="col-2 q-ml-md">
           <q-card flat bordered class="no-border-radius">
             <div class="row">
-              <div class="col-11 text-center">平均硬盘使用率</div>
+              <div class="col-11 text-center">{{ tc('平均硬盘使用率') }}</div>
               <q-icon name="loop" class="col-1" size="xs" v-show="item.isShowDisk"
                       @click="refresh({ service_id: item.service_id, type: 'disk', num: index})"/>
             </div>
             <div :class="!item.disk_usage ? 'text-center text-h5 q-mt-md' : 'text-center text-h4 q-mt-md'">
-              {{ !item.disk_usage ? '暂无数据' : (parseFloat(item.disk_usage).toFixed(2) + '%') }}
+              {{ !item.disk_usage ? tc('暂无数据') : (parseFloat(item.disk_usage).toFixed(2) + '%') }}
             </div>
             <line-chart :ref="el=>{divNodesDisk[index] = el}" :chartData="[item.disk_usage, item.min_disk_usage, item.max_disk_usage]"></line-chart>
           </q-card>
           <div class="row q-mt-xs">
             <q-card flat bordered class="no-border-radius col-6">
-              <div class="col-11 text-center">最大</div>
+              <div class="col-11 text-center">{{ tc('最大') }}</div>
               <div :class="!item.max_disk_usage ? 'text-center text-h6 q-mt-md q-py-sm' : 'text-center text-h5 q-mt-md q-py-sm'">
-                {{ !item.max_disk_usage ? '暂无数据' : (parseFloat(item.max_disk_usage).toFixed(2) + '%') }}
+                {{ !item.max_disk_usage ? tc('暂无数据') : (parseFloat(item.max_disk_usage).toFixed(2) + '%') }}
               </div>
             </q-card>
             <q-card flat bordered class="no-border-radius col-6">
-              <div class="col-11 text-center">最小</div>
+              <div class="col-11 text-center">{{ tc('最小') }}</div>
               <div :class="!item.min_disk_usage ? 'text-center text-h6 q-mt-md q-py-sm' : 'text-center text-h5 q-mt-md q-py-sm'">
-                {{ !item.min_disk_usage ? '暂无数据' : (parseFloat(item.min_disk_usage).toFixed(2) + '%') }}
+                {{ !item.min_disk_usage ? tc('暂无数据') : (parseFloat(item.min_disk_usage).toFixed(2) + '%') }}
               </div>
             </q-card>
           </div>
@@ -302,7 +304,7 @@ onMounted(() => {
             <div class="text-center q-mt-lg q-py-md">
               <p class="text-primary q-mt-xs">Go To</p>
               <p class="text-primary">Grafana</p>
-              <p>详细信息</p>
+              <p>{{ tc('详细信息') }}</p>
             </div>
           </q-card>
         </div>

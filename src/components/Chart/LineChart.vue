@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from 'vue'
+import { computed, ref, watch, onMounted, Ref } from 'vue'
 import * as echarts from 'echarts/core'
 import { GridComponent } from 'echarts/components'
 import { LineChart } from 'echarts/charts'
@@ -16,7 +16,7 @@ const props = defineProps({
 })
 
 const container = ref<HTMLElement>()
-const lineData: any = ref([])
+const lineData: Ref = ref([])
 const getChartData = () => {
   lineData.value = props.chartData
   lineData.value.unshift(0)

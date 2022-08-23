@@ -6,7 +6,7 @@ import StorageCluster from 'components/Federation/StorageCluster.vue'
 // import { navigateToUrl } from 'single-spa'
 
 // import { useRoute, useRouter } from 'vue-router'
-// import { i18n } from 'boot/i18n'
+import { i18n } from 'boot/i18n'
 
 // const props = defineProps({
 //   foo: {
@@ -19,34 +19,40 @@ import StorageCluster from 'components/Federation/StorageCluster.vue'
 
 // const route = useRoute()
 // const router = useRouter()
-// const tc = i18n.global.tc
+const { tc } = i18n.global
 const store = useStore()
 const isShow = ref(true)
 const services = computed(() => store.tables.serviceTable.allIds)
 const filterSelection = ref({
   label: '每30s刷新',
+  labelEn: 'Refresh every 30 seconds',
   value: 30
 })
 const divNodes = ref<typeof StorageCluster[]>([])
 const filterOptions = [
   {
     label: '每30s刷新',
+    labelEn: 'Refresh every 30 seconds',
     value: 30
   },
   {
     label: '每1min刷新',
+    labelEn: 'Refresh every 1 minute',
     value: 60
   },
   {
     label: '每10min刷新',
+    labelEn: 'Refresh every 10 minutes',
     value: 600
   },
   {
     label: '每30min刷新',
+    labelEn: 'Refresh every 30 minutes',
     value: 1800
   },
   {
     label: '每1h刷新',
+    labelEn: 'Refresh every 1 hour',
     value: 3600
   }
 ]
@@ -83,7 +89,7 @@ onUnmounted(() => {
   <div class="StoragePage" style="min-width: 1000px">
     <div class="row justify-end q-mt-xs">
       <q-icon class="col-1" name="refresh" size="md" v-show="isShow" @click="refresh"/>
-      <q-select outlined dense v-model="filterSelection" :options="filterOptions" label="刷新时间" class="col-3"/>
+      <q-select outlined dense v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')" class="col-3"/>
     </div>
     <storage-cluster v-for="(serviceId, index) in services" :key="serviceId" :id="serviceId" :ref="el=>{divNodes[index] = el}" @is-emit="childEmit"></storage-cluster>
   </div>

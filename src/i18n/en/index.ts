@@ -10,5 +10,46 @@ export default {
   综合监控: 'Monitor',
   视频会议: 'Meeting Services',
   主机集群: 'Server Clusters',
-  存储集群: 'Storage Clusters'
+  存储集群: 'Storage Clusters',
+  发布时间: 'Release Time',
+
+  // page
+  // MeetingPage
+  全部: 'All',
+  在线: 'Online',
+  离线: 'Offline',
+  每30s刷新: 'Refresh Every 30 Seconds',
+  每1min刷新: 'Refresh Every1 1 Minute',
+  每10min刷新: 'Refresh Every 10 Minutes',
+  每30min刷新: 'Refresh Every 30 Minutes',
+  每1h刷新: 'Refresh Every 1 Hour',
+  名称: 'Name',
+  ip地址: 'IP',
+  状态: 'State',
+  经度: 'Longitude',
+  纬度: 'Latitude',
+  '视频会议节点网络状态-全国': 'Video Conference Node Network Status - National',
+  IP地址: 'IP Address',
+  ping值: 'Ping',
+  信息化大厦: 'CNIC',
+  筛选单位名称或IP地址: 'Filter company or IP address',
+  打开自动刷新: 'Turn On Auto Refresh',
+  关闭自动刷新: 'Turn Off Auto Refresh',
+  刷新时间: 'Refresh Time',
+  暂无数据: 'No Data',
+  // components
+  // HostCluster
+  主机数: 'Number Of Servers',
+  掉线: 'Drop Line',
+  集群状态: 'Cluster Status',
+  平均CPU使用率: 'Average CPU Usage',
+  平均内存使用率: 'Average Memory Usage',
+  平均硬盘使用率: 'Average Disk Usage',
+  最大: 'Maximum',
+  最小: 'Minimum',
+  详细信息: 'Details',
+  // StorageCluster
+  集群容量: 'Cluster Capacity',
+  当前容量: 'Current Capacity',
+  OSD状态: 'OSD Status'
 }

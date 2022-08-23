@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { Ref, ref } from 'vue'
 import monitor from '../../api/index'
+import { i18n } from 'boot/i18n'
 
 const props = defineProps({
   id: {
@@ -9,8 +10,9 @@ const props = defineProps({
   }
 })
 const emits = defineEmits(['is-emit'])
+const { tc } = i18n.global
 
-const storageData: any = ref([])
+const storageData: Ref = ref([])
 const isShowHealth = ref(true)
 const isShowClusterTotal = ref(true)
 const isShowClusterUsed = ref(true)
@@ -131,37 +133,37 @@ defineExpose({ intervalRefresh })
           <div class="col-4">
             <q-card flat bordered class="my-card q-pb-md no-border-radius">
               <div class="row">
-                <div class="col-11 text-center">集群状态</div>
+                <div class="col-11 text-center">{{ tc('集群状态') }}</div>
                 <q-icon class="col-1" name="loop" size="xs" v-show="isShowHealth"
                         @click="refresh({ service_id: item.service_id, query: 'health_status', num: index })"/>
               </div>
               <div :class="!item.health_status ? 'text-center text-h4 q-mt-xl q-pb-xl' : item.health_status === '0' ? 'text-positive text-center text-h4 text-weight-bold q-mt-xl q-pb-xl' : item.health_status === '1' ?
                     'text-warning text-center text-h4 text-weight-bold q-mt-xl q-pb-xl' : 'text-negative text-center text-h4 text-weight-bold q-mt-xl q-pb-xl'">
-                {{ !item.health_status ? '暂无数据' : item.health_status === '0' ? 'Healthy' : item.health_status === '1' ? 'Warning' : 'Fatal' }}
+                {{ !item.health_status ? tc('暂无数据') : item.health_status === '0' ? 'Healthy' : item.health_status === '1' ? 'Warning' : 'Fatal' }}
               </div>
             </q-card>
           </div>
           <div class="col-4">
             <q-card flat bordered class="q-pb-md no-border-radius">
               <div class="row">
-                <div class="col-11 text-center">集群容量</div>
+                <div class="col-11 text-center">{{ tc('集群容量') }}</div>
                 <q-icon name="loop" class="col-1" size="xs" v-show="isShowClusterTotal"
                         @click="refresh({ service_id: item.service_id, query: 'cluster_total_bytes', num: index })"/>
               </div>
               <div class="text-center text-h4 q-mt-xl q-pb-xl">
-                {{ !item.cluster_total_bytes ? '暂无数据' : (item.cluster_total_bytes / Math.pow(1024, 5)).toFixed(2) + 'PiB' }}
+                {{ !item.cluster_total_bytes ? tc('暂无数据') : (item.cluster_total_bytes / Math.pow(1024, 5)).toFixed(2) + 'PiB' }}
               </div>
             </q-card>
           </div>
           <div class="col-4">
             <q-card flat bordered class="q-pb-md no-border-radius">
               <div class="row">
-                <div class="col-11 text-center">当前容量</div>
+                <div class="col-11 text-center">{{ tc('当前容量') }}</div>
                 <q-icon name="loop" class="col-1" size="xs" v-show="isShowClusterUsed"
                         @click="refresh({ service_id: item.service_id, query: 'cluster_total_used_bytes', num: index })"/>
               </div>
               <div class="text-center text-h4 q-mt-xl q-pb-xl">
-                {{ !item.cluster_total_used_bytes ? '暂无数据' : (item.cluster_total_used_bytes / Math.pow(1024, 4)).toFixed(2) + 'TiB' }}
+                {{ !item.cluster_total_used_bytes ? tc('暂无数据') : (item.cluster_total_used_bytes / Math.pow(1024, 4)).toFixed(2) + 'TiB' }}
               </div>
             </q-card>
           </div>
@@ -169,7 +171,7 @@ defineExpose({ intervalRefresh })
         <div class="col-5">
           <q-card flat bordered class="no-border-radius q-pb-sm">
             <div class="row q-pb-xs">
-              <div class="col-11 text-center">OSD状态</div>
+              <div class="col-11 text-center">{{ tc('OSD状态') }}</div>
               <q-icon name="loop" class="col-1" size="xs" v-show="isShowOSD"
                       @click="refresh({ service_id: item.service_id, query: 'osd_in,osd_out,osd_up,osd_down', num: index })"/>
             </div>
@@ -179,7 +181,7 @@ defineExpose({ intervalRefresh })
                   <q-card flat bordered class="no-border-radius">
                     <div class="text-center">OSD IN</div>
                     <div :class="!item.osd_in ? 'text-center text-h6 q-mt-xs' : 'text-center text-h5 text-weight-bold text-positive q-mt-xs'">
-                      {{ !item.osd_in ? '暂无数据' : item.osd_in }}
+                      {{ !item.osd_in ? tc('暂无数据') : item.osd_in }}
                     </div>
                   </q-card>
                 </div>
@@ -187,7 +189,7 @@ defineExpose({ intervalRefresh })
                   <q-card flat bordered class="no-border-radius">
                     <div class="text-center">OSD UP</div>
                     <div :class="!item.osd_up ? 'text-center text-h6 q-mt-xs' : 'text-center text-h5 text-weight-bold text-positive q-mt-xs'">
-                      {{ !item.osd_up ? '暂无数据' : item.osd_up }}
+                      {{ !item.osd_up ? tc('暂无数据') : item.osd_up }}
                     </div>
                   </q-card>
                 </div>
@@ -195,7 +197,7 @@ defineExpose({ intervalRefresh })
                   <q-card flat bordered class="no-border-radius">
                     <div class="text-center">OSD OUT</div>
                     <div :class="!item.osd_out ? 'text-center text-h6 q-mt-xs' : 'text-center text-h5 text-weight-bold q-mt-xs'">
-                      {{ !item.osd_out ? '暂无数据' : item.osd_out }}
+                      {{ !item.osd_out ? tc('暂无数据') : item.osd_out }}
                     </div>
                   </q-card>
                 </div>
@@ -203,7 +205,7 @@ defineExpose({ intervalRefresh })
                   <q-card flat bordered class="no-border-radius">
                     <div class="text-center">OSD DOWN</div>
                     <div :class="!item.osd_down ? 'text-center text-h6 q-mt-xs' : 'text-center text-h5 text-weight-bold q-mt-xs'">
-                      {{ !item.osd_down ? '暂无数据' : item.osd_down }}
+                      {{ !item.osd_down ? tc('暂无数据') : item.osd_down }}
                     </div>
                   </q-card>
                 </div>
@@ -215,7 +217,7 @@ defineExpose({ intervalRefresh })
           <q-card flat bordered class="no-border-radius q-pb-sm">
             <div class="text-center q-mt-lg q-pb-lg">
               <p class="text-primary text-h6">Go To Grafana</p>
-              <p class="text-h7">详细信息</p>
+              <p class="text-h7">{{ tc('详细信息') }}</p>
             </div>
           </q-card>
         </div>
