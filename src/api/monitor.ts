@@ -24,13 +24,25 @@ export default {
       }
       return axiosMonitor.get('/service', config)
     },
+    getMonitorUnitCeph (payload?: { query: { page: number; page_size: number } }) {
+      const config = {
+        params: payload?.query
+      }
+      return axiosMonitor.get('/monitor/unit/ceph', config)
+    },
     getMonitorCephQuery (payload: { query: { service_id: string; query: string } }) {
       const config = {
         params: payload.query
       }
       return axiosMonitor.get('/monitor/ceph/query', config)
     },
-    getMonitorServerQuery (payload: { query: { service_id: string; query: string } }) {
+    getMonitorUnitServer (payload?: { query: { page: number; page_size: number } }) {
+      const config = {
+        params: payload?.query
+      }
+      return axiosMonitor.get('/monitor/unit/server', config)
+    },
+    getMonitorServerQuery (payload: { query: { monitor_unit_id: string; query: string } }) {
       const config = {
         params: payload.query
       }

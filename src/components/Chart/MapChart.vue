@@ -14,7 +14,6 @@ const props = defineProps({
 const container = ref<HTMLElement>()
 let myChart: any
 const roamMap = (flag: number) => {
-  console.log(myChart)
   const currentZoom = myChart.getOption().geo[0].zoom
   let increaseAmplitude
   if (flag === 1) {

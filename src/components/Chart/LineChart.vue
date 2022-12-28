@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, Ref } from 'vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount, Ref } from 'vue'
 import * as echarts from 'echarts/core'
 import { GridComponent } from 'echarts/components'
 import { LineChart } from 'echarts/charts'
@@ -59,12 +59,19 @@ onMounted(() => {
   watch(option, () => {
     chart.setOption(option.value)
   })
+  const chartResize = () => {
+    chart.resize()
+  }
+  window.addEventListener('resize', chartResize)
+  onBeforeUnmount(() => {
+    window.removeEventListener('resize', chartResize)
+  })
 })
 </script>
 
 <template>
-  <div class="LineChart">
-    <div ref="container" :style="{ width: '224px', height: '40px' }"></div>
+  <div class="LineChart" style="width: 100%">
+    <div ref="container" :style="{ width: '100%', height: '40px' }"></div>
   </div>
 </template>
 

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch } from 'vue'
-import { useStore } from 'stores/store'
-import HostCluster from 'components/Federation/HostCluster.vue'
+import { onUnmounted, ref, watch, onBeforeMount } from 'vue'
+// import { useStore } from 'stores/store'
+import ServerCluster from 'components/Federation/ServerCluster.vue'
 // import { navigateToUrl } from 'single-spa'
 // import { useRoute, useRouter } from 'vue-router'
+import monitor from '../api/index'
 import { i18n } from 'boot/i18n'
 
 // const props = defineProps({
@@ -15,18 +16,18 @@ import { i18n } from 'boot/i18n'
 // })
 // const emits = defineEmits(['change', 'delete'])
 
-const store = useStore()
+// const store = useStore()
 // const route = useRoute()
 // const router = useRouter()
 const { tc } = i18n.global
-const services = computed(() => store.tables.serviceTable.allIds)
-const isShow = ref(true)
+const divNodes = ref<typeof ServerCluster[]>([])
+const monitorUnits = ref([])
+const isRefreshShow = ref(true)
 const filterSelection = ref({
   label: '每30s刷新',
   labelEn: 'Refresh every 30 seconds',
   value: 30
 })
-const divNodes = ref<typeof HostCluster[]>([])
 const filterOptions = [
   {
     label: '每30s刷新',
@@ -55,7 +56,7 @@ const filterOptions = [
   }
 ]
 let timer = setInterval(() => {
-  isShow.value = false
+  isRefreshShow.value = false
   divNodes.value.forEach((node) => {
     node.intervalRefresh()
   })
@@ -63,21 +64,25 @@ let timer = setInterval(() => {
 watch(filterSelection, () => {
   clearInterval(timer)
   timer = setInterval(() => {
-    isShow.value = false
+    isRefreshShow.value = false
     divNodes.value.forEach((node) => {
       node.intervalRefresh()
     })
   }, filterSelection.value.value * 1000)
 })
 const refresh = () => {
-  isShow.value = false
+  isRefreshShow.value = false
   divNodes.value.forEach((node) => {
     node.intervalRefresh()
   })
 }
-const childEmit = (val: boolean) => {
-  isShow.value = val
+const refreshComplete = (val: boolean) => {
+  isRefreshShow.value = val
 }
+onBeforeMount(async () => {
+  const UnitServerRes = await monitor.monitor.api.getMonitorUnitServer()
+  monitorUnits.value = UnitServerRes.data.results
+})
 onUnmounted(() => {
   clearInterval(timer)
 })
@@ -85,11 +90,11 @@ onUnmounted(() => {
 
 <template>
   <div class="ServerPage" style="min-width: 1000px">
-    <div class="row justify-end q-mt-xs q-pb-xl">
-      <q-icon class="col-1" name="refresh" size="md" v-show="isShow" @click="refresh"/>
+    <div class="row justify-end items-center">
+      <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="isRefreshShow" @click="refresh"/>
       <q-select outlined dense v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')" class="col-3"/>
     </div>
-    <host-cluster v-for="(serviceId, index) in services" :key="serviceId" :id="serviceId" :ref="el=>{divNodes[index] = el}" @is-emit="childEmit"></host-cluster>
+    <server-cluster v-for="(monitor, index) in monitorUnits" :key="monitor.id" :unit-servers="monitor" :ref="el=>{divNodes[index] = el}" @is-emit="refreshComplete"></server-cluster>
   </div>
 </template>
 
