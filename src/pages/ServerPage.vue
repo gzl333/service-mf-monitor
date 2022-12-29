@@ -80,8 +80,8 @@ const refreshComplete = (val: boolean) => {
   isRefreshShow.value = val
 }
 onBeforeMount(async () => {
-  const UnitServerRes = await monitor.monitor.api.getMonitorUnitServer()
-  monitorUnits.value = UnitServerRes.data.results
+  const unitServerRes = await monitor.monitor.api.getMonitorUnitServer()
+  monitorUnits.value = unitServerRes.data.results
 })
 onUnmounted(() => {
   clearInterval(timer)
@@ -92,7 +92,7 @@ onUnmounted(() => {
   <div class="ServerPage" style="min-width: 1000px">
     <div class="row justify-end items-center">
       <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="isRefreshShow" @click="refresh"/>
-      <q-select outlined dense v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')" class="col-3"/>
+      <q-select class="col-3" outlined dense v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')" />
     </div>
     <server-cluster v-for="(monitor, index) in monitorUnits" :key="monitor.id" :unit-servers="monitor" :ref="el=>{divNodes[index] = el}" @is-emit="refreshComplete"></server-cluster>
   </div>

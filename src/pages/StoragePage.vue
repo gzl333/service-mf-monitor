@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import { ref, watch, computed, onUnmounted } from 'vue'
-import { useStore } from 'stores/store'
-import StorageCluster from 'components/Federation/StorageCluster.vue'
-// import { ref, computed } from "vue"
-// import { navigateToUrl } from 'single-spa'
-
+import { ref, watch, onUnmounted, onBeforeMount } from 'vue'
+// import { useStore } from 'stores/store'
 // import { useRoute, useRouter } from 'vue-router'
+import StorageCluster from 'components/Federation/StorageCluster.vue'
 import { i18n } from 'boot/i18n'
+import monitor from '../api/index'
 
 // const props = defineProps({
 //   foo: {
@@ -20,9 +18,9 @@ import { i18n } from 'boot/i18n'
 // const route = useRoute()
 // const router = useRouter()
 const { tc } = i18n.global
-const store = useStore()
+// const store = useStore()
 const isShow = ref(true)
-const services = computed(() => store.tables.serviceTable.allIds)
+const monitorUnits = ref([])
 const filterSelection = ref({
   label: '每30s刷新',
   labelEn: 'Refresh every 30 seconds',
@@ -80,6 +78,10 @@ const refresh = () => {
 const childEmit = (val: boolean) => {
   isShow.value = val
 }
+onBeforeMount(async () => {
+  const unitServerRes = await monitor.monitor.api.getMonitorUnitCeph()
+  monitorUnits.value = unitServerRes.data.results
+})
 onUnmounted(() => {
   clearInterval(timer)
 })
@@ -87,11 +89,11 @@ onUnmounted(() => {
 
 <template>
   <div class="StoragePage" style="min-width: 1000px">
-    <div class="row justify-end q-mt-xs">
-      <q-icon class="col-1" name="refresh" size="md" v-show="isShow" @click="refresh"/>
-      <q-select outlined dense v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')" class="col-3"/>
+    <div class="row justify-end">
+      <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="isShow" @click="refresh"/>
+      <q-select class="col-3" outlined dense v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')" />
     </div>
-    <storage-cluster v-for="(serviceId, index) in services" :key="serviceId" :id="serviceId" :ref="el=>{divNodes[index] = el}" @is-emit="childEmit"></storage-cluster>
+    <storage-cluster v-for="(monitor, index) in monitorUnits" :key="monitor.id" :unit-ceph="monitor" :ref="el=>{divNodes[index] = el}" @is-emit="childEmit"></storage-cluster>
   </div>
 </template>
 

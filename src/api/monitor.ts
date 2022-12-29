@@ -30,7 +30,7 @@ export default {
       }
       return axiosMonitor.get('/monitor/unit/ceph', config)
     },
-    getMonitorCephQuery (payload: { query: { service_id: string; query: string } }) {
+    getMonitorCephQuery (payload: { query: { monitor_unit_id: string; query: string } }) {
       const config = {
         params: payload.query
       }

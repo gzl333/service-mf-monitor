@@ -235,8 +235,8 @@ onBeforeMount(async () => {
                       @click="refresh(item.monitor_unit_id, 'healthy', index)"/>
             </div>
             <div :class="!item.health_status ? 'text-center text-h5 q-mt-lg q-py-xl' : item.health_status === '0' ? 'text-positive text-center text-h4 text-weight-bold q-mt-lg q-py-xl' :
-            item.health_status === '1' ? 'text-warning text-center text-h4 text-weight-bold q-mt-lg q-pa-xl q-pb-md' :
-            'text-negative text-center text-h4 text-weight-bold q-mt-lg q-pa-xl q-pb-md'">
+            item.health_status === '1' ? 'text-warning text-center text-h4 text-weight-bold q-mt-lg q-px-xl q-pb-md' :
+            'text-negative text-center text-h4 text-weight-bold q-mt-lg q-px-xl q-pb-md'">
               {{ !item.health_status ? tc('暂无数据') : item.health_status === '0' ? 'Healthy' : item.health_status === '1' ? 'Warning' : 'Fatal' }}
             </div>
           </q-card>
