@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onBeforeUnmount, Ref } from 'vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts/core'
 import { GridComponent } from 'echarts/components'
 import { LineChart } from 'echarts/charts'
@@ -14,20 +14,10 @@ const props = defineProps({
     required: true
   }
 })
-
 const container = ref<HTMLElement>()
-const lineData: Ref = ref([])
-const getChartData = () => {
-  lineData.value = props.chartData
-  lineData.value.unshift(0)
-}
-const refreshChart = (data: []) => {
-  lineData.value = data
-}
-defineExpose({ refreshChart })
+// defineExpose({ })
 onMounted(() => {
   const chart = echarts.init(container.value!)
-  getChartData()
   const option = computed(() => ({
     grid: {
       left: 0,
@@ -49,7 +39,7 @@ onMounted(() => {
     },
     series: [
       {
-        data: lineData.value,
+        data: [0, props.chartData[0], props.chartData[1], props.chartData[2]],
         type: 'line',
         symbol: 'none'
       }
