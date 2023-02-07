@@ -21,12 +21,14 @@ import { i18n } from 'boot/i18n'
 // const router = useRouter()
 const { tc } = i18n.global
 const divNodes = ref<typeof ServerClusters[]>([])
+const monitorUnitsTable = ref([])
 const allMonitorUnits = ref([])
+const keyword = ref('')
 const isRefreshShow = ref(true)
 const filterSelection = ref({
   label: '每30s刷新',
   labelEn: 'Refresh every 30 seconds',
-  value: 3600
+  value: 30
 })
 const filterOptions = [
   {
@@ -55,28 +57,28 @@ const filterOptions = [
     value: 3600
   }
 ]
-const filterStateSelection = ref({
-  label: '全部',
-  value: 'all'
-})
-const filterStateOptions = [
-  {
-    label: '全部',
-    value: 'all'
-  },
-  {
-    label: 'Healthy',
-    value: '0'
-  },
-  {
-    label: 'Warning',
-    value: '1'
-  },
-  {
-    label: 'Fatal',
-    value: '2'
-  }
-]
+// const filterStateSelection = ref({
+//   label: '全部',
+//   value: 'all'
+// })
+// const filterStateOptions = [
+//   {
+//     label: '全部',
+//     value: 'all'
+//   },
+//   {
+//     label: 'Healthy',
+//     value: '0'
+//   },
+//   {
+//     label: 'Warning',
+//     value: '1'
+//   },
+//   {
+//     label: 'Fatal',
+//     value: '2'
+//   }
+// ]
 let timer = setInterval(() => {
   isRefreshShow.value = false
   divNodes.value.forEach((node) => {
@@ -101,35 +103,41 @@ const refresh = () => {
 const refreshComplete = (val: boolean) => {
   isRefreshShow.value = val
 }
-const filterState = () => {
-  console.log(filterStateSelection.value)
-  // allMonitorUnits.value = allMonitorUnits.value.filter()
+// const filterState = () => {
+//   console.log(filterStateSelection.value)
+//   // monitorUnitsTable.value = monitorUnitsTable.value.filter(state => state.)
+// }
+const keywordSearch = () => {
+  if (keyword.value === '') {
+    monitorUnitsTable.value = allMonitorUnits.value
+  } else {
+    monitorUnitsTable.value = allMonitorUnits.value.filter((state: any) => state.name.indexOf(keyword.value) !== -1)
+  }
 }
 onBeforeMount(async () => {
   const unitServerRes = await monitor.monitor.api.getMonitorUnitServer()
+  monitorUnitsTable.value = unitServerRes.data.results
   allMonitorUnits.value = unitServerRes.data.results
-  console.log(allMonitorUnits.value)
 })
 onUnmounted(() => {
   clearInterval(timer)
 })
-const text = ref('')
 </script>
 
 <template>
   <div class="ServerPage" style="min-width: 1000px">
     <div class="row items-center">
       <div class="row col-8">
-        <q-input class="col-4" outlined dense v-model="text" label="输入关键字搜索" />
+        <q-input class="col-4" outlined dense v-model="keyword" label="输入关键字搜索" @update:model-value="keywordSearch"/>
 <!--        <q-select class="col-3 q-ml-sm" outlined dense v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('筛选类别')" />-->
-        <q-select class="col-3 q-ml-sm" outlined dense v-model="filterStateSelection" :options="filterStateOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('筛选状态')" @update:model-value="filterState"/>
+<!--        <q-select class="col-3 q-ml-sm" outlined dense v-model="filterStateSelection" :options="filterStateOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('筛选状态')" @update:model-value="filterState"/>-->
       </div>
       <div class="col-4 row justify-evenly items-center">
         <q-icon name="refresh" size="lg" v-show="isRefreshShow" @click="refresh"/>
         <q-select class="col-8 q-ml-sm" outlined dense v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')" />
       </div>
     </div>
-    <server-clusters v-for="(monitor, index) in allMonitorUnits" :key="monitor.id" :unit-servers="monitor" :ref="el=>{divNodes[index] = el}" @is-emit="refreshComplete"></server-clusters>
+    <server-clusters v-for="(monitor, index) in monitorUnitsTable" :key="monitor.id" :unit-servers="monitor" :ref="el=>{divNodes[index] = el}" @is-emit="refreshComplete"></server-clusters>
   </div>
 </template>
 
