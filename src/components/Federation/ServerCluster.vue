@@ -11,34 +11,30 @@ const props = defineProps({
   }
 })
 // interface MonitorServerInterface {
-//   cpu_usage: number
-//   disk_usage: number
-//   health_status: number
-//   host_count: number
-//   host_up_count: number
-//   isCpuRefreshShow: boolean
-//   isDiskRefreshShow: boolean
-//   isHostRefreshShow: boolean
-//   isMemRefreshShow: boolean
-//   isStatusRefreshShow: boolean
-//   max_cpu_usage: number
-//   max_disk_usage: number
-//   max_mem_usage: number
-//   mem_usage: number
-//   min_cpu_usage: number
-//   min_disk_usage: number
-//   min_mem_usage: number
-//   monitor_unit_id: string | undefined
+//   cpu_usage: string
+//   disk_usage: string
+//   grafana_url: string
+//   health_status: string
+//   host_count: string
+//   host_up_count: string
+//   max_cpu_usage: string
+//   max_disk_usage: string
+//   max_mem_usage: string
+//   mem_usage: string
+//   min_cpu_usage: string
+//   min_disk_usage: string
+//   min_mem_usage: string
+//   id: string
 //   name: string
 // }
-
-const emits = defineEmits(['is-emit'])
+const emits = defineEmits(['is-emit', 'is-back'])
 const { tc } = i18n.global
-
-const monitorServersData = ref<any[]>([])
-const divNodesCpu = ref<typeof LineChart[]>([])
-const divNodesMem = ref<typeof LineChart[]>([])
-const divNodesDisk = ref<typeof LineChart[]>([])
+const monitorServersData = ref<Record<string, string | number>>({})
+const isHostRefreshShow = ref(false)
+const isStatusRefreshShow = ref(false)
+const isCpuRefreshShow = ref(false)
+const isMemRefreshShow = ref(false)
+const isDiskRefreshShow = ref(false)
 const getServerQuery = async (monitor_unit_id: string) => {
   const serverQuery: string[] = ['host_count', 'host_up_count', 'health_status', 'cpu_usage', 'max_cpu_usage', 'min_cpu_usage', 'mem_usage', 'max_mem_usage', 'min_mem_usage', 'disk_usage', 'max_disk_usage', 'min_disk_usage']
   const config = {
@@ -47,41 +43,35 @@ const getServerQuery = async (monitor_unit_id: string) => {
       query: ''
     }
   }
-  const serverQueryData = []
-  let monitorServers = 0
-  config.query.query = serverQuery[0]
-  const monitorServerRes = await monitor.monitor.api.getMonitorServerQuery(config)
-  monitorServers = monitorServerRes.data.length
-  for (let i = 0; i < monitorServers; i++) {
-    const serverObject: Record<string, any> = {}
-    serverObject.isHostRefreshShow = true
-    serverObject.isStatusRefreshShow = true
-    serverObject.isCpuRefreshShow = true
-    serverObject.isMemRefreshShow = true
-    serverObject.isDiskRefreshShow = true
-    serverObject.grafana_url = props.unitServers.grafana_url
-    for (const server of serverQuery) {
-      config.query.query = server
-      // const str: keyof MonitorServerInterface = item
-      await monitor.monitor.api.getMonitorServerQuery(config).then((res) => {
-        if (!serverObject.name) {
-          serverObject.name = res.data[i].monitor.name
+  const serverObject: {[key: string]: string } = {}
+  serverObject.grafana_url = props.unitServers.grafana_url
+  serverObject.unitName = props.unitServers.name
+  serverObject.id = props.unitServers.id
+  for (const query of serverQuery) {
+    config.query.query = query
+    await monitor.monitor.api.getMonitorServerQuery(config).then((res) => {
+      if (res.data[0].value !== null) {
+        serverObject[query as keyof typeof serverObject] = res.data[0].value[1]
+      } else {
+        if (query === 'health_status') {
+          serverObject[query as keyof typeof serverObject] = '2'
+        } else {
+          serverObject[query as keyof typeof serverObject] = '暂无数据'
         }
-        if (!serverObject.monitor_unit_id) {
-          serverObject.monitor_unit_id = res.data[i].monitor.id
-        }
-        if (res.data[i].value !== null) {
-          serverObject[server] = res.data[i].value[1]
-        }
-      }).catch((error) => {
-        console.log(error)
-      })
-    }
-    serverQueryData.push(serverObject)
+      }
+    }).catch((error) => {
+      serverObject[query as keyof typeof serverObject] = '获取数据出错'
+      console.log(error)
+    })
   }
-  return serverQueryData
+  isHostRefreshShow.value = true
+  isStatusRefreshShow.value = true
+  isCpuRefreshShow.value = true
+  isMemRefreshShow.value = true
+  isDiskRefreshShow.value = true
+  return serverObject
 }
-const refreshGetServerData = async (monitor_unit_id: string, query: string, num: number) => {
+const refreshServerData = async (monitor_unit_id: string, query: string) => {
   const config = {
     query: {
       monitor_unit_id,
@@ -89,252 +79,216 @@ const refreshGetServerData = async (monitor_unit_id: string, query: string, num:
     }
   }
   await monitor.monitor.api.getMonitorServerQuery(config).then((res) => {
-    if (res.data[num].value !== null) {
-      monitorServersData.value[num][query] = res.data[num].value[1]
+    if (res.data[0].value !== null) {
+      monitorServersData.value[query] = res.data[0].value[1]
+    } else {
+      if (query === 'health_status') {
+        monitorServersData.value[query] = '2'
+      } else {
+        monitorServersData.value[query] = '暂无数据'
+      }
     }
   })
 }
-const refresh = async (monitor_unit_id: string, type: string, itemIndex: number) => {
+const refreshByQuery = async (monitor_unit_id: string, type: string) => {
   if (type === 'host') {
-    monitorServersData.value[itemIndex].isHostRefreshShow = false
+    isHostRefreshShow.value = false
     const hostQueryArr = ['host_count', 'host_up_count']
     for (const host of hostQueryArr) {
-      void await refreshGetServerData(monitor_unit_id, host, itemIndex)
+      void await refreshServerData(monitor_unit_id, host)
     }
-    monitorServersData.value[itemIndex].isHostRefreshShow = true
+    isHostRefreshShow.value = true
   } else if (type === 'healthy') {
-    monitorServersData.value[itemIndex].isStatusRefreshShow = false
-    void await refreshGetServerData(monitor_unit_id, 'health_status', itemIndex)
-    monitorServersData.value[itemIndex].isStatusRefreshShow = true
+    isStatusRefreshShow.value = false
+    void await refreshServerData(monitor_unit_id, 'health_status')
+    isStatusRefreshShow.value = true
   } else if (type === 'cpu') {
-    monitorServersData.value[itemIndex].isCpuRefreshShow = false
-    const cpuArr = ['cpu_usage', 'min_cpu_usage', 'max_cpu_usage']
-    const cpuChart: number[] = []
-    for (const cpu of cpuArr) {
-      void await refreshGetServerData(monitor_unit_id, cpu, itemIndex)
+    isCpuRefreshShow.value = false
+    const cpuQueryArr = ['cpu_usage', 'min_cpu_usage', 'max_cpu_usage']
+    for (const cpu of cpuQueryArr) {
+      void await refreshServerData(monitor_unit_id, cpu)
     }
-    cpuChart.push(0)
-    cpuChart.push(monitorServersData.value[itemIndex].cpu_usage)
-    cpuChart.push(monitorServersData.value[itemIndex].min_cpu_usage)
-    cpuChart.push(monitorServersData.value[itemIndex].max_cpu_usage)
-    divNodesCpu.value[itemIndex].refreshChart(cpuChart)
-    monitorServersData.value[itemIndex].isCpuRefreshShow = true
+    isCpuRefreshShow.value = true
   } else if (type === 'mem') {
-    monitorServersData.value[itemIndex].isMemRefreshShow = false
-    const memArr = ['mem_usage', 'min_mem_usage', 'max_mem_usage']
-    const memChart: number[] = []
-    for (const mem of memArr) {
-      void await refreshGetServerData(monitor_unit_id, mem, itemIndex)
+    isMemRefreshShow.value = false
+    const memQueryArr = ['mem_usage', 'min_mem_usage', 'max_mem_usage']
+    for (const mem of memQueryArr) {
+      void await refreshServerData(monitor_unit_id, mem)
     }
-    memChart.push(0)
-    memChart.push(monitorServersData.value[itemIndex].mem_usage)
-    memChart.push(monitorServersData.value[itemIndex].min_mem_usage)
-    memChart.push(monitorServersData.value[itemIndex].max_mem_usage)
-    divNodesMem.value[itemIndex].refreshChart(memChart)
-    monitorServersData.value[itemIndex].isMemRefreshShow = true
+    isMemRefreshShow.value = true
   } else {
-    monitorServersData.value[itemIndex].isDiskRefreshShow = false
-    const diskArr = ['disk_usage', 'min_disk_usage', 'max_disk_usage']
-    const diskChart: number[] = []
-    for (const disk of diskArr) {
-      void await refreshGetServerData(monitor_unit_id, disk, itemIndex)
+    isDiskRefreshShow.value = false
+    const diskQueryArr = ['disk_usage', 'min_disk_usage', 'max_disk_usage']
+    for (const disk of diskQueryArr) {
+      void await refreshServerData(monitor_unit_id, disk)
     }
-    diskChart.push(0)
-    diskChart.push(monitorServersData.value[itemIndex].disk_usage)
-    diskChart.push(monitorServersData.value[itemIndex].min_disk_usage)
-    diskChart.push(monitorServersData.value[itemIndex].max_disk_usage)
-    divNodesDisk.value[itemIndex].refreshChart(diskChart)
-    monitorServersData.value[itemIndex].isDiskRefreshShow = true
+    isDiskRefreshShow.value = true
   }
 }
-const intervalRefresh = () => {
-  for (const server of monitorServersData.value) {
-    server.isHostRefreshShow = false
-    server.isStatusRefreshShow = false
-    server.isCpuRefreshShow = false
-    server.isMemRefreshShow = false
-    server.isDiskRefreshShow = false
+const intervalRefresh = async (isLast: boolean) => {
+  isHostRefreshShow.value = false
+  isStatusRefreshShow.value = false
+  isCpuRefreshShow.value = false
+  isMemRefreshShow.value = false
+  isDiskRefreshShow.value = false
+  monitorServersData.value = await getServerQuery(props.unitServers.id)
+  if (isLast) {
+    emits('is-emit')
   }
-  void getServerQuery(props.unitServers.id).then((res) => {
-    monitorServersData.value = res
-    for (let i = 0; i < res.length; i++) {
-      const cpuChart: number[] = []
-      const memChart: number[] = []
-      const diskChart: number[] = []
-      cpuChart.push(0)
-      cpuChart.push(monitorServersData.value[i].cpu_usage)
-      cpuChart.push(monitorServersData.value[i].min_cpu_usage)
-      cpuChart.push(monitorServersData.value[i].max_cpu_usage)
-      memChart.push(0)
-      memChart.push(monitorServersData.value[i].mem_usage)
-      memChart.push(monitorServersData.value[i].min_mem_usage)
-      memChart.push(monitorServersData.value[i].max_mem_usage)
-      diskChart.push(0)
-      diskChart.push(monitorServersData.value[i].disk_usage)
-      diskChart.push(monitorServersData.value[i].min_disk_usage)
-      diskChart.push(monitorServersData.value[i].max_disk_usage)
-      divNodesCpu.value[i].refreshChart(cpuChart)
-      divNodesMem.value[i].refreshChart(memChart)
-      divNodesDisk.value[i].refreshChart(diskChart)
-    }
-    for (const item of monitorServersData.value) {
-      item.isHostRefreshShow = true
-      item.isStatusRefreshShow = true
-      item.isCpuRefreshShow = true
-      item.isMemRefreshShow = true
-      item.isDiskRefreshShow = true
-    }
-    emits('is-emit', true)
-  })
+}
+const filterStatus = (status: string) => {
+  // console.log(status)
+  // console.log(monitorServersData.value)
+  if (monitorServersData.value.health_status === status) {
+    emits('is-back', monitorServersData.value.id)
+  }
 }
 const goToGrafana = () => {
   window.open(props.unitServers.grafana_url)
 }
-defineExpose({ intervalRefresh })
 onBeforeMount(async () => {
   monitorServersData.value = await getServerQuery(props.unitServers.id)
+  // console.log(monitorServersData.value)
 })
+defineExpose({ intervalRefresh, filterStatus })
 </script>
 
 <template>
   <div class="ServerCluster">
-    <div class="q-mt-sm q-pb-lg" v-for="(item, index) in monitorServersData" :key="index">
-      <div class="text-subtitle1 text-weight-bold">{{ item.name }}</div>
-      <div class="row q-mt-sm">
+      <div class="text-subtitle1 text-weight-bold q-mt-lg">{{ props.unitServers.name }}</div>
+      <div class="row q-mt-sm justify-between">
         <div class="col-2">
-          <q-card flat bordered class="no-border-radius q-pb-sm">
-            <div class="row q-pb-lg">
+          <q-card flat bordered class="no-border-radius" style="height: 120px">
+            <div class="row">
               <div class="col-11 text-center">{{ tc('主机数') }}</div>
-              <q-icon name="loop" class="col-1" size="xs" v-show="item.isHostRefreshShow"
-                      @click="refresh(item.monitor_unit_id, 'host', index)"/>
+              <q-icon name="loop" class="col-1" size="xs" v-show="isHostRefreshShow"
+                      @click="refreshByQuery(props.unitServers.id, 'host')"/>
             </div>
-            <div :class="!item.host_count ? 'text-center text-h5 q-mt-sm q-py-sm' : 'text-center text-h4 q-mt-sm q-py-sm'">
-              {{ !item.host_count ? tc('暂无数据') : item.host_count }}
+            <div :class="monitorServersData.host_count ? 'text-center text-h4 q-mt-lg' : 'text-center text-h5 q-mt-lg'">
+              {{ monitorServersData.host_count ? monitorServersData.host_count : tc('正在获取')}}
             </div>
           </q-card>
           <div class="row q-mt-xs">
-            <q-card flat bordered class="no-border-radius col-6">
+            <q-card flat bordered class="no-border-radius col-6" style="height: 85px">
               <div class="col-11 text-center">{{ tc('在线') }}</div>
-              <div :class="!item.host_up_count ? 'text-center text-h6 q-mt-sm q-pt-sm q-pb-md' : 'text-center text-h4 text-positive q-mt-sm q-py-sm'">
-                {{ !item.host_up_count ? tc('暂无数据') : item.host_up_count }}
+              <div :class="monitorServersData.host_up_count && monitorServersData.host_count !== '暂无数据' && monitorServersData.host_count !== '获取数据出错' ? 'text-center text-h5 text-positive q-mt-sm' : 'text-center text-h6 q-mt-sm'">
+                {{ monitorServersData.host_up_count ? monitorServersData.host_up_count : tc('正在获取') }}
               </div>
             </q-card>
-            <q-card flat bordered class="no-border-radius col-6">
+            <q-card flat bordered class="no-border-radius col-6" style="height: 85px">
               <div class="col-11 text-center">{{ tc('掉线') }}</div>
-              <div :class="!item.host_count || !item.host_up_count ? 'text-center text-h6 q-mt-sm q-pt-sm q-pb-md' : 'text-center text-h4 text-negative q-mt-sm q-py-sm'">
-                {{ !item.host_count || !item.host_up_count ? tc('暂无数据') : (parseFloat(item.host_count) - parseFloat(item.host_up_count)) }}
+              <div :class="monitorServersData.host_count && monitorServersData.host_count !== '暂无数据' && monitorServersData.host_count !== '获取数据出错' ? 'text-center text-h5 text-negative q-mt-sm' : 'text-center text-h6 q-mt-sm'">
+                {{ monitorServersData.host_count && monitorServersData.host_count !== '暂无数据' && monitorServersData.host_count !== '获取数据出错' ? (parseFloat(monitorServersData.host_count) - parseFloat(monitorServersData.host_up_count)) : monitorServersData.host_count ? tc(monitorServersData.host_count) : tc('正在获取')}}
               </div>
             </q-card>
           </div>
         </div>
-        <div class="col-2 q-ml-md">
-          <q-card flat bordered class="no-border-radius q-pb-lg">
-            <div class="row q-pb-xs">
+        <div class="col-2">
+          <q-card flat bordered class="no-border-radius" style="height: 209px">
+            <div class="row">
               <div class="col-11 text-center">{{ tc('集群状态') }}</div>
-              <q-icon name="loop" class="col-1" size="xs" v-show="item.isStatusRefreshShow"
-                      @click="refresh(item.monitor_unit_id, 'healthy', index)"/>
+              <q-icon name="loop" class="col-1" size="xs" v-show="isStatusRefreshShow"
+                      @click="refreshByQuery(props.unitServers.id, 'healthy')"/>
             </div>
-            <div :class="!item.health_status ? 'text-center text-h5 q-mt-lg q-py-xl' : item.health_status === '0' ? 'text-positive text-center text-h4 text-weight-bold q-mt-lg q-py-xl' :
-            item.health_status === '1' ? 'text-warning text-center text-h4 text-weight-bold q-mt-lg q-px-xl q-pb-md' :
-            'text-negative text-center text-h4 text-weight-bold q-mt-lg q-px-xl q-pb-md'">
-              {{ !item.health_status ? tc('暂无数据') : item.health_status === '0' ? 'Healthy' : item.health_status === '1' ? 'Warning' : 'Fatal' }}
+            <div :class="!monitorServersData.health_status ? 'text-center text-h5 q-mt-xl' : monitorServersData.health_status === '0' ? 'text-positive text-center text-h4 text-weight-bold q-mt-xl' :
+            monitorServersData.health_status === '1' ? 'text-warning text-center text-h4 text-weight-bold q-mt-xl' : 'text-negative text-center text-h4 text-weight-bold q-mt-xl'">
+              {{ !monitorServersData.health_status ? tc('正在获取') : monitorServersData.health_status === '0' ? 'Healthy' : monitorServersData.health_status === '1' ? 'Warning' : 'Fatal' }}
             </div>
           </q-card>
         </div>
-        <div class="col-2 q-ml-md">
-          <q-card flat bordered class="no-border-radius">
+        <div class="col-2">
+          <q-card flat bordered class="no-border-radius" style="height: 120px">
             <div class="row">
               <div class="col-11 text-center">{{ tc('平均CPU使用率') }}</div>
-              <q-icon name="loop" class="col-1" size="xs" v-show="item.isCpuRefreshShow"
-                      @click="refresh(item.monitor_unit_id,'cpu', index)"/>
+              <q-icon name="loop" class="col-1" size="xs" v-show="isCpuRefreshShow"
+                      @click="refreshByQuery(props.unitServers.id,'cpu')"/>
             </div>
-            <div :class="!item.cpu_usage ? 'text-center text-h5 q-mt-md' : 'text-center text-h4 q-mt-md'">
-              {{ !item.cpu_usage ? tc('暂无数据') : (parseFloat(item.cpu_usage).toFixed(2) + '%') }}
+            <div :class="monitorServersData.cpu_usage ? 'text-center text-h4 q-mt-md' : 'text-center text-h5 q-mt-md'">
+              {{ monitorServersData.cpu_usage && monitorServersData.cpu_usage !== '暂无数据' && monitorServersData.cpu_usage !== '获取数据出错' ? (parseFloat(monitorServersData.cpu_usage).toFixed(2) + '%') : monitorServersData.cpu_usage ? tc(monitorServersData.cpu_usage) : tc('正在获取') }}
             </div>
-            <line-chart :ref="el=>{divNodesCpu[index] = el}" :chartData="[item.cpu_usage, item.min_cpu_usage, item.max_cpu_usage]"></line-chart>
+            <line-chart :chartData="[monitorServersData.cpu_usage, monitorServersData.min_cpu_usage, monitorServersData.max_cpu_usage]"></line-chart>
           </q-card>
           <div class="row q-mt-xs">
-            <q-card flat bordered class="no-border-radius col-6">
+            <q-card flat bordered class="no-border-radius col-6" style="height: 85px">
               <div class="col-11 text-center">{{ tc('最大') }}</div>
-              <div :class="!item.max_cpu_usage ? 'text-center text-h6 q-mt-md q-py-sm' : 'text-center text-h5 q-mt-md q-py-sm'">
-                {{ !item.max_cpu_usage ? tc('暂无数据') : (parseFloat(item.max_cpu_usage).toFixed(2) + '%') }}
+              <div :class="monitorServersData.max_cpu_usage && monitorServersData.max_cpu_usage !== '暂无数据' && monitorServersData.max_cpu_usage !== '获取数据出错' ? 'text-center text-h5 q-mt-md' : 'text-center text-h6 q-mt-md'">
+                {{ monitorServersData.max_cpu_usage && monitorServersData.max_cpu_usage !== '暂无数据' && monitorServersData.max_cpu_usage !== '获取数据出错' ? (parseFloat(monitorServersData.max_cpu_usage).toFixed(2) + '%') : monitorServersData.max_cpu_usage ? tc(monitorServersData.max_cpu_usage) : tc('正在获取') }}
               </div>
             </q-card>
-            <q-card flat bordered class="no-border-radius col-6">
+            <q-card flat bordered class="no-border-radius col-6" style="height: 85px">
               <div class="col-11 text-center">{{ tc('最小') }}</div>
-              <div :class="!item.min_cpu_usage ? 'text-center text-h6 q-mt-md q-py-sm' : 'text-center text-h5 q-mt-md q-py-sm'">
-                {{ !item.min_cpu_usage ? tc('暂无数据') : (parseFloat(item.min_cpu_usage).toFixed(2) + '%') }}
+              <div :class="monitorServersData.min_cpu_usage && monitorServersData.min_cpu_usage !== '暂无数据' && monitorServersData.min_cpu_usage !== '获取数据出错' ? 'text-center text-h5 q-mt-md' : 'text-center text-h6 q-mt-md'">
+                {{ monitorServersData.min_cpu_usage && monitorServersData.min_cpu_usage !== '暂无数据' && monitorServersData.min_cpu_usage !== '获取数据出错' ? (parseFloat(monitorServersData.min_cpu_usage).toFixed(2) + '%') : monitorServersData.min_cpu_usage ? tc(monitorServersData.min_cpu_usage) : tc('正在获取') }}
               </div>
             </q-card>
           </div>
         </div>
-        <div class="col-2 q-ml-md">
-          <q-card flat bordered class="no-border-radius">
+        <div class="col-2" >
+          <q-card flat bordered class="no-border-radius" style="height: 120px">
             <div class="row">
               <div class="col-11 text-center">{{ tc('平均内存使用率') }}</div>
-              <q-icon name="loop" class="col-1" size="xs" v-show="item.isMemRefreshShow"
-                      @click="refresh(item.monitor_unit_id,'mem', index)"/>
+              <q-icon name="loop" class="col-1" size="xs" v-show="isMemRefreshShow"
+                      @click="refreshByQuery(props.unitServers.id,'mem')"/>
             </div>
-            <div :class="!item.mem_usage ? 'text-center text-h5 q-mt-md' : 'text-center text-h4 q-mt-md'">
-              {{ !item.mem_usage ? tc('暂无数据') : (parseFloat(item.mem_usage).toFixed(2) + '%') }}
+            <div :class="monitorServersData.mem_usage ? 'text-center text-h4 q-mt-md' : 'text-center text-h5 q-mt-md'">
+              {{ monitorServersData.mem_usage && monitorServersData.mem_usage !== '暂无数据' && monitorServersData.mem_usage !== '获取数据出错' ? (parseFloat(monitorServersData.mem_usage).toFixed(2) + '%') : monitorServersData.mem_usage ? tc(monitorServersData.mem_usage) : tc('正在获取') }}
             </div>
-            <line-chart :ref="el=>{divNodesMem[index] = el}" :chartData="[item.mem_usage, item.min_mem_usage, item.max_mem_usage]"></line-chart>
+            <line-chart :chartData="[monitorServersData.mem_usage, monitorServersData.min_mem_usage, monitorServersData.max_mem_usage]"></line-chart>
           </q-card>
           <div class="row q-mt-xs">
-            <q-card flat bordered class="no-border-radius col-6">
+            <q-card flat bordered class="no-border-radius col-6" style="height: 85px">
               <div class="col-11 text-center">{{ tc('最大') }}</div>
-              <div :class="!item.max_mem_usage ? 'text-center text-h6 q-mt-md q-py-sm' : 'text-center text-h5 q-mt-md q-py-sm'">
-                {{ !item.max_mem_usage ? tc('暂无数据') : (parseFloat(item.max_mem_usage).toFixed(2) + '%') }}
+              <div :class="monitorServersData.max_mem_usage && monitorServersData.max_mem_usage !== '暂无数据' && monitorServersData.max_mem_usage !== '获取数据出错' ? 'text-center text-h5 q-mt-md' : 'text-center text-h6 q-mt-md'">
+                {{ monitorServersData.max_mem_usage && monitorServersData.max_mem_usage !== '暂无数据' && monitorServersData.max_mem_usage !== '获取数据出错' ? (parseFloat(monitorServersData.max_mem_usage).toFixed(2) + '%') : monitorServersData.max_mem_usage ? tc(monitorServersData.max_mem_usage) : tc('正在获取') }}
               </div>
             </q-card>
-            <q-card flat bordered class="no-border-radius col-6">
+            <q-card flat bordered class="no-border-radius col-6" style="height: 85px">
               <div class="col-11 text-center">{{ tc('最小') }}</div>
-              <div :class="!item.min_mem_usage ? 'text-center text-h6 q-mt-md q-py-sm' : 'text-center text-h5 q-mt-md q-py-sm'">
-                {{ !item.min_mem_usage ? tc('暂无数据') : (parseFloat(item.min_mem_usage).toFixed(2) + '%') }}
+              <div :class="monitorServersData.min_mem_usage && monitorServersData.min_mem_usage !== '暂无数据' && monitorServersData.min_mem_usage !== '获取数据出错' ? 'text-center text-h5 q-mt-md' : 'text-center text-h6 q-mt-md'">
+                {{ monitorServersData.min_mem_usage && monitorServersData.min_mem_usage !== '暂无数据' && monitorServersData.min_mem_usage !== '获取数据出错' ? (parseFloat(monitorServersData.min_mem_usage).toFixed(2) + '%') : monitorServersData.min_mem_usage ? tc(monitorServersData.min_mem_usage) : tc('正在获取') }}
               </div>
             </q-card>
           </div>
         </div>
-        <div class="col-2 q-ml-md">
-          <q-card flat bordered class="no-border-radius">
+        <div class="col-2">
+          <q-card flat bordered class="no-border-radius" style="height: 120px">
             <div class="row">
               <div class="col-11 text-center">{{ tc('平均硬盘使用率') }}</div>
-              <q-icon name="loop" class="col-1" size="xs" v-show="item.isDiskRefreshShow"
-                      @click="refresh(item.monitor_unit_id,'disk', index)"/>
+              <q-icon name="loop" class="col-1" size="xs" v-show="isDiskRefreshShow"
+                      @click="refreshByQuery(props.unitServers.id,'disk')"/>
             </div>
-            <div :class="!item.disk_usage ? 'text-center text-h5 q-mt-md' : 'text-center text-h4 q-mt-md'">
-              {{ !item.disk_usage ? tc('暂无数据') : (parseFloat(item.disk_usage).toFixed(2) + '%') }}
+            <div :class="monitorServersData.disk_usage ? 'text-center text-h4 q-mt-md' : 'text-center text-h5 q-mt-md'">
+              {{ monitorServersData.disk_usage && monitorServersData.disk_usage !== '暂无数据' && monitorServersData.disk_usage !== '获取数据出错' ? (parseFloat(monitorServersData.disk_usage).toFixed(2) + '%') : monitorServersData.disk_usage ? tc(monitorServersData.disk_usage) : tc('正在获取') }}
             </div>
-            <line-chart :ref="el=>{divNodesDisk[index] = el}" :chartData="[item.disk_usage, item.min_disk_usage, item.max_disk_usage]"></line-chart>
+            <line-chart :chartData="[monitorServersData.disk_usage, monitorServersData.min_disk_usage, monitorServersData.max_disk_usage]"></line-chart>
           </q-card>
           <div class="row q-mt-xs">
-            <q-card flat bordered class="no-border-radius col-6">
+            <q-card flat bordered class="no-border-radius col-6" style="height: 85px">
               <div class="col-11 text-center">{{ tc('最大') }}</div>
-              <div :class="!item.max_disk_usage ? 'text-center text-h6 q-mt-md q-py-sm' : 'text-center text-h5 q-mt-md q-py-sm'">
-                {{ !item.max_disk_usage ? tc('暂无数据') : (parseFloat(item.max_disk_usage).toFixed(2) + '%') }}
+              <div :class="monitorServersData.max_disk_usage && monitorServersData.max_disk_usage !== '暂无数据' && monitorServersData.max_disk_usage !== '获取数据出错' ? 'text-center text-h5 q-mt-md' : 'text-center text-h6 q-mt-md'">
+                {{ monitorServersData.max_disk_usage && monitorServersData.max_disk_usage !== '暂无数据' && monitorServersData.max_disk_usage !== '获取数据出错' ? (parseFloat(monitorServersData.max_disk_usage).toFixed(2) + '%') : monitorServersData.max_disk_usage ? tc(monitorServersData.max_disk_usage) : tc('正在获取') }}
               </div>
             </q-card>
-            <q-card flat bordered class="no-border-radius col-6">
+            <q-card flat bordered class="no-border-radius col-6" style="height: 85px">
               <div class="col-11 text-center">{{ tc('最小') }}</div>
-              <div :class="!item.min_disk_usage ? 'text-center text-h6 q-mt-md q-py-sm' : 'text-center text-h5 q-mt-md q-py-sm'">
-                {{ !item.min_disk_usage ? tc('暂无数据') : (parseFloat(item.min_disk_usage).toFixed(2) + '%') }}
+              <div :class="monitorServersData.min_disk_usage && monitorServersData.min_disk_usage !== '暂无数据' && monitorServersData.min_disk_usage !== '获取数据出错' ? 'text-center text-h5 q-mt-md' : 'text-center text-h6 q-mt-md'">
+                {{ monitorServersData.min_disk_usage && monitorServersData.min_disk_usage !== '暂无数据' && monitorServersData.min_disk_usage !== '获取数据出错' ? (parseFloat(monitorServersData.min_disk_usage).toFixed(2) + '%') : monitorServersData.min_disk_usage ? tc(monitorServersData.min_disk_usage) : tc('正在获取') }}
               </div>
             </q-card>
           </div>
         </div>
-        <div class="col-1 q-ml-md">
-          <q-card flat bordered class="no-border-radius q-py-lg">
-            <div class="text-center q-mt-lg q-py-lg">
+        <div class="col-1">
+          <q-card flat bordered class="no-border-radius" style="height: 209px">
+            <div class="text-center q-mt-xl">
               <div class="text-primary cursor-pointer" @click="goToGrafana">
                 <div>Go To</div>
                 <div>Grafana</div>
               </div>
-              <div class="q-mt-sm q-pb-md">{{ tc('查看详细信息') }}</div>
+              <div class="q-mt-sm">{{ tc('查看详细信息') }}</div>
             </div>
           </q-card>
         </div>
       </div>
-    </div>
   </div>
 </template>
 

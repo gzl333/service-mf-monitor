@@ -19,14 +19,16 @@ import monitor from '../api/index'
 // const router = useRouter()
 const { tc } = i18n.global
 // const store = useStore()
+const divNodes = ref<typeof StorageCluster[]>([])
+const monitorCephTable = ref([])
+const allMonitorCeph = ref([])
+const keyword = ref('')
 const isShow = ref(true)
-const monitorUnits = ref([])
 const filterSelection = ref({
   label: '每30s刷新',
   labelEn: 'Refresh every 30 seconds',
   value: 30
 })
-const divNodes = ref<typeof StorageCluster[]>([])
 const filterOptions = [
   {
     label: '每30s刷新',
@@ -56,31 +58,54 @@ const filterOptions = [
 ]
 let timer = setInterval(() => {
   isShow.value = false
-  divNodes.value.forEach((node) => {
-    node.intervalRefresh()
+  divNodes.value = divNodes.value.filter(item => item !== null)
+  divNodes.value.forEach((node, index) => {
+    if (index === divNodes.value.length - 1) {
+      node.intervalRefresh(true)
+    } else {
+      node.intervalRefresh(false)
+    }
   })
 }, filterSelection.value.value * 1000)
 watch(filterSelection, () => {
   clearInterval(timer)
   timer = setInterval(() => {
     isShow.value = false
-    divNodes.value.forEach((node) => {
-      node.intervalRefresh()
+    divNodes.value = divNodes.value.filter(item => item !== null)
+    divNodes.value.forEach((node, index) => {
+      if (index === divNodes.value.length - 1) {
+        node.intervalRefresh(true)
+      } else {
+        node.intervalRefresh(false)
+      }
     })
   }, filterSelection.value.value * 1000)
 })
 const refresh = () => {
   isShow.value = false
-  divNodes.value.forEach((node) => {
-    node.intervalRefresh()
+  divNodes.value = divNodes.value.filter(item => item !== null)
+  divNodes.value.forEach((node, index) => {
+    if (index === divNodes.value.length - 1) {
+      node.intervalRefresh(true)
+    } else {
+      node.intervalRefresh(false)
+    }
   })
 }
-const childEmit = (val: boolean) => {
-  isShow.value = val
+const refreshComplete = () => {
+  isShow.value = true
+}
+const keywordSearch = () => {
+  if (keyword.value === '') {
+    monitorCephTable.value = allMonitorCeph.value
+  } else {
+    monitorCephTable.value = allMonitorCeph.value.filter((state: any) => state.name.indexOf(keyword.value) !== -1)
+  }
 }
 onBeforeMount(async () => {
   const unitServerRes = await monitor.monitor.api.getMonitorUnitCeph()
-  monitorUnits.value = unitServerRes.data.results
+  monitorCephTable.value = unitServerRes.data.results
+  allMonitorCeph.value = unitServerRes.data.results
 })
 onUnmounted(() => {
   clearInterval(timer)
@@ -89,11 +114,16 @@ onUnmounted(() => {
 
 <template>
   <div class="StoragePage" style="min-width: 1000px">
-    <div class="row justify-end">
-      <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="isShow" @click="refresh"/>
-      <q-select class="col-3" outlined dense v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')" />
+    <div class="row">
+      <div class="col-8 row">
+        <q-input class="col-4" outlined dense v-model="keyword" label="输入关键字搜索" @update:model-value="keywordSearch"/>
+      </div>
+      <div class="col-4 row justify-end items-center">
+        <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="isShow" @click="refresh"/>
+        <q-select class="col-8 q-mr-sm" outlined dense v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')" />
+      </div>
     </div>
-    <storage-cluster v-for="(monitor, index) in monitorUnits" :key="monitor.id" :unit-ceph="monitor" :ref="el=>{divNodes[index] = el}" @is-emit="childEmit"></storage-cluster>
+    <storage-cluster v-for="(monitor, index) in monitorCephTable" :key="monitor.id" :unit-ceph="monitor" :ref="el=>{divNodes[index] = el}" @is-emit="refreshComplete"></storage-cluster>
   </div>
 </template>
 
