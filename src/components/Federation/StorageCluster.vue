@@ -156,7 +156,7 @@ defineExpose({ intervalRefresh })
                 <div class="col-5">
                   <q-card flat bordered class="no-border-radius">
                     <div class="text-center">OSD IN</div>
-                    <div :class="monitorCephData.osd_in ? 'text-center text-h5 q-mt-xs' : 'text-center text-h6 q-mt-xs'">
+                    <div :class="monitorCephData.osd_in && monitorCephData.osd_in !== '暂无数据' && monitorCephData.osd_in !== '正在获取' ? 'text-center text-h5 q-mt-xs text-positive' : 'text-center text-h6 q-mt-xs'">
                       {{ monitorCephData.osd_in ? monitorCephData.osd_in : tc('正在获取') }}
                     </div>
                   </q-card>
@@ -164,7 +164,7 @@ defineExpose({ intervalRefresh })
                 <div class="col-5 q-ml-lg">
                   <q-card flat bordered class="no-border-radius">
                     <div class="text-center">OSD UP</div>
-                    <div :class="monitorCephData.osd_up ? 'text-center text-h5 q-mt-xs' : 'text-center text-h6 q-mt-xs'">
+                    <div :class="monitorCephData.osd_up && monitorCephData.osd_up !== '暂无数据' && monitorCephData.osd_up !== '正在获取' ? 'text-center text-h5 q-mt-xs text-positive' : 'text-center text-h6 q-mt-xs'">
                       {{ monitorCephData.osd_up ? monitorCephData.osd_up : tc('正在获取') }}
                     </div>
                   </q-card>
@@ -172,7 +172,7 @@ defineExpose({ intervalRefresh })
                 <div class="col-5 q-mt-sm">
                   <q-card flat bordered class="no-border-radius">
                     <div class="text-center">OSD OUT</div>
-                    <div :class="monitorCephData.osd_out ? 'text-center text-h5 q-mt-xs' : 'text-center text-h6 q-mt-xs'">
+                    <div class="text-center text-h6 q-mt-xs">
                       {{ monitorCephData.osd_out ? monitorCephData.osd_out : tc('正在获取') }}
                     </div>
                   </q-card>
@@ -180,7 +180,7 @@ defineExpose({ intervalRefresh })
                 <div class="col-5 q-ml-lg q-mt-sm">
                   <q-card flat bordered class="no-border-radius">
                     <div class="text-center">OSD DOWN</div>
-                    <div :class="monitorCephData.osd_down ? 'text-center text-h5 q-mt-xs' : 'text-center text-h6 q-mt-xs'">
+                    <div class="text-center text-h6 q-mt-xs">
                       {{ monitorCephData.osd_down ? monitorCephData.osd_down : tc('正在获取') }}
                     </div>
                   </q-card>

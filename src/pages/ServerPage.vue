@@ -34,7 +34,7 @@ const divNodes = ref<typeof ServerCluster[]>([])
 const serverUnitsTable = ref<ServerUnitInterface[]>([])
 const allServerUnitsTable = ref<ServerUnitInterface[]>([])
 const keyword = ref('')
-const isRefreshShow = ref(true)
+const isRefreshShow = ref(false)
 const filterSelection = ref({
   label: '每30s刷新',
   labelEn: 'Refresh every 30 seconds',
@@ -145,16 +145,17 @@ const refreshComplete = () => {
 //   serverUnitsTable.value = arr1
 // }
 const keywordSearch = () => {
-  if (keyword.value === '') {
+  if (keyword.value === '' || keyword.value === null) {
     serverUnitsTable.value = allServerUnitsTable.value
   } else {
-    serverUnitsTable.value = allServerUnitsTable.value.filter((state: ServerUnitInterface) => state.name.indexOf(keyword.value) !== -1)
+    serverUnitsTable.value = allServerUnitsTable.value.filter(state => state.name.indexOf(keyword.value.trim()) > -1 || state.name_en.indexOf(keyword.value.trim()) > -1)
   }
 }
 onBeforeMount(async () => {
   const unitServerRes = await monitor.monitor.api.getMonitorUnitServer()
   serverUnitsTable.value = unitServerRes.data.results
   allServerUnitsTable.value = unitServerRes.data.results
+  isRefreshShow.value = true
 })
 onBeforeUpdate(() => {
   divNodes.value = []
@@ -168,16 +169,16 @@ onUnmounted(() => {
   <div class="ServerPage" style="min-width: 1000px">
     <div class="row items-center">
       <div class="row col-8">
-        <q-input class="col-4" outlined dense v-model="keyword" label="输入关键字搜索" @update:model-value="keywordSearch"/>
+        <q-input class="col-5" outlined dense clearable :disable="!isRefreshShow" v-model="keyword" label="输入关键字搜索" @update:model-value="keywordSearch"/>
 <!--        <q-select class="col-3 q-ml-sm" outlined dense v-model="filterStateSelection" :options="filterStateOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('筛选状态')" @update:model-value="filterState"/>-->
 <!--        <q-select class="col-3 q-ml-sm" outlined dense v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('筛选类别')" />-->
       </div>
       <div class="col-4 row justify-end items-center">
         <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="isRefreshShow" @click="refresh"/>
-        <q-select class="col-7" outlined dense v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')" />
+        <q-select class="col-7" outlined dense :disable="!isRefreshShow" v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')" />
       </div>
     </div>
-    <server-cluster v-for="(monitor, index) in serverUnitsTable" :key="monitor.id" :unit-servers="monitor" :ref="el=>{divNodes[index] = el}" @is-emit="refreshComplete" @is-back="backComplete"></server-cluster>
+    <server-cluster v-for="(monitor, index) in serverUnitsTable" :key="monitor.id" :unit-servers="monitor" :ref="el=>{divNodes[index] = el}" @is-emit="refreshComplete"></server-cluster>
   </div>
 </template>
 
