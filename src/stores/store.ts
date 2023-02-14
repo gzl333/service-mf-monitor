@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import monitor from '../api/index'
 import { normalize, schema } from 'normalizr'
+
 export interface DataCenterInterface {
   // 来自registry接口
   id: string
@@ -37,6 +38,40 @@ export interface ServiceInterface {
   longitude: number
   latitude: number
 }
+
+export interface StatusArrayInterface {
+  metric: {
+    ipv4s: string[]
+    latitude: number
+    longitude: number
+    name: string
+  }
+  value: [number, string]
+}
+
+export interface MeetingStatusInterface {
+  monitor: {
+    job_tag: string
+    name: string
+    name_en: string
+  }
+  value: StatusArrayInterface[]
+}
+
+export interface EndPointInterface {
+  ipv4: string[]
+  latitude: number
+  longitude: number
+  name: string
+  ping: string
+  status: string
+  value: number
+}
+
+export interface StartPointInterface {
+  name: string
+}
+
 export const useStore = defineStore('monitor', {
   state: () => ({
     items: {

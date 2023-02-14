@@ -53,11 +53,7 @@ const getServerQuery = async (monitor_unit_id: string) => {
       if (res.data[0].value !== null) {
         serverObject[query as keyof typeof serverObject] = res.data[0].value[1]
       } else {
-        if (query === 'health_status') {
-          serverObject[query as keyof typeof serverObject] = '2'
-        } else {
-          serverObject[query as keyof typeof serverObject] = '暂无数据'
-        }
+        serverObject[query as keyof typeof serverObject] = '暂无数据'
       }
     }).catch((error) => {
       serverObject[query as keyof typeof serverObject] = '获取数据出错'
@@ -82,11 +78,7 @@ const refreshServerData = async (monitor_unit_id: string, query: string) => {
     if (res.data[0].value !== null) {
       monitorServersData.value[query] = res.data[0].value[1]
     } else {
-      if (query === 'health_status') {
-        monitorServersData.value[query] = '2'
-      } else {
-        monitorServersData.value[query] = '暂无数据'
-      }
+      monitorServersData.value[query] = '暂无数据'
     }
   })
 }

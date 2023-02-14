@@ -156,6 +156,7 @@ onBeforeMount(async () => {
   serverUnitsTable.value = unitServerRes.data.results
   allServerUnitsTable.value = unitServerRes.data.results
   isRefreshShow.value = true
+  console.log(allServerUnitsTable.value)
 })
 onBeforeUpdate(() => {
   divNodes.value = []

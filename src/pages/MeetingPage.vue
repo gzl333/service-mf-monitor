@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, computed, Ref } from 'vue'
-import monitor from '../api/index'
+import { ref, onUnmounted, watch, computed } from 'vue'
 import MapChart from 'components/Chart/MapChart.vue'
-// import { navigateToUrl } from 'single-spa'
-// import { useStore } from 'stores/store'
+import { MeetingStatusInterface, StartPointInterface, EndPointInterface, StatusArrayInterface } from 'stores/store'
 // import { useRoute, useRouter } from 'vue-router'
+import monitor from '../api/index'
 import { i18n } from 'boot/i18n'
 
 // const props = defineProps({
@@ -28,28 +27,27 @@ interface StatusDataInterface {
   value: []
 }
 const { tc } = i18n.global
-const statusData: Ref = ref([])
-const pingData: Ref = ref([])
-const mapRef: Ref = ref(null)
-// 表格数据
-const tableRow = ref([])
+const mapRef = ref()
 // 刷新相关数据
 const isRefresh = ref(true)
 const disable = ref(false)
+// 表格数据
+const tableRow = ref<EndPointInterface[]>([])
 // 全国地图需要的数据
-const countryFilterData = ref([])
-const countrySeries: Ref = ref([])
-// 全国数据
-const nationalData: Ref = ref([])
-// 所有服务经纬度数据
-const coordinateData: Ref = ref({})
-// 搜索过滤后的数据
-const searchFilterData: Ref = ref([])
+const countrySeries: Record<string, any> = ref([])
 // 搜索条件
 const searchQuery = ref({
   status: '2',
   name: ''
 })
+let meetingStatusData: MeetingStatusInterface[] = []
+let meetingPingData: MeetingStatusInterface[] = []
+// 所有服务经纬度数据
+let coordinateData: Record<string, number[]> = {}
+// 全国所有节点数据
+let nationalNodeData: Array<[StartPointInterface, EndPointInterface]> = []
+// 搜索过滤后的数据
+let searchFilterData: any[] = []
 const translationMapping = {
   北京市: 'Beijing',
   天津市: 'Tianjin',
@@ -289,7 +287,7 @@ const convertData = function (data: any) {
     const dataItem = data[i]
     if (dataItem[1].latitude !== 0 && dataItem[1].longitude !== 0) {
       const fromCoords = [116.342428, 39.99322]
-      const toCoords = coordinateData.value[dataItem[1].name]
+      const toCoords = coordinateData[dataItem[1].name]
       if (fromCoords && toCoords) {
         res.push({
           fromName: dataItem[0].name,
@@ -312,7 +310,7 @@ const convertPointData = function (data: any) {
     if (dataItem[1].latitude !== 0 && dataItem[1].longitude !== 0) {
       res.push({
         name: dataItem[1].name,
-        value: coordinateData.value[dataItem[1].name].concat([dataItem[1].value]),
+        value: coordinateData[dataItem[1].name].concat([dataItem[1].value]),
         status: dataItem[1].status
       })
     }
@@ -387,27 +385,17 @@ const getCountryData = (data: any[]) => {
       })
   })
 }
-const getStatusData = async () => {
+const getMeetingStatusData = async (query: string) => {
   const config = {
     query: {
-      query: 'node_status'
+      query
     }
   }
   let response: StatusDataInterface[] = []
   await monitor.monitor.api.getMonitorVideoQuery(config).then((res) => {
     response = res.data
-  })
-  return response
-}
-const getDelayData = async () => {
-  const config = {
-    query: {
-      query: 'node_lantency'
-    }
-  }
-  let response: StatusDataInterface[] = []
-  await monitor.monitor.api.getMonitorVideoQuery(config).then((res) => {
-    response = res.data
+  }).catch((error) => {
+    console.log(error)
   })
   return response
 }
@@ -415,40 +403,45 @@ const handleStatusData = () => {
   const startObj = {
     name: tc('信息化大厦')
   }
-  statusData.value.forEach((item: Record<string, any>) => {
-    item.value.forEach((item1: Record<string, any>) => {
-      const outArr = []
-      outArr.push(item1.metric.longitude)
-      outArr.push(item1.metric.latitude)
-      coordinateData.value[item1.metric.name] = outArr
-      const inArr = []
-      const inObj: Record<string, any> = {}
-      inArr.push(startObj)
-      inObj.name = item1.metric.name
-      inObj.value = 4
-      inObj.status = item1.value[1]
-      inObj.ipv4 = item1.metric.ipv4s
-      inObj.longitude = item1.metric.longitude
-      inObj.latitude = item1.metric.latitude
-      inArr.push(inObj)
-      nationalData.value.push(inArr)
+  meetingStatusData.forEach(meeting => {
+    meeting.value.forEach(state => {
+      const longLatArr = []
+      longLatArr.push(state.metric.longitude)
+      longLatArr.push(state.metric.latitude)
+      coordinateData[state.metric.name] = longLatArr
+      const nodeArr: any = []
+      const nodeObj: EndPointInterface = {
+        ipv4: [],
+        latitude: 0,
+        longitude: 0,
+        name: '',
+        ping: '',
+        status: '',
+        value: 0
+      }
+      nodeArr.push(startObj)
+      nodeObj.name = state.metric.name
+      nodeObj.value = 4
+      nodeObj.status = state.value[1]
+      nodeObj.ipv4 = state.metric.ipv4s
+      nodeObj.longitude = state.metric.longitude
+      nodeObj.latitude = state.metric.latitude
+      nodeArr.push(nodeObj)
+      nationalNodeData.push(nodeArr)
     })
   })
 }
 const handlePingData = () => {
-  pingData.value.forEach((item: Record<string, any>) => {
-    item.value.forEach((item1: Record<string, any>) => {
-      nationalData.value.forEach((item2: Record<string, string | number | number[]>[]) => {
-        if (item2[1].name === item1.metric.name) {
-          item2[1].ping = item1.value[1]
+  meetingPingData.forEach(meeting => {
+    meeting.value.forEach((ping: StatusArrayInterface) => {
+      nationalNodeData.forEach((node: [StartPointInterface, EndPointInterface]) => {
+        if (node[1].name === ping.metric.name) {
+          node[1].ping = ping.value[1]
         }
       })
     })
   })
-  return nationalData.value
-}
-const getTableRow = () => {
-  tableRow.value = nationalData.value.map((item: Record<string, string | number | number[]>[]) => item[1])
+  tableRow.value = nationalNodeData.map(item => item[1])
 }
 const change = (val: Record<string, string>) => {
   searchQuery.value.status = val.value
@@ -467,24 +460,21 @@ const openOrClose = () => {
   }
 }
 const refresh = () => {
-  coordinateData.value = {}
-  nationalData.value = []
+  coordinateData = {}
+  nationalNodeData = []
   void initialization()
 }
 const initialization = async () => {
   isRefresh.value = false
-  statusData.value = await getStatusData()
+  meetingStatusData = await getMeetingStatusData('node_status')
   handleStatusData()
-  pingData.value = await getDelayData()
-  countryFilterData.value = handlePingData()
-  getCountryData(countryFilterData.value)
-  getTableRow()
+  meetingPingData = await getMeetingStatusData('node_lantency')
+  handlePingData()
+  getCountryData(nationalNodeData)
   initialPagination.value.page = 1
   isRefresh.value = true
 }
-onMounted(() => {
-  void initialization()
-})
+initialization()
 onUnmounted(() => {
   clearInterval(timer)
 })
@@ -495,12 +485,12 @@ watch(refreshSelection, () => {
   }, refreshSelection.value.value * 1000)
 })
 watch(tableData, () => {
-  searchFilterData.value = []
+  searchFilterData = []
   initialPagination.value.page = 1
-  tableData.value.forEach((item: Record<string, number | string | number[]>) => {
-    searchFilterData.value.push(countryFilterData.value.find((item1: Record<string, string | number | number[]>[]) => item1[1].name === item.name))
+  tableData.value.forEach(row => {
+    searchFilterData.push(nationalNodeData.find(node => node[1].name === row.name))
   })
-  getCountryData(searchFilterData.value)
+  getCountryData(searchFilterData)
 })
 </script>
 
