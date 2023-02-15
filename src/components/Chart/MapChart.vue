@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, toRefs, watch, onUnmounted } from 'vue'
+import { onMounted, ref, toRefs, watch, onUnmounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
 import china from 'assets/map/China.json'
 import { GeoJSONSourceInput } from 'echarts/types/src/coord/geo/geoTypes'
@@ -63,6 +63,13 @@ onMounted(() => {
     chart.setOption(props.option)
   }, { deep: true })
 })
+const chartResize = () => {
+  myChart.resize()
+}
+window.addEventListener('resize', chartResize)
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', chartResize)
+})
 onUnmounted(() => {
   myChart.clear()
   echarts.dispose(myChart)
@@ -73,10 +80,6 @@ onUnmounted(() => {
   <q-card flat bordered class="row">
     <div ref="container" class="col-12" style="height: 600px"/>
   </q-card>
-  <!--    <div style="background-color: #FAFAFA; width: 5%;" class="row column justify-end">-->
-  <!--      <q-btn outline color="white" text-color="black" icon="add" class="q-mb-md" @click="roamMap(0)"/>-->
-  <!--      <q-btn outline color="white" text-color="black" icon="remove" @click="roamMap(1)"/>-->
-  <!--    </div>-->
 </template>
 <style lang="scss" scoped>
 .MapChart {

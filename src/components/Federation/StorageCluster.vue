@@ -2,7 +2,6 @@
 import { ref } from 'vue'
 import monitor from '../../api/index'
 import { i18n } from 'boot/i18n'
-
 const props = defineProps({
   unitCeph: {
     type: Object,
@@ -12,7 +11,7 @@ const props = defineProps({
 
 const emits = defineEmits(['is-emit'])
 const { tc } = i18n.global
-const monitorCephData: Record<string, any> = ref({})
+const monitorCephData = ref<{[key: string]: string }>({})
 const isShowHealth = ref(true)
 const isShowClusterTotal = ref(true)
 const isShowClusterUsed = ref(true)
@@ -61,7 +60,7 @@ const refreshGetData = async (monitor_unit_id: string, query: string) => {
     if (res.data[0].value !== null) {
       monitorCephData.value[query] = res.data[0].value[1]
     } else {
-      monitorCephData[query] = '暂无数据'
+      monitorCephData.value[query] = '暂无数据'
     }
   })
 }

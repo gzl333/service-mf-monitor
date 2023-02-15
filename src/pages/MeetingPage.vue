@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onUnmounted, watch, computed } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import MapChart from 'components/Chart/MapChart.vue'
 import { MeetingStatusInterface, StartPointInterface, EndPointInterface, StatusArrayInterface } from 'stores/store'
 // import { useRoute, useRouter } from 'vue-router'
@@ -18,14 +18,6 @@ import { i18n } from 'boot/i18n'
 // const store = useStore()
 // const route = useRoute()
 // const router = useRouter()
-interface StatusDataInterface {
-  monitor: {
-    job_tag: string
-    name: string
-    name_en: string
-  }
-  value: []
-}
 const { tc } = i18n.global
 const mapRef = ref()
 // 刷新相关数据
@@ -39,6 +31,9 @@ const countrySeries: Record<string, any> = ref([])
 const searchQuery = ref({
   status: '2',
   name: ''
+})
+const initialPagination = ref({
+  page: 1
 })
 let meetingStatusData: MeetingStatusInterface[] = []
 let meetingPingData: MeetingStatusInterface[] = []
@@ -88,17 +83,14 @@ const translationMapping = {
 // 筛选表格数据
 const tableData = computed(() => {
   if (searchQuery.value.name !== '' && searchQuery.value.status !== '2') {
-    return tableRow.value.filter((item: Record<string, any>) => item.status === searchQuery.value.status && (item.name.toLowerCase().includes(searchQuery.value.name.toLowerCase()) || item.ipv4.toString().indexOf(searchQuery.value.name.trim()) !== -1))
+    return tableRow.value.filter(item => item.status === searchQuery.value.status && (item.name.toLowerCase().includes(searchQuery.value.name.toLowerCase()) || item.ipv4.toString().indexOf(searchQuery.value.name.trim()) !== -1))
   } else if (searchQuery.value.name === '' && searchQuery.value.status !== '2') {
-    return tableRow.value.filter((item: Record<string, any>) => item.status === searchQuery.value.status)
+    return tableRow.value.filter(item => item.status === searchQuery.value.status)
   } else if (searchQuery.value.name !== '' && searchQuery.value.status === '2') {
-    return tableRow.value.filter((item: Record<string, any>) => item.name.toLowerCase().includes(searchQuery.value.name.toLowerCase().trim()) || item.ipv4.toString().indexOf(searchQuery.value.name.trim()) !== -1)
+    return tableRow.value.filter(item => item.name.toLowerCase().includes(searchQuery.value.name.toLowerCase().trim()) || item.ipv4.toString().indexOf(searchQuery.value.name.trim()) !== -1)
   } else {
     return tableRow.value
   }
-})
-const initialPagination = ref({
-  page: 1
 })
 const statusOptions = [
   {
@@ -193,8 +185,6 @@ const columns = computed(() => [
     style: 'width: 150px'
   }
 ])
-
-// const style = 'path://M807.4 938.5c-139.5-8-250.2-31.7-250.2-173.2v-95.5c0-35.5 72.5-64.3 108-64.3h0.3l0.9-152.4c0-8.5-6.9-15.4-15.4-15.4H373.2c-8.5 0-15.4 6.9-15.4 15.4l0.6 148.7c33.6 2.1 103.8 30 103.8 64.1v95.5c0 142.2-111.8 168.4-252.3 175.3l-0.1 0.3 0.9 71.5c0 8.5 6.9 15.4 15.4 15.4h568.1c8.5 0 15.4-6.9 15.4-15.4l-0.8-69.8-1.4-0.2zM598.2 64.5V18.6c0-8.5-6.9-15.4-15.4-15.4H428.6c-8.5 0-15.4 6.9-15.4 15.4V67C212.1 111.8 61.7 291.3 61.7 506c0 153.6 77 289.2 194.4 370.3l42.7-136.7C236 681 196.7 597.4 196.7 504.7c0-177.4 143.8-321.3 321.3-321.3s321.3 143.8 321.3 321.3c0 97.9-43.8 185.5-112.8 244.5l40.1 127.4C884.2 795.4 961.4 659.7 961.4 506c0-218.8-156.2-401.1-363.2-441.5z'
 const countryOption = computed(() => ({
   backgroundColor: '#FAFAFA',
   title: {
@@ -233,7 +223,7 @@ const countryOption = computed(() => ({
   },
   tooltip: {
     trigger: 'item',
-    formatter: function (params: any) {
+    formatter: function (params: Record<string, any>) {
       if (params.seriesType === 'effectScatter') {
         const status = params.data.status === '0' ? '<span style="color: red">离线</span>' : '<span style="color: green">在线</span>'
         return params.data.name + '<br/>' + '状态:' + status
@@ -281,7 +271,8 @@ const countryOption = computed(() => ({
   },
   series: countrySeries.value
 }))
-const convertData = function (data: any) {
+const convertData = function (data: Array<[StartPointInterface, EndPointInterface]>) {
+  console.log(data)
   const res = []
   for (let i = 0; i < data.length; i++) {
     const dataItem = data[i]
@@ -303,7 +294,7 @@ const convertData = function (data: any) {
   }
   return res
 }
-const convertPointData = function (data: any) {
+const convertPointData = function (data: Array<[StartPointInterface, EndPointInterface]>) {
   const res = []
   for (let i = 0; i < data.length; i++) {
     const dataItem = data[i]
@@ -317,7 +308,7 @@ const convertPointData = function (data: any) {
   }
   return res
 }
-const getCountryData = (data: any[]) => {
+const getCountryData = (data: Array<[StartPointInterface, EndPointInterface]>) => {
   countrySeries.value = []
   const dataArr = []
   dataArr.push(data)
@@ -391,7 +382,7 @@ const getMeetingStatusData = async (query: string) => {
       query
     }
   }
-  let response: StatusDataInterface[] = []
+  let response: MeetingStatusInterface[] = []
   await monitor.monitor.api.getMonitorVideoQuery(config).then((res) => {
     response = res.data
   }).catch((error) => {
@@ -442,13 +433,22 @@ const handlePingData = () => {
     })
   })
   tableRow.value = nationalNodeData.map(item => item[1])
+  console.log(tableRow.value)
 }
+const initialization = async () => {
+  isRefresh.value = false
+  meetingStatusData = await getMeetingStatusData('node_status')
+  handleStatusData()
+  meetingPingData = await getMeetingStatusData('node_lantency')
+  handlePingData()
+  getCountryData(nationalNodeData)
+  initialPagination.value.page = 1
+  isRefresh.value = true
+}
+initialization()
 const change = (val: Record<string, string>) => {
   searchQuery.value.status = val.value
 }
-let timer = setInterval(() => {
-  void refresh()
-}, refreshSelection.value.value * 1000)
 const openOrClose = () => {
   disable.value = !disable.value
   if (disable.value === true) {
@@ -464,20 +464,9 @@ const refresh = () => {
   nationalNodeData = []
   void initialization()
 }
-const initialization = async () => {
-  isRefresh.value = false
-  meetingStatusData = await getMeetingStatusData('node_status')
-  handleStatusData()
-  meetingPingData = await getMeetingStatusData('node_lantency')
-  handlePingData()
-  getCountryData(nationalNodeData)
-  initialPagination.value.page = 1
-  isRefresh.value = true
-}
-initialization()
-onUnmounted(() => {
-  clearInterval(timer)
-})
+let timer = setInterval(() => {
+  void refresh()
+}, refreshSelection.value.value * 1000)
 watch(refreshSelection, () => {
   clearInterval(timer)
   timer = setInterval(() => {
@@ -492,13 +481,15 @@ watch(tableData, () => {
   })
   getCountryData(searchFilterData)
 })
+onUnmounted(() => {
+  clearInterval(timer)
+})
 </script>
 
 <template>
   <div class="MeetingPage">
     <map-chart :option="countryOption" ref="mapRef"></map-chart>
-    <q-card flat class="q-mt-lg">
-      <div class="row justify-between q-mt-md">
+    <div class="row justify-between q-mt-lg items-center">
         <div class="col-6 row">
           <q-select outlined dense v-model="searchQuery.status"  map-options :options="statusOptions" :label="tc('状态')" class="col-2" @update:model-value="change"
                     :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'"/>
@@ -508,13 +499,13 @@ watch(tableData, () => {
             </template>
           </q-input>
         </div>
-        <div class="col-6 row justify-end">
-          <q-icon name="refresh" size="md" v-show="isRefresh" @click="refresh" class="col-2"/>
-          <q-btn no-caps color="primary" :label="disable === true ? tc('打开自动刷新') : tc('关闭自动刷新')" class="q-mr-md" @click="openOrClose" unelevated/>
-          <q-select outlined dense v-model="refreshSelection" :options="refreshOptions" :label="tc('刷新时间')" class="col-5" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :disable="disable"/>
+        <div class="col-6 row justify-end items-center">
+          <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="isRefresh" @click="refresh"/>
+          <q-btn no-caps unelevated class="q-mr-md" color="primary" :label="disable === true ? tc('打开自动刷新') : tc('关闭自动刷新')" @click="openOrClose" />
+          <q-select outlined dense v-model="refreshSelection" :disable="disable" :options="refreshOptions" :label="tc('刷新时间')" class="col-5" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" />
         </div>
       </div>
-      <q-table
+    <q-table
         flat
         table-header-class="bg-grey-1 text-grey"
         :rows="tableData"
@@ -546,7 +537,6 @@ watch(tableData, () => {
           </q-tr>
         </template>
       </q-table>
-    </q-card>
   </div>
 </template>
 

@@ -72,6 +72,18 @@ export interface StartPointInterface {
   name: string
 }
 
+export interface StorageUnitInterface {
+  cluster_total_bytes: string
+  cluster_total_used_bytes: string
+  grafana_url: string
+  health_status: string
+  osd_down: string
+  osd_in: string
+  osd_out: string
+  osd_up: string
+  unitName: string
+}
+
 export const useStore = defineStore('monitor', {
   state: () => ({
     items: {

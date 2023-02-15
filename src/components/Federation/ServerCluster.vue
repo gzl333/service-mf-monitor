@@ -129,8 +129,6 @@ const intervalRefresh = async (isLast: boolean) => {
   }
 }
 const filterStatus = (status: string) => {
-  // console.log(status)
-  // console.log(monitorServersData.value)
   if (monitorServersData.value.health_status === status) {
     emits('is-back', monitorServersData.value.id)
   }
@@ -140,7 +138,6 @@ const goToGrafana = () => {
 }
 onBeforeMount(async () => {
   monitorServersData.value = await getServerQuery(props.unitServers.id)
-  // console.log(monitorServersData.value)
 })
 defineExpose({ intervalRefresh, filterStatus })
 </script>
