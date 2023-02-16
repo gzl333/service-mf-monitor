@@ -271,111 +271,6 @@ const countryOption = computed(() => ({
   },
   series: countrySeries.value
 }))
-const convertData = function (data: Array<[StartPointInterface, EndPointInterface]>) {
-  console.log(data)
-  const res = []
-  for (let i = 0; i < data.length; i++) {
-    const dataItem = data[i]
-    if (dataItem[1].latitude !== 0 && dataItem[1].longitude !== 0) {
-      const fromCoords = [116.342428, 39.99322]
-      const toCoords = coordinateData[dataItem[1].name]
-      if (fromCoords && toCoords) {
-        res.push({
-          fromName: dataItem[0].name,
-          toName: dataItem[1].name,
-          coords: [fromCoords, toCoords],
-          value: dataItem[1].value,
-          status: dataItem[1].status,
-          ping: dataItem[1].ping,
-          ipv4: dataItem[1].ipv4
-        })
-      }
-    }
-  }
-  return res
-}
-const convertPointData = function (data: Array<[StartPointInterface, EndPointInterface]>) {
-  const res = []
-  for (let i = 0; i < data.length; i++) {
-    const dataItem = data[i]
-    if (dataItem[1].latitude !== 0 && dataItem[1].longitude !== 0) {
-      res.push({
-        name: dataItem[1].name,
-        value: coordinateData[dataItem[1].name].concat([dataItem[1].value]),
-        status: dataItem[1].status
-      })
-    }
-  }
-  return res
-}
-const getCountryData = (data: Array<[StartPointInterface, EndPointInterface]>) => {
-  countrySeries.value = []
-  const dataArr = []
-  dataArr.push(data)
-  dataArr.forEach(function (item) {
-    countrySeries.value.push(
-      {
-        type: 'lines',
-        zlevel: 1,
-        symbol: ['none'],
-        symbolSize: 9,
-        effect: {
-          show: false,
-          period: 6,
-          trailLength: 0.3,
-          // symbol: style,
-          symbolSize: 5
-        },
-        lineStyle: {
-          normal: {
-            // 线段颜色
-            color: function (item1: Record<string, any>) {
-              if (item1.data.status === '0') {
-                return '#FF0000'
-              } else {
-                return '#00FF00'
-              }
-            },
-            width: 1.2,
-            opacity: 0.6,
-            curveness: 0.2
-          }
-        },
-        data: convertData(item)
-      },
-      {
-        type: 'effectScatter',
-        coordinateSystem: 'geo',
-        zlevel: 1,
-        rippleEffect: {
-          brushType: 'stroke',
-          number: 2,
-          scale: 4
-        },
-        label: {
-          normal: {
-            show: true,
-            // color: '#012248',
-            position: 'right',
-            formatter: '{b}'
-          }
-        },
-        symbolSize: function (val: number[]) {
-          return val[2]
-        },
-        itemStyle: {
-          normal: {
-            // 点的颜色
-            color: '#5882FA'
-          },
-          emphasis: {
-            areaColor: '#2B91B7'
-          }
-        },
-        data: convertPointData(item)
-      })
-  })
-}
 const getMeetingStatusData = async (query: string) => {
   const config = {
     query: {
@@ -390,13 +285,16 @@ const getMeetingStatusData = async (query: string) => {
   })
   return response
 }
+// 获得状态信息后处理数据
 const handleStatusData = () => {
   const startObj = {
     name: tc('信息化大厦')
   }
+  // 将所有坐标信息存到nationalNodeData中
   meetingStatusData.forEach(meeting => {
     meeting.value.forEach(state => {
       const longLatArr = []
+      // 存储坐标
       longLatArr.push(state.metric.longitude)
       longLatArr.push(state.metric.latitude)
       coordinateData[state.metric.name] = longLatArr
@@ -423,6 +321,7 @@ const handleStatusData = () => {
   })
 }
 const handlePingData = () => {
+  // 获取到ping值之后 将ping值再添加到nationalNodeData中
   meetingPingData.forEach(meeting => {
     meeting.value.forEach((ping: StatusArrayInterface) => {
       nationalNodeData.forEach((node: [StartPointInterface, EndPointInterface]) => {
@@ -432,8 +331,118 @@ const handlePingData = () => {
       })
     })
   })
+  // 所有状态和ping值均获取完成 存储表格
   tableRow.value = nationalNodeData.map(item => item[1])
-  console.log(tableRow.value)
+}
+// Echarts地图连线需要的处理数据方法
+const convertData = function (data: Array<[StartPointInterface, EndPointInterface]>) {
+  // data为所有坐标信息
+  const pointRes = []
+  for (let i = 0; i < data.length; i++) {
+    const dataItem = data[i]
+    // dataItem[0]为起点 dataItem[1]为终点
+    //  判断后端是否返回正确的坐标信息
+    if (dataItem[1].latitude !== 0 && dataItem[1].longitude !== 0) {
+      // fromCoords信息化大厦坐标 toCoords终点坐标
+      const fromCoords = [116.342428, 39.99322]
+      const toCoords = coordinateData[dataItem[1].name]
+      if (fromCoords && toCoords) {
+        pointRes.push({
+          fromName: dataItem[0].name,
+          toName: dataItem[1].name,
+          coords: [fromCoords, toCoords],
+          value: dataItem[1].value,
+          status: dataItem[1].status,
+          ping: dataItem[1].ping,
+          ipv4: dataItem[1].ipv4
+        })
+      }
+    }
+  }
+  return pointRes
+}
+// Echarts地图需要的处理坐标点方法
+const convertPointData = function (data: Array<[StartPointInterface, EndPointInterface]>) {
+  const pointRes = []
+  for (let i = 0; i < data.length; i++) {
+    const dataItem = data[i]
+    if (dataItem[1].latitude !== 0 && dataItem[1].longitude !== 0) {
+      pointRes.push({
+        name: dataItem[1].name,
+        value: coordinateData[dataItem[1].name].concat([dataItem[1].value]),
+        status: dataItem[1].status
+      })
+    }
+  }
+  return pointRes
+}
+const getCountryData = (data: Array<[StartPointInterface, EndPointInterface]>) => {
+  countrySeries.value = []
+  // const dataArr = []
+  // dataArr.push(data)
+  // dataArr.forEach(function (item) {
+  countrySeries.value.push(
+    {
+      type: 'lines',
+      zlevel: 1,
+      symbol: ['none'],
+      symbolSize: 9,
+      effect: {
+        show: false,
+        period: 6,
+        trailLength: 0.3,
+        // symbol: style,
+        symbolSize: 5
+      },
+      lineStyle: {
+        normal: {
+          // 线段颜色
+          color: function (item: Record<string, any>) {
+            if (item.data.status === '0') {
+              return '#FF0000'
+            } else {
+              return '#00FF00'
+            }
+          },
+          width: 1.2,
+          opacity: 0.6,
+          curveness: 0.2
+        }
+      },
+      data: convertData(data)
+    },
+    {
+      type: 'effectScatter',
+      coordinateSystem: 'geo',
+      zlevel: 1,
+      rippleEffect: {
+        brushType: 'stroke',
+        number: 2,
+        scale: 4
+      },
+      label: {
+        normal: {
+          show: true,
+          // color: '#012248',
+          position: 'right',
+          formatter: '{b}'
+        }
+      },
+      symbolSize: function (val: number[]) {
+        return val[2]
+      },
+      itemStyle: {
+        normal: {
+          // 点的颜色
+          color: '#5882FA'
+        },
+        emphasis: {
+          areaColor: '#2B91B7'
+        }
+      },
+      data: convertPointData(data)
+    })
+  // })
 }
 const initialization = async () => {
   isRefresh.value = false
@@ -441,15 +450,15 @@ const initialization = async () => {
   handleStatusData()
   meetingPingData = await getMeetingStatusData('node_lantency')
   handlePingData()
-  getCountryData(nationalNodeData)
-  initialPagination.value.page = 1
+  // getCountryData(nationalNodeData)
+  // initialPagination.value.page = 1
   isRefresh.value = true
 }
-initialization()
-const change = (val: Record<string, string>) => {
+void initialization()
+const filterStatus = (val: Record<string, string>) => {
   searchQuery.value.status = val.value
 }
-const openOrClose = () => {
+const openOrCloseRefresh = () => {
   disable.value = !disable.value
   if (disable.value === true) {
     clearInterval(timer)
@@ -491,7 +500,7 @@ onUnmounted(() => {
     <map-chart :option="countryOption" ref="mapRef"></map-chart>
     <div class="row justify-between q-mt-lg items-center">
         <div class="col-6 row">
-          <q-select outlined dense v-model="searchQuery.status"  map-options :options="statusOptions" :label="tc('状态')" class="col-2" @update:model-value="change"
+          <q-select outlined dense v-model="searchQuery.status"  map-options :options="statusOptions" :label="tc('状态')" class="col-2" @update:model-value="filterStatus"
                     :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'"/>
           <q-input outlined dense v-model="searchQuery.name" :placeholder="tc('筛选单位名称或IP地址')" class="col-6  q-ml-md">
             <template v-slot:append v-if="searchQuery.name !== ''">
@@ -501,7 +510,7 @@ onUnmounted(() => {
         </div>
         <div class="col-6 row justify-end items-center">
           <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="isRefresh" @click="refresh"/>
-          <q-btn no-caps unelevated class="q-mr-md" color="primary" :label="disable === true ? tc('打开自动刷新') : tc('关闭自动刷新')" @click="openOrClose" />
+          <q-btn no-caps unelevated class="q-mr-md" color="primary" :label="disable === true ? tc('打开自动刷新') : tc('关闭自动刷新')" @click="openOrCloseRefresh" />
           <q-select outlined dense v-model="refreshSelection" :disable="disable" :options="refreshOptions" :label="tc('刷新时间')" class="col-5" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" />
         </div>
       </div>

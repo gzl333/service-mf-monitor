@@ -38,6 +38,7 @@ onMounted(() => {
   chart.on('globalout', function () {
     const point = chart.getOption().geo[0].center
     const zoom = chart.getOption().geo[0].zoom
+    // 用于以坐标来判断边界,拖拽出界后弹回
     if (point !== null && zoom <= 7 && ((point[0] < 80.1 || point[0] > 127.8) || (point[1] < 24.1 || point[1] > 30.8))) {
       chart.setOption({
         geo: {
@@ -59,10 +60,12 @@ onMounted(() => {
   })
   const { option } = toRefs(props)
   watch(option, () => {
+    // 每次刷新时,清空图表实例,再重新渲染,防止占用cpu过高导致页面卡顿
     chart.clear()
     chart.setOption(props.option)
   }, { deep: true })
 })
+// 用于图表自适应大小
 const chartResize = () => {
   myChart.resize()
 }
@@ -71,6 +74,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', chartResize)
 })
 onUnmounted(() => {
+  // 清空Echarts渲染图表
   myChart.clear()
   echarts.dispose(myChart)
 })
