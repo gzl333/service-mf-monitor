@@ -24,6 +24,7 @@ const tc = i18n.global.tc
 const activeItem = computed(() => store.items.currentPath[0])
 
 const releaseTime = process.env.releaseTime
+console.log('table', store.tables)
 </script>
 
 <template>
@@ -63,6 +64,18 @@ const releaseTime = process.env.releaseTime
               <q-item-section class="column items-center">
                 <q-icon name="las la-server" size="lg"/>
                 <div class="active-text text-center">{{ tc('主机集群') }}</div>
+              </q-item-section>
+            </q-item>
+
+            <q-item
+              clickable
+              :active="activeItem === 'server1'"
+              @click="activeItem = 'server1'; navigateToUrl('/my/monitor/server1')"
+              active-class="active-item"
+            >
+              <q-item-section class="column items-center">
+                <q-icon name="las la-server" size="lg"/>
+                <div class="active-text text-center">{{ tc('主机集群1') }}</div>
               </q-item-section>
             </q-item>
 

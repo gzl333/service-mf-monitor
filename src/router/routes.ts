@@ -15,6 +15,10 @@ const routes: RouteRecordRaw[] = [
         component: () => import('pages/ServerPage.vue')
       },
       {
+        path: 'server1',
+        component: () => import('pages/ServerPage1.vue')
+      },
+      {
         path: 'storage',
         component: () => import('pages/StoragePage.vue')
       }

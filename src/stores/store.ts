@@ -25,6 +25,23 @@ export interface DataCenterInterface {
   // personalServices: string[] // 用户可用services汇总
 }
 
+export interface OrganizationInterface {
+  abbreviation: string
+  address: string
+  city: string
+  country: string
+  creation: string
+  id: string
+  latitude: number
+  longitude: number
+  modification: string
+  name: string
+  name_en: string
+  postal_code: string
+  remark: string
+  sort_weight: number
+}
+
 export interface ServiceInterface {
   // 来自service接口
   id: string
@@ -84,6 +101,26 @@ export interface StorageUnitInterface {
   unitName: string
 }
 
+export interface ServerUnitInterface {
+  creation: string
+  dashboard_url: string
+  grafana_url: string
+  id: string
+  job_tag: string
+  name: string
+  name_en: string
+  organization: {
+  bbreviation: string
+  creation: string
+  id: string
+  name: string
+  name_en: string
+  sort_weight: string
+}
+  remark: string
+  sort_weight: string
+}
+
 export const useStore = defineStore('monitor', {
   state: () => ({
     items: {
@@ -101,10 +138,24 @@ export const useStore = defineStore('monitor', {
         byId: {} as Record<string, ServiceInterface>,
         allIds: [],
         isLoaded: false
+      },
+      organizationTable: {
+        byId: {} as Record<string, OrganizationInterface>,
+        allIds: [],
+        isLoaded: false
       }
     }
   }),
-  getters: {},
+  getters: {
+    getPersonalAvailableCoupon: state => (): OrganizationInterface[] => {
+      const allOrganizations: OrganizationInterface[] = []
+      state.tables.organizationTable.allIds.forEach(id => {
+        const organization = state.tables.organizationTable.byId[id]
+        allOrganizations.unshift(organization)
+      })
+      return allOrganizations
+    }
+  },
   actions: {
     loadAllTables () {
       if (!this.tables.dataCenterTable.isLoaded) {
@@ -113,6 +164,9 @@ export const useStore = defineStore('monitor', {
             void this.loadServiceTable()
           }
         })
+      }
+      if (!this.tables.organizationTable.isLoaded) {
+        void this.loadOrganizationTable()
       }
     },
     async loadDataCenterTable () {
@@ -153,6 +207,23 @@ export const useStore = defineStore('monitor', {
         this.tables.dataCenterTable.byId[Object.values(normalizedData.entities.service!)[0].data_center].services = [...new Set(this.tables.dataCenterTable.byId[Object.values(normalizedData.entities.service!)[0].data_center].services)]
       })
       this.tables.serviceTable.isLoaded = true
+    },
+    async loadOrganizationTable () {
+      this.tables.organizationTable = {
+        byId: {},
+        allIds: [],
+        isLoaded: false
+      }
+      const respOrganization = await monitor.monitor.api.getMonitorOrganization()
+      const organization = new schema.Entity('organization', {})
+      respOrganization.data.results.forEach((data: Record<string, never>) => {
+        const normalizedData = normalize(data, organization)
+        Object.assign(this.tables.organizationTable.byId, normalizedData.entities.organization)
+        // @ts-ignore
+        this.tables.organizationTable.allIds.unshift(Object.keys(normalizedData.entities.organization)[0])
+        this.tables.organizationTable.allIds = [...new Set(this.tables.organizationTable.allIds)]
+      })
+      this.tables.organizationTable.isLoaded = true
     }
   }
 })

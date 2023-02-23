@@ -24,19 +24,19 @@ export default {
       }
       return axiosMonitor.get('/service', config)
     },
-    getMonitorUnitCeph (payload?: { query: { page: number; page_size: number } }) {
-      const config = {
-        params: payload?.query
-      }
-      return axiosMonitor.get('/monitor/unit/ceph', config)
-    },
-    getMonitorCephQuery (payload: { query: { monitor_unit_id: string; query: string } }) {
+    getMonitorVideoQuery (payload: { query: { query: string } }) {
       const config = {
         params: payload.query
       }
-      return axiosMonitor.get('/monitor/ceph/query', config)
+      return axiosMonitor.get('/monitor/video-meeting/query', config)
     },
-    getMonitorUnitServer (payload?: { query: { page: number; page_size: number } }) {
+    getMonitorOrganization (payload?: { query: { page: number, page_size: number } }) {
+      const config = {
+        params: payload?.query
+      }
+      return axiosMonitor.get('/monitor/organization', config)
+    },
+    getMonitorUnitServer (payload?: { query: { page: number; page_size: number, organization_id: string } }) {
       const config = {
         params: payload?.query
       }
@@ -48,12 +48,17 @@ export default {
       }
       return axiosMonitor.get('/monitor/server/query', config)
     },
-
-    getMonitorVideoQuery (payload: { query: { query: string } }) {
+    getMonitorUnitCeph (payload?: { query: { page: number; page_size: number, organization_id: string } }) {
+      const config = {
+        params: payload?.query
+      }
+      return axiosMonitor.get('/monitor/unit/ceph', config)
+    },
+    getMonitorCephQuery (payload: { query: { monitor_unit_id: string; query: string } }) {
       const config = {
         params: payload.query
       }
-      return axiosMonitor.get('/monitor/video-meeting/query', config)
+      return axiosMonitor.get('/monitor/ceph/query', config)
     }
   }
 }
