@@ -37,8 +37,10 @@ export default {
   关闭自动刷新: 'Turn Off Auto Refresh',
   刷新时间: 'Refresh Time',
   暂无数据: 'No Data',
+  // ServerPage
+  输入关键字搜索: 'Enter Keyword Search',
   // components
-  // HostCluster
+  // ServerCluster
   主机数: 'Number Of Servers',
   掉线: 'Drop Line',
   集群状态: 'Cluster Status',
@@ -47,7 +49,7 @@ export default {
   平均硬盘使用率: 'Average Disk Usage',
   最大: 'Maximum',
   最小: 'Minimum',
-  详细信息: 'Details',
+  查看详细信息: 'View Details',
   // StorageCluster
   集群容量: 'Cluster Capacity',
   当前容量: 'Current Capacity',

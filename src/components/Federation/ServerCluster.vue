@@ -53,7 +53,7 @@ const goToGrafana = () => {
                 />
               </div>
             </div>
-            <div class="col-5">
+            <div class="col-6">
               <div class="text-center">{{ tc('掉线') }}</div>
               <div v-if="props.unitServersData?.host_count && props.unitServersData?.host_up_count"
                 :class="props.unitServersData?.host_count === '暂无数据' || props.unitServersData?.host_count === '获取数据出错' || props.unitServersData?.host_up_count === '暂无数据' || props.unitServersData?.host_up_count === '获取数据出错' ? 'text-center text-h6 q-mt-sm' : 'text-center text-h5 text-negative q-mt-sm'">

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, watch, onBeforeMount, computed, onBeforeUpdate, onUnmounted } from 'vue'
-import { useStore, ServerUnitInterface } from 'stores/store'
+import { ref, watch, onBeforeMount, computed, onUnmounted } from 'vue'
+import { useStore, ServiceUnitInterface } from 'stores/store'
 // import { useRoute, useRouter } from 'vue-router'
 import ServerCluster from 'components/Federation/ServerCluster.vue'
 import monitor from '../api/index'
@@ -20,13 +20,12 @@ const store = useStore()
 // const router = useRouter()
 const { tc } = i18n.global
 const organizations = computed(() => store.getPersonalAvailableCoupon())
-const divNodes = ref<typeof ServerCluster[]>([])
 const keyword = ref('')
 const isDisable = ref(true)
 const filterSelection = ref({
   label: '每30s刷新',
   labelEn: 'Refresh every 30 seconds',
-  value: 3600
+  value: 30
 })
 const filterOptions = [
   {
@@ -55,12 +54,12 @@ const filterOptions = [
     value: 3600
   }
 ]
-const serverUnitsObj = ref<Record<string, ServerUnitInterface[]>>({})
-const allServerUnitsObjData: Record<string, ServerUnitInterface[]> = {}
+const serverUnitsObj = ref<Record<string, ServiceUnitInterface[]>>({})
+const allServerUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
 const isIntervalOpen = ref(false)
-let timer: any
-const propsData: any = ref({})
-const refIsShow: any = ref({})
+let timer: NodeJS.Timer
+const propsData = ref<Record<string, any>>({})
+const refIsShow = ref<Record<string, boolean>>({})
 const getServerQuery = async (monitor_unit_id: string) => {
   const serverQuery: string[] = ['host_count', 'host_up_count', 'health_status', 'cpu_usage', 'max_cpu_usage', 'min_cpu_usage', 'mem_usage', 'max_mem_usage', 'min_mem_usage', 'disk_usage', 'max_disk_usage', 'min_disk_usage']
   const config = {
@@ -86,8 +85,14 @@ const getServerQuery = async (monitor_unit_id: string) => {
   return serverObject
 }
 const openPanel = async (organization_id: string) => {
-  const unitObj: {[key: string]: string } = {}
-  const unitServerRes = await monitor.monitor.api.getMonitorUnitServer({ query: { page: 1, page_size: 9999, organization_id } })
+  const unitObj: { [key: string]: string } = {}
+  const unitServerRes = await monitor.monitor.api.getMonitorUnitServer({
+    query: {
+      page: 1,
+      page_size: 9999,
+      organization_id
+    }
+  })
   unitObj[organization_id] = unitServerRes.data.results
   Object.assign(serverUnitsObj.value, unitObj)
   Object.assign(allServerUnitsObjData, unitObj)
@@ -109,7 +114,7 @@ const closePanel = (organization_id: string) => {
   Reflect.deleteProperty(serverUnitsObj.value, organization_id)
   Reflect.deleteProperty(allServerUnitsObjData, organization_id)
   if (Object.keys(serverUnitsObj.value).length === 0) {
-    clearInterval(timer)
+    clearInterval(Number(timer))
     isIntervalOpen.value = false
     isDisable.value = true
   }
@@ -118,8 +123,10 @@ const refreshAllUnit = () => {
   isDisable.value = true
   Object.keys(allServerUnitsObjData).forEach((org, orgIndex) => {
     allServerUnitsObjData[org].forEach((unit, unitIndex) => {
+      refIsShow.value[unit.id] = false
       getServerQuery(unit.id).then((res) => {
         propsData.value[unit.id] = res
+        refIsShow.value[unit.id] = true
         if (orgIndex === Object.keys(allServerUnitsObjData).length - 1 && unitIndex === allServerUnitsObjData[org].length - 1) {
           isDisable.value = false
         }
@@ -144,7 +151,7 @@ const keywordSearch = () => {
   }
 }
 watch(filterSelection, () => {
-  clearInterval(timer)
+  clearInterval(Number(timer))
   timer = setInterval(() => {
     refreshAllUnit()
   }, filterSelection.value.value * 1000)
@@ -161,11 +168,8 @@ onBeforeMount(() => {
     isDisable.value = false
   }
 })
-onBeforeUpdate(() => {
-  divNodes.value = []
-})
 onUnmounted(() => {
-  clearInterval(timer)
+  clearInterval(Number(timer))
 })
 </script>
 
@@ -173,40 +177,46 @@ onUnmounted(() => {
   <div class="ServerPage" style="min-width: 1000px">
     <div class="row items-center">
       <div class="row col-8">
-        <q-input class="col-5" outlined dense clearable :disable="isDisable" v-model="keyword" label="输入关键字搜索" @update:model-value="keywordSearch"/>
+        <q-input class="col-5" outlined dense clearable :disable="isDisable" v-model="keyword"
+                 :label="tc('输入关键字搜索')" @update:model-value="keywordSearch"/>
       </div>
       <div class="col-4 row justify-end items-center">
         <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="!isDisable" @click="refreshAllUnit"/>
-        <q-select class="col-7" outlined dense :disable="isDisable" v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')" />
+        <q-select class="col-7" outlined dense :disable="isDisable" v-model="filterSelection" :options="filterOptions"
+                  :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')"/>
       </div>
     </div>
     <div class="q-mt-lg">
-    <q-list bordered>
-      <q-expansion-item
-        v-for="(item, index) in organizations"
-        :key="index"
-        :default-opened="index === 0"
-        @show="openPanel(item.id)"
-        @hide="closePanel(item.id)"
-      >
-        <template v-slot:header>
-          <q-item-section>
-            <div class="text-subtitle1">{{ item.name }}</div>
-            <div>{{ item.country + '-' + item.city }}</div>
-          </q-item-section>
-        </template>
-        <q-separator/>
-        <q-card>
-          <div v-for="monitor in serverUnitsObj[item.id]" :key="monitor.id">
-            <div class="row items-center q-mt-md justify-between">
-              <div class="text-subtitle1 text-weight-bold q-ml-sm">{{ monitor.name }}</div>
-              <q-icon class="q-mr-sm" name="refresh" size="md" v-show="refIsShow[monitor.id]" @click="refreshUint(monitor.id)"/>
+      <q-list bordered>
+        <q-expansion-item
+          v-for="(item, index) in organizations"
+          :key="item.id"
+          header-class="bg-grey-3"
+          :default-opened="index === 0"
+          @show="openPanel(item.id)"
+          @hide="closePanel(item.id)"
+        >
+          <template v-slot:header>
+            <q-item-section>
+              <div class="text-subtitle1">{{ i18n.global.locale === 'zh' ? item.name : item.name_en }}</div>
+              <div>{{ item.country + '-' + item.city }}</div>
+            </q-item-section>
+          </template>
+          <q-card>
+            <div v-for="monitor in serverUnitsObj[item.id]" :key="monitor.id">
+              <div class="row justify-between items-center q-mt-md">
+                <div class="text-subtitle1 text-weight-bold q-ml-sm">
+                  {{ i18n.global.locale === 'zh' ? monitor.name : monitor.name_en }}
+                </div>
+                <q-icon class="q-mr-sm" name="refresh" size="1.7rem" v-show="refIsShow[monitor.id]"
+                        @click="refreshUint(monitor.id)"/>
+              </div>
+              <server-cluster :unit-servers-data="propsData[monitor.id]" :unit-id="monitor.id"
+                              :grafana-url="monitor.grafana_url"></server-cluster>
             </div>
-            <server-cluster :unit-servers-data="propsData[monitor.id]" :unit-id="monitor.id" :grafana-url="monitor.grafana_url"></server-cluster>
-          </div>
-        </q-card>
-      </q-expansion-item>
-    </q-list>
+          </q-card>
+        </q-expansion-item>
+      </q-list>
     </div>
   </div>
 </template>

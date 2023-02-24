@@ -92,16 +92,14 @@ export interface StartPointInterface {
 export interface StorageUnitInterface {
   cluster_total_bytes: string
   cluster_total_used_bytes: string
-  grafana_url: string
   health_status: string
   osd_down: string
   osd_in: string
   osd_out: string
   osd_up: string
-  unitName: string
 }
 
-export interface ServerUnitInterface {
+export interface ServiceUnitInterface {
   creation: string
   dashboard_url: string
   grafana_url: string

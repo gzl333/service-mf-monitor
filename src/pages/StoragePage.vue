@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, watch, onUnmounted, onBeforeMount } from 'vue'
-// import { useStore } from 'stores/store'
+import { ref, watch, onUnmounted, onBeforeMount, computed } from 'vue'
+import { useStore, ServiceUnitInterface } from 'stores/store'
 // import { useRoute, useRouter } from 'vue-router'
 import StorageCluster from 'components/Federation/StorageCluster.vue'
 import { i18n } from 'boot/i18n'
@@ -14,32 +14,24 @@ import monitor from '../api/index'
 //   }
 // })
 
-interface ServerUnitInterface {
-  creation: string
-  dashboard_url: string
-  grafana_url: string
-  id: string
-  job_tag: string
-  name: string
-  name_en: string
-  remark: string
-  sort_weight: number
-}
-
 // const emits = defineEmits(['change', 'delete'])
 // const route = useRoute()
 // const router = useRouter()
 const { tc } = i18n.global
-// const store = useStore()
-const divNodes = ref<typeof StorageCluster[]>([])
-const monitorCephTable = ref<ServerUnitInterface[]>([])
-const allMonitorCeph = ref<ServerUnitInterface[]>([])
+const store = useStore()
+const organizations = computed(() => store.getPersonalAvailableCoupon())
+const storageUnitsObj = ref<Record<string, ServiceUnitInterface[]>>({})
+const allStorageUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
+const propsUnitData = ref<Record<string, any>>({})
+let timer: NodeJS.Timer | null
 const keyword = ref('')
-const isShow = ref(false)
+const isDisable = ref(true)
+const isIntervalOpen = ref(false)
+const renovateShow = ref<Record<string, boolean>>({})
 const filterSelection = ref({
   label: '每30s刷新',
   labelEn: 'Refresh every 30 seconds',
-  value: 30
+  value: 10
 })
 const filterOptions = [
   {
@@ -68,60 +60,116 @@ const filterOptions = [
     value: 3600
   }
 ]
-let timer = setInterval(() => {
-  isShow.value = false
-  divNodes.value = divNodes.value.filter(item => item !== null)
-  divNodes.value.forEach((node, index) => {
-    if (index === divNodes.value.length - 1) {
-      node.intervalRefresh(true)
-    } else {
-      node.intervalRefresh(false)
+const getStorageQuery = async (monitor_unit_id: string) => {
+  const storageQuery: string[] = ['health_status', 'cluster_total_bytes', 'cluster_total_used_bytes', 'osd_in', 'osd_out', 'osd_up', 'osd_down']
+  const config = {
+    query: {
+      monitor_unit_id,
+      query: ''
+    }
+  }
+  const storageObject: {[key: string]: string } = {}
+  for (const query of storageQuery) {
+    config.query.query = query
+    await monitor.monitor.api.getMonitorCephQuery(config).then((res) => {
+      if (res.data[0].value !== null) {
+        storageObject[query as keyof typeof storageObject] = res.data[0].value[1]
+      } else {
+        storageObject[query as keyof typeof storageObject] = '暂无数据'
+      }
+    }).catch((error) => {
+      console.log(error)
+      storageObject[query as keyof typeof storageObject] = '获取数据出错'
+    })
+  }
+  return storageObject
+}
+const openPanel = async (organization_id: string) => {
+  const unitObj: { [key: string]: string } = {}
+  const unitCephRes = await monitor.monitor.api.getMonitorUnitCeph({
+    query: {
+      page: 1,
+      page_size: 9999,
+      organization_id
     }
   })
-}, filterSelection.value.value * 1000)
-watch(filterSelection, () => {
-  clearInterval(timer)
-  timer = setInterval(() => {
-    isShow.value = false
-    divNodes.value = divNodes.value.filter(item => item !== null)
-    divNodes.value.forEach((node, index) => {
-      if (index === divNodes.value.length - 1) {
-        node.intervalRefresh(true)
-      } else {
-        node.intervalRefresh(false)
-      }
+  unitObj[organization_id] = unitCephRes.data.results
+  Object.assign(storageUnitsObj.value, unitObj)
+  Object.assign(allStorageUnitsObjData, unitObj)
+  allStorageUnitsObjData[organization_id].forEach(unit => {
+    getStorageQuery(unit.id).then((res) => {
+      propsUnitData.value[unit.id] = res
+      renovateShow.value[unit.id] = true
     })
-  }, filterSelection.value.value * 1000)
-})
-const refresh = () => {
-  isShow.value = false
-  divNodes.value = divNodes.value.filter(item => item !== null)
-  divNodes.value.forEach((node, index) => {
-    if (index === divNodes.value.length - 1) {
-      node.intervalRefresh(true)
-    } else {
-      node.intervalRefresh(false)
-    }
+  })
+  if (!isIntervalOpen.value) {
+    timer = setInterval(() => {
+      refreshAllUnit()
+    }, filterSelection.value.value * 1000)
+    isIntervalOpen.value = true
+    isDisable.value = false
+  }
+}
+const closePanel = (organization_id: string) => {
+  Reflect.deleteProperty(storageUnitsObj.value, organization_id)
+  Reflect.deleteProperty(allStorageUnitsObjData, organization_id)
+  if (Object.keys(storageUnitsObj.value).length === 0) {
+    clearInterval(Number(timer))
+    isIntervalOpen.value = false
+    isDisable.value = true
+  }
+}
+const refreshAllUnit = () => {
+  isDisable.value = true
+  Object.keys(allStorageUnitsObjData).forEach((org, orgIndex) => {
+    allStorageUnitsObjData[org].forEach((unit, unitIndex) => {
+      renovateShow.value[unit.id] = false
+      getStorageQuery(unit.id).then((res) => {
+        propsUnitData.value[unit.id] = res
+        renovateShow.value[unit.id] = true
+        if (orgIndex === Object.keys(allStorageUnitsObjData).length - 1 && unitIndex === allStorageUnitsObjData[org].length - 1) {
+          isDisable.value = false
+        }
+      })
+    })
   })
 }
-const refreshComplete = () => {
-  isShow.value = true
+const refreshUint = (unitId: string) => {
+  renovateShow.value[unitId] = false
+  getStorageQuery(unitId).then((res) => {
+    propsUnitData.value[unitId] = res
+    renovateShow.value[unitId] = true
+  })
 }
 const keywordSearch = () => {
   if (keyword.value === '' || keyword.value === null) {
-    monitorCephTable.value = allMonitorCeph.value
+    storageUnitsObj.value = { ...allStorageUnitsObjData }
   } else {
-    monitorCephTable.value = allMonitorCeph.value.filter(state => state.name.indexOf(keyword.value.trim()) > -1 || state.name_en.indexOf(keyword.value.trim()) > -1)
+    Object.keys(storageUnitsObj.value).forEach(item => {
+      storageUnitsObj.value[item] = allStorageUnitsObjData[item].filter(state => state.name.indexOf(keyword.value.trim()) > -1 || state.name_en.indexOf(keyword.value.trim()) > -1)
+    })
   }
 }
-onBeforeMount(async () => {
-  const unitServerRes = await monitor.monitor.api.getMonitorUnitCeph()
-  monitorCephTable.value = unitServerRes.data.results
-  allMonitorCeph.value = unitServerRes.data.results
-  isShow.value = true
+watch(filterSelection, () => {
+  clearInterval(Number(timer))
+  timer = setInterval(() => {
+    refreshAllUnit()
+  }, filterSelection.value.value * 1000)
+})
+watch(organizations, () => {
+  if (organizations.value.length > 0) {
+    openPanel(organizations.value[0].id)
+    isDisable.value = false
+  }
+})
+onBeforeMount(() => {
+  if (organizations.value.length > 0) {
+    openPanel(organizations.value[0].id)
+    isDisable.value = false
+  }
 })
 onUnmounted(() => {
-  clearInterval(timer)
+  clearInterval(Number(timer))
 })
 </script>
 
@@ -129,14 +177,43 @@ onUnmounted(() => {
   <div class="StoragePage" style="min-width: 1000px">
     <div class="row">
       <div class="col-8 row">
-        <q-input class="col-5" :disable="!isShow" outlined dense clearable v-model="keyword" label="输入关键字搜索" @update:model-value="keywordSearch"/>
+        <q-input class="col-5" :disable="isDisable" outlined dense clearable v-model="keyword" label="输入关键字搜索" @update:model-value="keywordSearch"/>
       </div>
       <div class="col-4 row justify-end items-center">
-        <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="isShow" @click="refresh"/>
-        <q-select class="col-7" :disable="!isShow" outlined dense v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')" />
+        <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="!isDisable" @click="refreshAllUnit"/>
+        <q-select class="col-7" :disable="isDisable" outlined dense v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')" />
       </div>
     </div>
-    <storage-cluster v-for="(monitor, index) in monitorCephTable" :key="monitor.id" :unit-ceph="monitor" :ref="el=>{divNodes[index] = el}" @is-emit="refreshComplete"></storage-cluster>
+    <div class="q-mt-lg">
+      <q-list bordered>
+        <q-expansion-item
+          v-for="(org, index) in organizations"
+          :key="org.id"
+          header-class="bg-grey-3"
+          :default-opened="index === 0"
+          @show="openPanel(org.id)"
+          @hide="closePanel(org.id)"
+        >
+          <template v-slot:header>
+            <q-item-section>
+              <div class="text-subtitle1">{{ i18n.global.locale === 'zh' ? org.name : org.name_en }}</div>
+              <div>{{ org.country + '-' + org.city }}</div>
+            </q-item-section>
+          </template>
+          <q-card>
+            <div v-for="monitor in storageUnitsObj[org.id]" :key="monitor.id">
+              <div class="row justify-between items-center q-mt-md">
+                <div class="text-subtitle1 text-weight-bold q-ml-sm">
+                  {{ i18n.global.locale === 'zh' ? monitor.name : monitor.name_en }}
+                </div>
+                <q-icon class="q-mr-sm" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]" @click="refreshUint(monitor.id)"/>
+              </div>
+              <storage-cluster :unit-ceph-data="propsUnitData[monitor.id]" :unit-id="monitor.id" :grafana-url="monitor.grafana_url"></storage-cluster>
+            </div>
+          </q-card>
+        </q-expansion-item>
+      </q-list>
+    </div>
   </div>
 </template>
 
