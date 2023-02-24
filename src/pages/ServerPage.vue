@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, watch, onBeforeMount, onBeforeUpdate, onUnmounted } from 'vue'
-// import { useStore } from 'stores/store'
+import { ref, watch, onBeforeMount, computed, onBeforeUpdate, onUnmounted } from 'vue'
+import { useStore, ServerUnitInterface } from 'stores/store'
 // import { useRoute, useRouter } from 'vue-router'
 import ServerCluster from 'components/Federation/ServerCluster.vue'
 import monitor from '../api/index'
@@ -15,30 +15,18 @@ import { i18n } from 'boot/i18n'
 // })
 // const emits = defineEmits(['change', 'delete'])
 
-// const store = useStore()
+const store = useStore()
 // const route = useRoute()
 // const router = useRouter()
-interface ServerUnitInterface {
-  creation: string
-  dashboard_url: string
-  grafana_url: string
-  id: string
-  job_tag: string
-  name: string
-  name_en: string
-  remark: string
-  sort_weight: number
-}
 const { tc } = i18n.global
+const organizations = computed(() => store.getPersonalAvailableCoupon())
 const divNodes = ref<typeof ServerCluster[]>([])
-const serverUnitsTable = ref<ServerUnitInterface[]>([])
-const allServerUnitsTable = ref<ServerUnitInterface[]>([])
 const keyword = ref('')
-const isRefreshShow = ref(false)
+const isDisable = ref(true)
 const filterSelection = ref({
   label: '每30s刷新',
   labelEn: 'Refresh every 30 seconds',
-  value: 30
+  value: 3600
 })
 const filterOptions = [
   {
@@ -67,95 +55,111 @@ const filterOptions = [
     value: 3600
   }
 ]
-// const filterStateSelection = ref({
-//   label: '全部',
-//   value: 'all'
-// })
-// const filterStateOptions = [
-//   {
-//     label: '全部',
-//     value: 'all'
-//   },
-//   {
-//     label: 'Healthy',
-//     value: '0'
-//   },
-//   {
-//     label: 'Warning',
-//     value: '1'
-//   },
-//   {
-//     label: 'Fatal',
-//     value: '2'
-//   }
-// ]
-let timer = setInterval(() => {
-  isRefreshShow.value = false
-  divNodes.value = divNodes.value.filter(item => item !== null)
-  divNodes.value.forEach((node, index) => {
-    if (index === divNodes.value.length - 1) {
-      node.intervalRefresh(true)
-    } else {
-      node.intervalRefresh(false)
+const serverUnitsObj = ref<Record<string, ServerUnitInterface[]>>({})
+const allServerUnitsObjData: Record<string, ServerUnitInterface[]> = {}
+const isIntervalOpen = ref(false)
+let timer: any
+const propsData: any = ref({})
+const refIsShow: any = ref({})
+const getServerQuery = async (monitor_unit_id: string) => {
+  const serverQuery: string[] = ['host_count', 'host_up_count', 'health_status', 'cpu_usage', 'max_cpu_usage', 'min_cpu_usage', 'mem_usage', 'max_mem_usage', 'min_mem_usage', 'disk_usage', 'max_disk_usage', 'min_disk_usage']
+  const config = {
+    query: {
+      monitor_unit_id,
+      query: ''
     }
+  }
+  const serverObject: { [key: string]: string } = {}
+  for (const query of serverQuery) {
+    config.query.query = query
+    await monitor.monitor.api.getMonitorServerQuery(config).then((res) => {
+      if (res.data[0].value !== null) {
+        serverObject[query as keyof typeof serverObject] = res.data[0].value[1]
+      } else {
+        serverObject[query as keyof typeof serverObject] = '暂无数据'
+      }
+    }).catch((error) => {
+      serverObject[query as keyof typeof serverObject] = '获取数据出错'
+      console.log(error)
+    })
+  }
+  return serverObject
+}
+const openPanel = async (organization_id: string) => {
+  const unitObj: {[key: string]: string } = {}
+  const unitServerRes = await monitor.monitor.api.getMonitorUnitServer({ query: { page: 1, page_size: 9999, organization_id } })
+  unitObj[organization_id] = unitServerRes.data.results
+  Object.assign(serverUnitsObj.value, unitObj)
+  Object.assign(allServerUnitsObjData, unitObj)
+  allServerUnitsObjData[organization_id].forEach(unit => {
+    getServerQuery(unit.id).then((res) => {
+      propsData.value[unit.id] = res
+      refIsShow.value[unit.id] = true
+    })
   })
-}, filterSelection.value.value * 1000)
+  if (!isIntervalOpen.value) {
+    timer = setInterval(() => {
+      refreshAllUnit()
+    }, filterSelection.value.value * 1000)
+    isIntervalOpen.value = true
+    isDisable.value = false
+  }
+}
+const closePanel = (organization_id: string) => {
+  Reflect.deleteProperty(serverUnitsObj.value, organization_id)
+  Reflect.deleteProperty(allServerUnitsObjData, organization_id)
+  if (Object.keys(serverUnitsObj.value).length === 0) {
+    clearInterval(timer)
+    isIntervalOpen.value = false
+    isDisable.value = true
+  }
+}
+const refreshAllUnit = () => {
+  isDisable.value = true
+  Object.keys(allServerUnitsObjData).forEach((org, orgIndex) => {
+    allServerUnitsObjData[org].forEach((unit, unitIndex) => {
+      getServerQuery(unit.id).then((res) => {
+        propsData.value[unit.id] = res
+        if (orgIndex === Object.keys(allServerUnitsObjData).length - 1 && unitIndex === allServerUnitsObjData[org].length - 1) {
+          isDisable.value = false
+        }
+      })
+    })
+  })
+}
+const refreshUint = (unitId: string) => {
+  refIsShow.value[unitId] = false
+  getServerQuery(unitId).then((res) => {
+    propsData.value[unitId] = res
+    refIsShow.value[unitId] = true
+  })
+}
+const keywordSearch = () => {
+  if (keyword.value === '' || keyword.value === null) {
+    serverUnitsObj.value = { ...allServerUnitsObjData }
+  } else {
+    Object.keys(serverUnitsObj.value).forEach(item => {
+      serverUnitsObj.value[item] = allServerUnitsObjData[item].filter(state => state.name.indexOf(keyword.value.trim()) > -1 || state.name_en.indexOf(keyword.value.trim()) > -1)
+    })
+  }
+}
 watch(filterSelection, () => {
   clearInterval(timer)
   timer = setInterval(() => {
-    isRefreshShow.value = false
-    divNodes.value = divNodes.value.filter(item => item !== null)
-    divNodes.value.forEach((node, index) => {
-      if (index === divNodes.value.length - 1) {
-        node.intervalRefresh(true)
-      } else {
-        node.intervalRefresh(false)
-      }
-    })
+    refreshAllUnit()
   }, filterSelection.value.value * 1000)
 })
-const refresh = () => {
-  isRefreshShow.value = false
-  divNodes.value = divNodes.value.filter(item => item !== null)
-  divNodes.value.forEach((node, index) => {
-    if (index === divNodes.value.length - 1) {
-      node.intervalRefresh(true)
-    } else {
-      node.intervalRefresh(false)
-    }
-  })
-}
-const refreshComplete = () => {
-  isRefreshShow.value = true
-}
-// let arr: string[] = []
-// const backComplete = (id: string) => {
-//   arr.push(id)
-// }
-// const filterState = () => {
-//   arr = []
-//   const arr1: any = []
-//   divNodes.value.forEach((node) => {
-//     node.filterStatus(filterStateSelection.value.value)
-//   })
-//   arr.forEach(item => {
-//     const unit = allServerUnitsTable.value.find(server => server.id === item)
-//     arr1.push(unit)
-//   })
-//   serverUnitsTable.value = arr1
-// }
-const keywordSearch = () => {
-  if (keyword.value === '' || keyword.value === null) {
-    serverUnitsTable.value = allServerUnitsTable.value
-  } else {
-    serverUnitsTable.value = allServerUnitsTable.value.filter(state => state.name.indexOf(keyword.value.trim()) > -1 || state.name_en.indexOf(keyword.value.trim()) > -1)
+watch(organizations, () => {
+  if (organizations.value.length > 0) {
+    openPanel(organizations.value[0].id)
+    isDisable.value = false
   }
-}
-onBeforeMount(async () => {
-  const unitServerRes = await monitor.monitor.api.getMonitorUnitServer()
-  serverUnitsTable.value = unitServerRes.data.results
-  allServerUnitsTable.value = unitServerRes.data.results
-  isRefreshShow.value = true
+})
+onBeforeMount(() => {
+  if (organizations.value.length > 0) {
+    openPanel(organizations.value[0].id)
+    isDisable.value = false
+  }
 })
 onBeforeUpdate(() => {
   divNodes.value = []
@@ -169,16 +173,41 @@ onUnmounted(() => {
   <div class="ServerPage" style="min-width: 1000px">
     <div class="row items-center">
       <div class="row col-8">
-        <q-input class="col-5" outlined dense clearable :disable="!isRefreshShow" v-model="keyword" label="输入关键字搜索" @update:model-value="keywordSearch"/>
-<!--        <q-select class="col-3 q-ml-sm" outlined dense v-model="filterStateSelection" :options="filterStateOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('筛选状态')" @update:model-value="filterState"/>-->
-<!--        <q-select class="col-3 q-ml-sm" outlined dense v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('筛选类别')" />-->
+        <q-input class="col-5" outlined dense clearable :disable="isDisable" v-model="keyword" label="输入关键字搜索" @update:model-value="keywordSearch"/>
       </div>
       <div class="col-4 row justify-end items-center">
-        <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="isRefreshShow" @click="refresh"/>
-        <q-select class="col-7" outlined dense :disable="!isRefreshShow" v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')" />
+        <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="!isDisable" @click="refreshAllUnit"/>
+        <q-select class="col-7" outlined dense :disable="isDisable" v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')" />
       </div>
     </div>
-    <server-cluster v-for="(monitor, index) in serverUnitsTable" :key="monitor.id" :unit-servers="monitor" :ref="el=>{divNodes[index] = el}" @is-emit="refreshComplete"></server-cluster>
+    <div class="q-mt-lg">
+    <q-list bordered>
+      <q-expansion-item
+        v-for="(item, index) in organizations"
+        :key="index"
+        :default-opened="index === 0"
+        @show="openPanel(item.id)"
+        @hide="closePanel(item.id)"
+      >
+        <template v-slot:header>
+          <q-item-section>
+            <div class="text-subtitle1">{{ item.name }}</div>
+            <div>{{ item.country + '-' + item.city }}</div>
+          </q-item-section>
+        </template>
+        <q-separator/>
+        <q-card>
+          <div v-for="monitor in serverUnitsObj[item.id]" :key="monitor.id">
+            <div class="row items-center q-mt-md justify-between">
+              <div class="text-subtitle1 text-weight-bold q-ml-sm">{{ monitor.name }}</div>
+              <q-icon class="q-mr-sm" name="refresh" size="md" v-show="refIsShow[monitor.id]" @click="refreshUint(monitor.id)"/>
+            </div>
+            <server-cluster :unit-servers-data="propsData[monitor.id]" :unit-id="monitor.id" :grafana-url="monitor.grafana_url"></server-cluster>
+          </div>
+        </q-card>
+      </q-expansion-item>
+    </q-list>
+    </div>
   </div>
 </template>
 

@@ -69,18 +69,6 @@ console.log('table', store.tables)
 
             <q-item
               clickable
-              :active="activeItem === 'server1'"
-              @click="activeItem = 'server1'; navigateToUrl('/my/monitor/server1')"
-              active-class="active-item"
-            >
-              <q-item-section class="column items-center">
-                <q-icon name="las la-server" size="lg"/>
-                <div class="active-text text-center">{{ tc('主机集群1') }}</div>
-              </q-item-section>
-            </q-item>
-
-            <q-item
-              clickable
               :active="activeItem === 'storage'"
               @click="activeItem = 'storage'; navigateToUrl('/my/monitor/storage')"
               active-class="active-item"
