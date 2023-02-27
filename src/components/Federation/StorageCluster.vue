@@ -24,10 +24,10 @@ const goToGrafana = () => {
 
 <template>
   <div class="StorageCluster">
-    <div class="row justify-around q-mt-sm q-pb-sm">
-        <div class="col-6 row q-col-gutter-sm">
-          <div class="col-4">
-            <q-card flat bordered class="my-card no-border-radius" style="height: 190px">
+    <div class="row justify-between q-mt-sm q-pb-sm">
+        <div class="col-6 row q-col-gutter-xs">
+          <div class="col">
+            <q-card flat class="my-card no-border-radius boxRightBorder" style="height: 190px">
               <div class="text-center">{{ tc('集群状态') }}</div>
               <div v-if="props.unitCephData?.health_status" :class="props.unitCephData?.health_status === '0' ? 'text-positive text-center text-h4 text-weight-bold q-mt-xl' : props.unitCephData?.health_status === '1' ?
                     'text-warning text-center text-h4 text-weight-bold q-mt-xl' : 'text-negative text-center text-h4 text-weight-bold q-mt-xl'">
@@ -41,7 +41,7 @@ const goToGrafana = () => {
               </div>
             </q-card>
           </div>
-          <div class="col-4">
+          <div class="col">
             <q-card flat bordered class="no-border-radius" style="height: 190px">
               <div class="text-center">{{ tc('集群容量') }}</div>
               <div v-if="props.unitCephData?.cluster_total_bytes" class="text-center text-h4 q-mt-xl">
@@ -55,7 +55,7 @@ const goToGrafana = () => {
               </div>
             </q-card>
           </div>
-          <div class="col-4">
+          <div class="col">
             <q-card flat bordered class="no-border-radius" style="height: 190px">
               <div class="text-center">{{ tc('当前容量') }}</div>
               <div v-if="props.unitCephData?.cluster_total_used_bytes" class="text-center text-h4 q-mt-xl">
@@ -126,7 +126,7 @@ const goToGrafana = () => {
           </q-card>
         </div>
         <div class="col-1">
-          <q-card flat bordered class="no-border-radius" style="height: 190px">
+          <q-card flat class="no-border-radius boxLeftBorder" style="height: 190px">
             <div class="text-center q-mt-xl">
               <div class="text-primary cursor-pointer text-subtitle1" @click="goToGrafana">
                 <div>Go To</div>
@@ -142,5 +142,15 @@ const goToGrafana = () => {
 
 <style lang="scss" scoped>
 .StoragePage {
+  .boxRightBorder {
+    border-top: 1px solid #DDDDDD;
+    border-bottom: 1px solid #DDDDDD;
+    border-right: 1px solid #DDDDDD;
+  }
+  .boxLeftBorder {
+    border-top: 1px solid #DDDDDD;
+    border-bottom: 1px solid #DDDDDD;
+    border-left: 1px solid #DDDDDD;
+  }
 }
 </style>

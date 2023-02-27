@@ -99,6 +99,21 @@ export interface StorageUnitInterface {
   osd_up: string
 }
 
+export interface ServerUnitInterface {
+  cpu_usage: string
+  disk_usage: string
+  health_status: string
+  host_count: string
+  host_up_count: string
+  max_cpu_usage: string
+  max_disk_usage: string
+  max_mem_usage: string
+  mem_usage: string
+  min_cpu_usage: string
+  min_disk_usage: string
+  min_mem_usage: string
+}
+
 export interface ServiceUnitInterface {
   creation: string
   dashboard_url: string
@@ -212,7 +227,8 @@ export const useStore = defineStore('monitor', {
         allIds: [],
         isLoaded: false
       }
-      const respOrganization = await monitor.monitor.api.getMonitorOrganization()
+      const respOrganization = await monitor.monitor.api.getMonitorOrganization({ query: { page: 1, page_size: 9999 } })
+      const count = respOrganization.data.count
       const organization = new schema.Entity('organization', {})
       respOrganization.data.results.forEach((data: Record<string, never>) => {
         const normalizedData = normalize(data, organization)
@@ -221,6 +237,23 @@ export const useStore = defineStore('monitor', {
         this.tables.organizationTable.allIds.unshift(Object.keys(normalizedData.entities.organization)[0])
         this.tables.organizationTable.allIds = [...new Set(this.tables.organizationTable.allIds)]
       })
+      if (count > 1000) {
+        for (let i = 0; i < Math.floor(count / 1000); i++) {
+          let pageSize = 1000
+          if (i + 1 === Math.floor(count / 1000)) {
+            pageSize = count - (1000 * Math.floor(count / 1000))
+          }
+          const respOrganization = await monitor.monitor.api.getMonitorOrganization({ query: { page: i + 2, page_size: pageSize } })
+          const organization = new schema.Entity('organization', {})
+          respOrganization.data.results.forEach((data: Record<string, never>) => {
+            const normalizedData = normalize(data, organization)
+            Object.assign(this.tables.organizationTable.byId, normalizedData.entities.organization)
+            // @ts-ignore
+            this.tables.organizationTable.allIds.unshift(Object.keys(normalizedData.entities.organization)[0])
+            this.tables.organizationTable.allIds = [...new Set(this.tables.organizationTable.allIds)]
+          })
+        }
+      }
       this.tables.organizationTable.isLoaded = true
     }
   }

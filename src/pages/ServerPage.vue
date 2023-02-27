@@ -20,8 +20,19 @@ const store = useStore()
 // const router = useRouter()
 const { tc } = i18n.global
 const organizations = computed(() => store.getPersonalAvailableCoupon())
+const serverUnitsObj = ref<Record<string, ServiceUnitInterface[]>>({})
+// 用于备份所有的单元，模糊搜索时用到
+const allServerUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
+let timer: NodeJS.Timer | null
+// 传输给子组件的数据
+const propsUnitData = ref<Record<string, unknown>>({})
 const keyword = ref('')
+// 用于判断是否存在计时器
+const isIntervalOpen = ref(false)
+// 用于判断是否可点击
 const isDisable = ref(true)
+// 用于判断刷新按钮显示和不显示 每一个子组件对应对象里的一个值
+const renovateShow = ref<Record<string, boolean>>({})
 const filterSelection = ref({
   label: '每30s刷新',
   labelEn: 'Refresh every 30 seconds',
@@ -54,12 +65,7 @@ const filterOptions = [
     value: 3600
   }
 ]
-const serverUnitsObj = ref<Record<string, ServiceUnitInterface[]>>({})
-const allServerUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
-const isIntervalOpen = ref(false)
-let timer: NodeJS.Timer
-const propsData = ref<Record<string, any>>({})
-const refIsShow = ref<Record<string, boolean>>({})
+// 获取数据
 const getServerQuery = async (monitor_unit_id: string) => {
   const serverQuery: string[] = ['host_count', 'host_up_count', 'health_status', 'cpu_usage', 'max_cpu_usage', 'min_cpu_usage', 'mem_usage', 'max_mem_usage', 'min_mem_usage', 'disk_usage', 'max_disk_usage', 'min_disk_usage']
   const config = {
@@ -86,6 +92,7 @@ const getServerQuery = async (monitor_unit_id: string) => {
 }
 const openPanel = async (organization_id: string) => {
   const unitObj: { [key: string]: string } = {}
+  // 获取机构下所有单元
   const unitServerRes = await monitor.monitor.api.getMonitorUnitServer({
     query: {
       page: 1,
@@ -96,12 +103,14 @@ const openPanel = async (organization_id: string) => {
   unitObj[organization_id] = unitServerRes.data.results
   Object.assign(serverUnitsObj.value, unitObj)
   Object.assign(allServerUnitsObjData, unitObj)
+  // 循环获取所有单元的所有监控信息
   allServerUnitsObjData[organization_id].forEach(unit => {
     getServerQuery(unit.id).then((res) => {
-      propsData.value[unit.id] = res
-      refIsShow.value[unit.id] = true
+      propsUnitData.value[unit.id] = res
+      renovateShow.value[unit.id] = true
     })
   })
+  // 判断是否添加计时器,打开第一个面板时添加计时器,后面再次打开不再添加计时器
   if (!isIntervalOpen.value) {
     timer = setInterval(() => {
       refreshAllUnit()
@@ -113,20 +122,23 @@ const openPanel = async (organization_id: string) => {
 const closePanel = (organization_id: string) => {
   Reflect.deleteProperty(serverUnitsObj.value, organization_id)
   Reflect.deleteProperty(allServerUnitsObjData, organization_id)
+  // 判断面板是否全部关闭,若全部关闭清空计时器
   if (Object.keys(serverUnitsObj.value).length === 0) {
     clearInterval(Number(timer))
     isIntervalOpen.value = false
     isDisable.value = true
   }
 }
+// 刷新展开的所有单元
 const refreshAllUnit = () => {
   isDisable.value = true
   Object.keys(allServerUnitsObjData).forEach((org, orgIndex) => {
     allServerUnitsObjData[org].forEach((unit, unitIndex) => {
-      refIsShow.value[unit.id] = false
+      renovateShow.value[unit.id] = false
       getServerQuery(unit.id).then((res) => {
-        propsData.value[unit.id] = res
-        refIsShow.value[unit.id] = true
+        propsUnitData.value[unit.id] = res
+        renovateShow.value[unit.id] = true
+        // 如果最后一个请求请求成功后 将isDisable赋值为false
         if (orgIndex === Object.keys(allServerUnitsObjData).length - 1 && unitIndex === allServerUnitsObjData[org].length - 1) {
           isDisable.value = false
         }
@@ -134,17 +146,19 @@ const refreshAllUnit = () => {
     })
   })
 }
+// 刷新单个单元
 const refreshUint = (unitId: string) => {
-  refIsShow.value[unitId] = false
+  renovateShow.value[unitId] = false
   getServerQuery(unitId).then((res) => {
-    propsData.value[unitId] = res
-    refIsShow.value[unitId] = true
+    propsUnitData.value[unitId] = res
+    renovateShow.value[unitId] = true
   })
 }
 const keywordSearch = () => {
   if (keyword.value === '' || keyword.value === null) {
     serverUnitsObj.value = { ...allServerUnitsObjData }
   } else {
+    // 在已经展开的单元里模糊搜索
     Object.keys(serverUnitsObj.value).forEach(item => {
       serverUnitsObj.value[item] = allServerUnitsObjData[item].filter(state => state.name.indexOf(keyword.value.trim()) > -1 || state.name_en.indexOf(keyword.value.trim()) > -1)
     })
@@ -157,12 +171,14 @@ watch(filterSelection, () => {
   }, filterSelection.value.value * 1000)
 })
 watch(organizations, () => {
+  // 默认展开第一个面板
   if (organizations.value.length > 0) {
     openPanel(organizations.value[0].id)
     isDisable.value = false
   }
 })
 onBeforeMount(() => {
+  // 默认展开第一个面板
   if (organizations.value.length > 0) {
     openPanel(organizations.value[0].id)
     isDisable.value = false
@@ -208,10 +224,10 @@ onUnmounted(() => {
                 <div class="text-subtitle1 text-weight-bold q-ml-sm">
                   {{ i18n.global.locale === 'zh' ? monitor.name : monitor.name_en }}
                 </div>
-                <q-icon class="q-mr-sm" name="refresh" size="1.7rem" v-show="refIsShow[monitor.id]"
+                <q-icon class="q-mr-sm" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]"
                         @click="refreshUint(monitor.id)"/>
               </div>
-              <server-cluster :unit-servers-data="propsData[monitor.id]" :unit-id="monitor.id"
+              <server-cluster :unit-servers-data="propsUnitData[monitor.id]" :unit-id="monitor.id"
                               :grafana-url="monitor.grafana_url"></server-cluster>
             </div>
           </q-card>

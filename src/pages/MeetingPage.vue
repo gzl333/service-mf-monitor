@@ -20,21 +20,10 @@ import { i18n } from 'boot/i18n'
 // const router = useRouter()
 const { tc } = i18n.global
 const mapRef = ref()
-// 刷新相关数据
-const isRefresh = ref(true)
-const disable = ref(false)
 // 表格数据
 const tableRow = ref<EndPointInterface[]>([])
 // 全国地图需要的数据
 const countrySeries: Record<string, any> = ref([])
-// 搜索条件
-const searchQuery = ref({
-  status: '2',
-  name: ''
-})
-const initialPagination = ref({
-  page: 1
-})
 let meetingStatusData: MeetingStatusInterface[] = []
 let meetingPingData: MeetingStatusInterface[] = []
 // 所有服务经纬度数据
@@ -43,6 +32,17 @@ let coordinateData: Record<string, number[]> = {}
 let nationalNodeData: Array<[StartPointInterface, EndPointInterface]> = []
 // 搜索过滤后的数据
 let searchFilterData: any[] = []
+// 刷新相关数据
+const isRefresh = ref(true)
+const disable = ref(false)
+// 搜索条件
+const searchQuery = ref({
+  status: '2',
+  name: ''
+})
+const initialPagination = ref({
+  page: 1
+})
 const translationMapping = {
   北京市: 'Beijing',
   天津市: 'Tianjin',

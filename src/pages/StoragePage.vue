@@ -21,17 +21,22 @@ const { tc } = i18n.global
 const store = useStore()
 const organizations = computed(() => store.getPersonalAvailableCoupon())
 const storageUnitsObj = ref<Record<string, ServiceUnitInterface[]>>({})
+// 用于备份所有的单元，模糊搜索时用到
 const allStorageUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
-const propsUnitData = ref<Record<string, any>>({})
+// 传输给子组件的数据
+const propsUnitData = ref<Record<string, unknown>>({})
 let timer: NodeJS.Timer | null
 const keyword = ref('')
+// 用于判断是否可点击
 const isDisable = ref(true)
+// 用于判断是否存在计时器
 const isIntervalOpen = ref(false)
+// 用于判断刷新按钮显示和不显示 每一个子组件对应对象里的一个值
 const renovateShow = ref<Record<string, boolean>>({})
 const filterSelection = ref({
   label: '每30s刷新',
   labelEn: 'Refresh every 30 seconds',
-  value: 10
+  value: 30
 })
 const filterOptions = [
   {
@@ -60,6 +65,7 @@ const filterOptions = [
     value: 3600
   }
 ]
+// 获取数据
 const getStorageQuery = async (monitor_unit_id: string) => {
   const storageQuery: string[] = ['health_status', 'cluster_total_bytes', 'cluster_total_used_bytes', 'osd_in', 'osd_out', 'osd_up', 'osd_down']
   const config = {

@@ -25,9 +25,9 @@ const goToGrafana = () => {
 
 <template>
   <div class="ServerCluster">
-    <div class="row q-mt-sm q-pb-sm justify-around">
-      <div class="col-2">
-        <q-card flat bordered class="no-border-radius" style="height: 120px">
+    <div class="row q-mt-sm q-pb-sm q-gutter-x-xs">
+      <div class="col">
+        <q-card flat class="no-border-radius boxRightBorder" style="height: 120px">
           <div class="text-center">{{ tc('主机数') }}</div>
           <div v-if="props.unitServersData?.host_count" class="text-center text-h4 q-mt-lg">
             {{ props.unitServersData?.host_count }}
@@ -39,8 +39,8 @@ const goToGrafana = () => {
             />
           </div>
         </q-card>
-        <q-card flat bordered class="no-border-radius q-mt-xs row" style="height: 85px">
-            <div class="col-6 boxBorder">
+        <q-card flat class="no-border-radius q-mt-xs row boxRightBorder" style="height: 85px">
+            <div class="col">
               <div class="text-center">{{ tc('在线') }}</div>
               <div v-if="props.unitServersData?.host_up_count"
                 :class="props.unitServersData?.host_up_count === '暂无数据' || props.unitServersData?.host_up_count === '获取数据出错' ? 'text-center text-h6 q-mt-sm' : 'text-center text-h5 text-positive q-mt-sm'">
@@ -53,7 +53,8 @@ const goToGrafana = () => {
                 />
               </div>
             </div>
-            <div class="col-6">
+            <q-separator vertical/>
+            <div class="col">
               <div class="text-center">{{ tc('掉线') }}</div>
               <div v-if="props.unitServersData?.host_count && props.unitServersData?.host_up_count"
                 :class="props.unitServersData?.host_count === '暂无数据' || props.unitServersData?.host_count === '获取数据出错' || props.unitServersData?.host_up_count === '暂无数据' || props.unitServersData?.host_up_count === '获取数据出错' ? 'text-center text-h6 q-mt-sm' : 'text-center text-h5 text-negative q-mt-sm'">
@@ -70,7 +71,7 @@ const goToGrafana = () => {
             </div>
         </q-card>
       </div>
-      <div class="col-2">
+      <div class="col">
         <q-card flat bordered class="no-border-radius" style="height: 209px">
           <div class="text-center">{{ tc('集群状态') }}</div>
           <div v-if="props.unitServersData?.health_status" :class="props.unitServersData?.health_status === '0' ? 'text-positive text-center text-h4 text-weight-bold q-mt-xl' :
@@ -87,7 +88,7 @@ const goToGrafana = () => {
           </div>
         </q-card>
       </div>
-      <div class="col-2">
+      <div class="col">
         <q-card flat bordered class="no-border-radius" style="height: 120px">
           <div class="text-center">{{ tc('平均CPU使用率') }}</div>
           <div v-if="props.unitServersData?.cpu_usage">
@@ -106,7 +107,7 @@ const goToGrafana = () => {
           </div>
         </q-card>
         <q-card flat bordered class="q-mt-xs no-border-radius row" style="height: 85px">
-          <div class="col-6 boxBorder">
+          <div class="col">
               <div class="text-center">{{ tc('最大') }}</div>
               <div v-if="props.unitServersData?.max_cpu_usage"
                 :class="props.unitServersData?.max_cpu_usage !== '暂无数据' && props.unitServersData?.max_cpu_usage !== '获取数据出错' ? 'text-center text-h5 q-mt-md' : 'text-center text-h6 q-mt-md'">
@@ -121,12 +122,13 @@ const goToGrafana = () => {
               />
             </div>
             </div>
-          <div class="col-6">
+          <q-separator vertical/>
+          <div class="col">
               <div class="text-center">{{ tc('最小') }}</div>
               <div v-if="props.unitServersData?.min_cpu_usage"
                 :class="props.unitServersData?.min_cpu_usage !== '暂无数据' && props.unitServersData?.min_cpu_usage !== '获取数据出错' ? 'text-center text-h5 q-mt-md' : 'text-center text-h6 q-mt-md'">
                 {{
-                  props.unitServersData?.min_cpu_usage !== '暂无数据' && props.unitServersData?.min_cpu_usage !== '获取数据出错' ? (parseFloat(props.unitServersData?.min_cpu_usage).toFixed(2) + '%') : tc(props.unitServersData?.min_cpu_usage)
+                  props.unitServersData?.min_cpu_usage !== '暂无数据' && props.unitServersData?.min_cpu_usage !== '获取数据出错' ? (parseFloat(props.unitServersData?.min_cpu_usage).toFixed(2) + '%') : props.unitServersData?.min_cpu_usage
                 }}
               </div>
             <div v-else class="row justify-center q-mt-sm">
@@ -138,7 +140,7 @@ const goToGrafana = () => {
             </div>
         </q-card>
       </div>
-      <div class="col-2">
+      <div class="col">
         <q-card flat bordered class="no-border-radius" style="height: 120px" >
           <div class="text-center">{{ tc('平均内存使用率') }}</div>
           <div v-if="props.unitServersData?.mem_usage">
@@ -157,12 +159,12 @@ const goToGrafana = () => {
           </div>
         </q-card>
         <q-card flat bordered class="no-border-radius q-mt-xs row" style="height: 85px">
-            <div class="col-6 boxBorder">
+            <div class="col">
               <div class="text-center">{{ tc('最大') }}</div>
               <div v-if="props.unitServersData?.max_mem_usage"
                 :class="props.unitServersData?.max_mem_usage !== '暂无数据' && props.unitServersData?.max_mem_usage !== '获取数据出错' ? 'text-center text-h5 q-mt-md' : 'text-center text-h6 q-mt-md'">
                 {{
-                  props.unitServersData?.max_mem_usage !== '暂无数据' && props.unitServersData?.max_mem_usage !== '获取数据出错' ? (parseFloat(props.unitServersData?.max_mem_usage).toFixed(2) + '%') : tc(props.unitServersData?.max_mem_usage)
+                  props.unitServersData?.max_mem_usage !== '暂无数据' && props.unitServersData?.max_mem_usage !== '获取数据出错' ? (parseFloat(props.unitServersData?.max_mem_usage).toFixed(2) + '%') : props.unitServersData?.max_mem_usage
                 }}
               </div>
               <div v-else class="row justify-center q-mt-sm">
@@ -172,12 +174,13 @@ const goToGrafana = () => {
                 />
               </div>
             </div>
-            <div class="col-6">
+            <q-separator vertical/>
+            <div class="col">
               <div class="text-center">{{ tc('最小') }}</div>
               <div v-if="props.unitServersData?.min_mem_usage"
                 :class="props.unitServersData?.min_mem_usage !== '暂无数据' && props.unitServersData?.min_mem_usage !== '获取数据出错' ? 'text-center text-h5 q-mt-md' : 'text-center text-h6 q-mt-md'">
                 {{
-                  props.unitServersData?.min_mem_usage !== '暂无数据' && props.unitServersData?.min_mem_usage !== '获取数据出错' ? (parseFloat(props.unitServersData?.min_mem_usage).toFixed(2) + '%') : tc(props.unitServersData?.min_mem_usage)
+                  props.unitServersData?.min_mem_usage !== '暂无数据' && props.unitServersData?.min_mem_usage !== '获取数据出错' ? (parseFloat(props.unitServersData?.min_mem_usage).toFixed(2) + '%') : props.unitServersData?.min_mem_usage
                 }}
               </div>
               <div v-else class="row justify-center q-mt-sm">
@@ -189,7 +192,7 @@ const goToGrafana = () => {
             </div>
         </q-card>
       </div>
-      <div class="col-2">
+      <div class="col">
         <q-card flat bordered class="no-border-radius" style="height: 120px">
           <div class="text-center">{{ tc('平均硬盘使用率') }}</div>
           <div v-if="props.unitServersData?.disk_usage">
@@ -208,12 +211,12 @@ const goToGrafana = () => {
           </div>
         </q-card>
         <q-card flat bordered class="no-border-radius q-mt-xs row" style="height: 85px">
-          <div class="col-6 boxBorder">
+          <div class="col">
               <div class="text-center">{{ tc('最大') }}</div>
               <div v-if="props.unitServersData?.max_disk_usage"
                 :class="props.unitServersData?.max_disk_usage !== '暂无数据' && props.unitServersData?.max_disk_usage !== '获取数据出错' ? 'text-center text-h5 q-mt-md' : 'text-center text-h6 q-mt-md'">
                 {{
-                  props.unitServersData?.max_disk_usage !== '暂无数据' && props.unitServersData?.max_disk_usage !== '获取数据出错' ? (parseFloat(props.unitServersData?.max_disk_usage).toFixed(2) + '%') : tc(props.unitServersData?.max_disk_usage)
+                  props.unitServersData?.max_disk_usage !== '暂无数据' && props.unitServersData?.max_disk_usage !== '获取数据出错' ? (parseFloat(props.unitServersData?.max_disk_usage).toFixed(2) + '%') : props.unitServersData?.max_disk_usage
                 }}
               </div>
             <div v-else class="row justify-center q-mt-sm">
@@ -223,12 +226,13 @@ const goToGrafana = () => {
               />
             </div>
             </div>
-          <div class="col-6">
+          <q-separator vertical/>
+          <div class="col">
               <div class="text-center">{{ tc('最小') }}</div>
               <div v-if="props.unitServersData?.min_disk_usage"
                 :class="props.unitServersData?.min_disk_usage !== '暂无数据' && props.unitServersData?.min_disk_usage !== '获取数据出错' ? 'text-center text-h5 q-mt-md' : 'text-center text-h6 q-mt-md'">
                 {{
-                  props.unitServersData?.min_disk_usage !== '暂无数据' && props.unitServersData?.min_disk_usage !== '获取数据出错' ? (parseFloat(props.unitServersData?.min_disk_usage).toFixed(2) + '%') : tc(props.unitServersData?.min_disk_usage)
+                  props.unitServersData?.min_disk_usage !== '暂无数据' && props.unitServersData?.min_disk_usage !== '获取数据出错' ? (parseFloat(props.unitServersData?.min_disk_usage).toFixed(2) + '%') : props.unitServersData?.min_disk_usage
                 }}
               </div>
             <div v-else class="row justify-center q-mt-sm">
@@ -241,7 +245,7 @@ const goToGrafana = () => {
         </q-card>
       </div>
       <div class="col-1">
-        <q-card flat bordered class="no-border-radius" style="height: 209px">
+        <q-card flat class="no-border-radius boxLeftBorder" style="height: 209px">
           <div class="text-center q-mt-xl">
             <div class="text-primary cursor-pointer" @click="goToGrafana">
               <div>Go To</div>
@@ -257,8 +261,15 @@ const goToGrafana = () => {
 
 <style lang="scss" scoped>
 .ServerCluster {
-  .boxBorder {
+  .boxRightBorder {
+    border-top: 1px solid #DDDDDD;
+    border-bottom: 1px solid #DDDDDD;
     border-right: 1px solid #DDDDDD;
+  }
+  .boxLeftBorder {
+    border-top: 1px solid #DDDDDD;
+    border-bottom: 1px solid #DDDDDD;
+    border-left: 1px solid #DDDDDD;
   }
 }
 </style>
