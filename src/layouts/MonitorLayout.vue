@@ -24,6 +24,7 @@ const tc = i18n.global.tc
 const activeItem = computed(() => store.items.currentPath[0])
 
 const releaseTime = process.env.releaseTime
+console.log('items', store.items)
 console.log('table', store.tables)
 </script>
 
@@ -40,6 +41,18 @@ console.log('table', store.tables)
             <q-item>
               <q-item-section class="column items-center q-py-sm text-center text-weight-bold text-grey-8">
                 {{ tc('综合监控') }}
+              </q-item-section>
+            </q-item>
+
+            <q-item
+              clickable
+              :active="activeItem === 'tasks'"
+              @click="activeItem = 'tasks'; navigateToUrl('/my/monitor/tasks')"
+              active-class="active-item"
+            >
+              <q-item-section class="column items-center">
+                <q-icon name="las la-tasks" size="lg"/>
+                <div class="active-text text-center">{{ tc('监控任务') }}</div>
               </q-item-section>
             </q-item>
 

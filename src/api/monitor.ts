@@ -59,6 +59,17 @@ export default {
         params: payload.query
       }
       return axiosMonitor.get('/monitor/ceph/query', config)
+    },
+    getMonitorWebsite (payload?: { query: { page: string; page_size: string } }) {
+      const config = {
+        params: payload?.query
+      }
+      return axiosMonitor.get('/monitor/website', config)
+    },
+    postMonitorWebsite (payload: { body: { name: string; url: string; remark?: string } }) {
+      console.log(payload)
+      const data = payload.body
+      return axiosMonitor.post('/monitor/website', data)
     }
   }
 }
