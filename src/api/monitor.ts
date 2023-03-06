@@ -60,16 +60,22 @@ export default {
       }
       return axiosMonitor.get('/monitor/ceph/query', config)
     },
-    getMonitorWebsite (payload?: { query: { page: string; page_size: string } }) {
+    getMonitorWebsite (payload?: { query: { page: number; page_size: number } }) {
       const config = {
         params: payload?.query
       }
       return axiosMonitor.get('/monitor/website', config)
     },
     postMonitorWebsite (payload: { body: { name: string; url: string; remark?: string } }) {
-      console.log(payload)
       const data = payload.body
       return axiosMonitor.post('/monitor/website', data)
+    },
+    putMonitorWebsite (payload: { body: { name: string; url: string; remark?: string }, path: { id: string } }) {
+      const data = payload.body
+      return axiosMonitor.put('/monitor/website/' + payload.path.id, data)
+    },
+    deleteMonitorWebsite (payload: { path: { id: string } }) {
+      return axiosMonitor.delete('/monitor/website/' + payload.path.id)
     }
   }
 }

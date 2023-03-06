@@ -1,7 +1,10 @@
 import { defineStore } from 'pinia'
 import monitor from '../api/index'
 import { normalize, schema } from 'normalizr'
+import { Dialog } from 'quasar'
 
+import TaskDeleteDialog from 'components/task/TaskDeleteDialog.vue'
+import TaskReviseDialog from 'components/task/TaskReviseDialog.vue'
 export interface DataCenterInterface {
   // 来自registry接口
   id: string
@@ -255,6 +258,22 @@ export const useStore = defineStore('monitor', {
         }
       }
       this.tables.organizationTable.isLoaded = true
+    },
+    triggerDeleteTaskDialog (task_Id: string) {
+      Dialog.create({
+        component: TaskDeleteDialog,
+        componentProps: {
+          task_Id
+        }
+      })
+    },
+    triggerReviseTaskDialog (payload: { id: string, name: string, url: string, remark: string }) {
+      Dialog.create({
+        component: TaskReviseDialog,
+        componentProps: {
+          taskObj: payload
+        }
+      })
     }
   }
 })

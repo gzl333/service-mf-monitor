@@ -29,6 +29,7 @@ const query = ref({
   remark: ''
 })
 const visible = ref(false)
+const urlReg = /^([hH][tT]{2}[pP]:\/\/|[hH][tT]{2}[pP][sS]:\/\/)(([A-Za-z0-9-~]+).)+([A-Za-z0-9-~/])+$/
 const onSubmit = async () => {
   visible.value = true
   await monitor.monitor.api.postMonitorWebsite({ body: query.value }).then((res) => {
@@ -99,7 +100,7 @@ const onReset = () => {
         <div class="row">
           <div class="col-2 q-mt-sm text-subtitle1 text-grey">监控地址</div>
           <div class="col-10">
-            <q-input outlined dense clearable v-model="query.url" label="请输入监控地址" lazy-rules="ondemand" :rules="[val => val && val.length > 0 || '监控地址不能为空']"
+            <q-input outlined dense clearable v-model="query.url" label="请输入监控地址" lazy-rules="ondemand" :rules="[val => val && val.length > 0 || '监控地址不能为空', val => urlReg.test(val) || '监控地址不是合法地址']"
             />
           </div>
         </div>
@@ -111,10 +112,10 @@ const onReset = () => {
         </div>
         <div class="row">
           <div class="col-2">
-            <q-btn label="创建" type="submit" color="primary"/>
+            <q-btn no-caps unelevated label="创建" type="submit" color="primary"/>
           </div>
           <div>
-            <q-btn label="重置" type="reset" color="primary"/>
+            <q-btn no-caps unelevated label="重置" type="reset" color="primary"/>
           </div>
         </div>
         <q-inner-loading
