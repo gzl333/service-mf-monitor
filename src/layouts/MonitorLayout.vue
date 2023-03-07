@@ -52,7 +52,7 @@ console.log('table', store.tables)
             >
               <q-item-section class="column items-center">
                 <q-icon name="las la-tasks" size="lg"/>
-                <div class="active-text text-center">{{ tc('监控任务') }}</div>
+                <div class="active-text text-center">{{ tc('网站监控') }}</div>
               </q-item-section>
             </q-item>
 
@@ -109,14 +109,13 @@ console.log('table', store.tables)
         </q-scroll-area>
       </div>
     </q-drawer>
+
     <q-page-container>
-      <q-scroll-area style="height: 92vh">
-        <q-page class="row justify-center q-mt-xl">
-          <div class="col-9">
-            <router-view/>
-          </div>
-        </q-page>
-      </q-scroll-area>
+      <q-page>
+        <q-scroll-area style="height: calc(100vh - 60px)">
+          <router-view/>
+        </q-scroll-area>
+      </q-page>
     </q-page-container>
 
   </q-layout>

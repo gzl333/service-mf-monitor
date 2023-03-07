@@ -191,48 +191,54 @@ onUnmounted(() => {
 
 <template>
   <div class="ServerPage" style="min-width: 1000px">
-    <div class="row items-center">
-      <div class="row col-8">
-        <q-input class="col-5" outlined dense clearable :disable="isDisable" v-model="keyword"
-                 :label="tc('输入关键字搜索')" @update:model-value="keywordSearch"/>
-      </div>
-      <div class="col-4 row justify-end items-center">
-        <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="!isDisable" @click="refreshAllUnit"/>
-        <q-select class="col-7" outlined dense :disable="isDisable" v-model="filterSelection" :options="filterOptions"
-                  :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')"/>
-      </div>
-    </div>
-    <div class="q-mt-lg">
-      <q-list bordered>
-        <q-expansion-item
-          v-for="(item, index) in organizations"
-          :key="item.id"
-          header-class="bg-grey-3"
-          :default-opened="index === 0"
-          @show="openPanel(item.id)"
-          @hide="closePanel(item.id)"
-        >
-          <template v-slot:header>
-            <q-item-section>
-              <div class="text-subtitle1">{{ i18n.global.locale === 'zh' ? item.name : item.name_en }}</div>
-              <div>{{ item.country + '-' + item.city }}</div>
-            </q-item-section>
-          </template>
-          <q-card>
-            <div v-for="monitor in serverUnitsObj[item.id]" :key="monitor.id">
-              <div class="row justify-between items-center q-mt-md">
-                <div class="text-subtitle1 text-weight-bold q-ml-sm">
-                  {{ i18n.global.locale === 'zh' ? monitor.name : monitor.name_en }}
-                </div>
-                <q-icon class="q-mr-sm" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]"
-                        @click="refreshUint(monitor.id)"/>
-              </div>
-              <server-cluster :unit-servers-data="propsUnitData[monitor.id]" :unit-id="monitor.id"
-                              :grafana-url="monitor.grafana_url"></server-cluster>
+    <div class="column">
+      <div class="row justify-center">
+        <div class="content-fixed-width">
+          <div class="row items-center q-mt-xl">
+            <div class="row col-8">
+              <q-input class="col-5" outlined dense clearable :disable="isDisable" v-model="keyword"
+                       :label="tc('输入关键字搜索')" @update:model-value="keywordSearch"/>
             </div>
-          </q-card>
-        </q-expansion-item>
-      </q-list>
+            <div class="col-4 row justify-end items-center">
+              <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="!isDisable" @click="refreshAllUnit"/>
+              <q-select class="col-7" outlined dense :disable="isDisable" v-model="filterSelection" :options="filterOptions"
+                        :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')"/>
+            </div>
+          </div>
+          <div class="q-mt-lg">
+            <q-list bordered>
+              <q-expansion-item
+                v-for="(item, index) in organizations"
+                :key="item.id"
+                header-class="bg-grey-3"
+                :default-opened="index === 0"
+                @show="openPanel(item.id)"
+                @hide="closePanel(item.id)"
+              >
+                <template v-slot:header>
+                  <q-item-section>
+                    <div class="text-subtitle1">{{ i18n.global.locale === 'zh' ? item.name : item.name_en }}</div>
+                    <div>{{ item.country + '-' + item.city }}</div>
+                  </q-item-section>
+                </template>
+                <q-card>
+                  <div v-for="monitor in serverUnitsObj[item.id]" :key="monitor.id">
+                    <div class="row justify-between items-center q-mt-md">
+                      <div class="text-subtitle1 text-weight-bold q-ml-sm">
+                        {{ i18n.global.locale === 'zh' ? monitor.name : monitor.name_en }}
+                      </div>
+                      <q-icon class="q-mr-sm" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]"
+                              @click="refreshUint(monitor.id)"/>
+                    </div>
+                    <server-cluster :unit-servers-data="propsUnitData[monitor.id]" :unit-id="monitor.id"
+                                    :grafana-url="monitor.grafana_url"></server-cluster>
+                  </div>
+                </q-card>
+              </q-expansion-item>
+            </q-list>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>

@@ -181,44 +181,50 @@ onUnmounted(() => {
 
 <template>
   <div class="StoragePage" style="min-width: 1000px">
-    <div class="row">
-      <div class="col-8 row">
-        <q-input class="col-5" :disable="isDisable" outlined dense clearable v-model="keyword" label="输入关键字搜索" @update:model-value="keywordSearch"/>
-      </div>
-      <div class="col-4 row justify-end items-center">
-        <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="!isDisable" @click="refreshAllUnit"/>
-        <q-select class="col-7" :disable="isDisable" outlined dense v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')" />
-      </div>
-    </div>
-    <div class="q-mt-lg">
-      <q-list bordered>
-        <q-expansion-item
-          v-for="(org, index) in organizations"
-          :key="org.id"
-          header-class="bg-grey-3"
-          :default-opened="index === 0"
-          @show="openPanel(org.id)"
-          @hide="closePanel(org.id)"
-        >
-          <template v-slot:header>
-            <q-item-section>
-              <div class="text-subtitle1">{{ i18n.global.locale === 'zh' ? org.name : org.name_en }}</div>
-              <div>{{ org.country + '-' + org.city }}</div>
-            </q-item-section>
-          </template>
-          <q-card>
-            <div v-for="monitor in storageUnitsObj[org.id]" :key="monitor.id">
-              <div class="row justify-between items-center q-mt-md">
-                <div class="text-subtitle1 text-weight-bold q-ml-sm">
-                  {{ i18n.global.locale === 'zh' ? monitor.name : monitor.name_en }}
-                </div>
-                <q-icon class="q-mr-sm" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]" @click="refreshUint(monitor.id)"/>
-              </div>
-              <storage-cluster :unit-ceph-data="propsUnitData[monitor.id]" :unit-id="monitor.id" :grafana-url="monitor.grafana_url"></storage-cluster>
+    <div class="column">
+      <div class="row justify-center">
+        <div class="content-fixed-width">
+          <div class="row q-mt-xl">
+            <div class="col-8 row">
+              <q-input class="col-5" :disable="isDisable" outlined dense clearable v-model="keyword" label="输入关键字搜索" @update:model-value="keywordSearch"/>
             </div>
-          </q-card>
-        </q-expansion-item>
-      </q-list>
+            <div class="col-4 row justify-end items-center">
+              <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="!isDisable" @click="refreshAllUnit"/>
+              <q-select class="col-7" :disable="isDisable" outlined dense v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')" />
+            </div>
+          </div>
+          <div class="q-mt-lg">
+            <q-list bordered>
+              <q-expansion-item
+                v-for="(org, index) in organizations"
+                :key="org.id"
+                header-class="bg-grey-3"
+                :default-opened="index === 0"
+                @show="openPanel(org.id)"
+                @hide="closePanel(org.id)"
+              >
+                <template v-slot:header>
+                  <q-item-section>
+                    <div class="text-subtitle1">{{ i18n.global.locale === 'zh' ? org.name : org.name_en }}</div>
+                    <div>{{ org.country + '-' + org.city }}</div>
+                  </q-item-section>
+                </template>
+                <q-card>
+                  <div v-for="monitor in storageUnitsObj[org.id]" :key="monitor.id">
+                    <div class="row justify-between items-center q-mt-md">
+                      <div class="text-subtitle1 text-weight-bold q-ml-sm">
+                        {{ i18n.global.locale === 'zh' ? monitor.name : monitor.name_en }}
+                      </div>
+                      <q-icon class="q-mr-sm" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]" @click="refreshUint(monitor.id)"/>
+                    </div>
+                    <storage-cluster :unit-ceph-data="propsUnitData[monitor.id]" :unit-id="monitor.id" :grafana-url="monitor.grafana_url"></storage-cluster>
+                  </div>
+                </q-card>
+              </q-expansion-item>
+            </q-list>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>

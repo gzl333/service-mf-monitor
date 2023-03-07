@@ -497,55 +497,63 @@ onUnmounted(() => {
 
 <template>
   <div class="MeetingPage">
-    <map-chart :option="countryOption" ref="mapRef"></map-chart>
-    <div class="row justify-between q-mt-lg items-center">
-        <div class="col-6 row">
-          <q-select outlined dense v-model="searchQuery.status"  map-options :options="statusOptions" :label="tc('状态')" class="col-2" @update:model-value="filterStatus"
-                    :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'"/>
-          <q-input outlined dense v-model="searchQuery.name" :placeholder="tc('筛选单位名称或IP地址')" class="col-6  q-ml-md">
-            <template v-slot:append v-if="searchQuery.name !== ''">
-              <q-icon name="close" @click="searchQuery.name = ''" class="cursor-pointer"/>
+    <div class="column">
+      <div class="row justify-center">
+        <div class="content-fixed-width">
+          <div class="q-mt-xl">
+            <map-chart :option="countryOption" ref="mapRef"></map-chart>
+          </div>
+          <div class="row justify-between q-mt-lg items-center">
+            <div class="col-6 row">
+              <q-select outlined dense v-model="searchQuery.status"  map-options :options="statusOptions" :label="tc('状态')" class="col-2" @update:model-value="filterStatus"
+                        :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'"/>
+              <q-input outlined dense v-model="searchQuery.name" :placeholder="tc('筛选单位名称或IP地址')" class="col-6  q-ml-md">
+                <template v-slot:append v-if="searchQuery.name !== ''">
+                  <q-icon name="close" @click="searchQuery.name = ''" class="cursor-pointer"/>
+                </template>
+              </q-input>
+            </div>
+            <div class="col-6 row justify-end items-center">
+              <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="isRefresh" @click="refresh"/>
+              <q-btn no-caps unelevated class="q-mr-md" color="primary" :label="disable === true ? tc('打开自动刷新') : tc('关闭自动刷新')" @click="openOrCloseRefresh" />
+              <q-select outlined dense v-model="refreshSelection" :disable="disable" :options="refreshOptions" :label="tc('刷新时间')" class="col-5" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" />
+            </div>
+          </div>
+          <q-table
+            flat
+            table-header-class="bg-grey-1 text-grey"
+            :rows="tableData"
+            :columns="columns"
+            :rows-per-page-options="[10, 15, 20, 25, 50, 0]"
+            v-model:pagination="initialPagination"
+            :no-data-label="tc('暂无数据')"
+          >
+            <template v-slot:body="props">
+              <q-tr :props="props">
+                <q-td key="name" :props="props">
+                  <div>{{ props.row.name }}</div>
+                </q-td>
+                <q-td key="ipv4" :props="props">
+                  <span v-for="(item, index) in props.row.ipv4" :key="index">{{ item }}</span>
+                </q-td>
+                <q-td key="status" :props="props" :class="props.row.status === '0' ? 'text-negative' : 'text-positive'">
+                  {{ props.row.status === '0' ? tc('离线') : tc('在线') }}
+                </q-td>
+                <q-td key="ping" :props="props" :class="parseFloat(props.row.ping) > 1 ? 'text-red' : ''">
+                  {{ (parseFloat(props.row.ping) * 1000).toFixed(3) }}ms
+                </q-td>
+                <q-td key="longitude" :props="props">
+                  <div>{{ props.row.longitude }}</div>
+                </q-td>
+                <q-td key="latitude" :props="props">
+                  <div>{{ props.row.latitude }}</div>
+                </q-td>
+              </q-tr>
             </template>
-          </q-input>
-        </div>
-        <div class="col-6 row justify-end items-center">
-          <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="isRefresh" @click="refresh"/>
-          <q-btn no-caps unelevated class="q-mr-md" color="primary" :label="disable === true ? tc('打开自动刷新') : tc('关闭自动刷新')" @click="openOrCloseRefresh" />
-          <q-select outlined dense v-model="refreshSelection" :disable="disable" :options="refreshOptions" :label="tc('刷新时间')" class="col-5" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" />
+          </q-table>
         </div>
       </div>
-    <q-table
-        flat
-        table-header-class="bg-grey-1 text-grey"
-        :rows="tableData"
-        :columns="columns"
-        :rows-per-page-options="[10, 15, 20, 25, 50, 0]"
-        v-model:pagination="initialPagination"
-        :no-data-label="tc('暂无数据')"
-      >
-        <template v-slot:body="props">
-          <q-tr :props="props">
-            <q-td key="name" :props="props">
-              <div>{{ props.row.name }}</div>
-            </q-td>
-            <q-td key="ipv4" :props="props">
-              <span v-for="(item, index) in props.row.ipv4" :key="index">{{ item }}</span>
-            </q-td>
-            <q-td key="status" :props="props" :class="props.row.status === '0' ? 'text-negative' : 'text-positive'">
-              {{ props.row.status === '0' ? tc('离线') : tc('在线') }}
-            </q-td>
-            <q-td key="ping" :props="props" :class="parseFloat(props.row.ping) > 1 ? 'text-red' : ''">
-              {{ (parseFloat(props.row.ping) * 1000).toFixed(3) }}ms
-            </q-td>
-            <q-td key="longitude" :props="props">
-              <div>{{ props.row.longitude }}</div>
-            </q-td>
-            <q-td key="latitude" :props="props">
-              <div>{{ props.row.latitude }}</div>
-            </q-td>
-          </q-tr>
-        </template>
-      </q-table>
+    </div>
   </div>
 </template>
 
