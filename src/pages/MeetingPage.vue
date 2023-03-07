@@ -3,7 +3,7 @@ import { ref, computed, watch, onUnmounted } from 'vue'
 import MapChart from 'components/Chart/MapChart.vue'
 import { MeetingStatusInterface, StartPointInterface, EndPointInterface, StatusArrayInterface } from 'stores/store'
 // import { useRoute, useRouter } from 'vue-router'
-import monitor from '../api/index'
+import monitor from 'src/api/monitor'
 import { i18n } from 'boot/i18n'
 
 // const props = defineProps({
@@ -278,7 +278,7 @@ const getMeetingStatusData = async (query: string) => {
     }
   }
   let response: MeetingStatusInterface[] = []
-  await monitor.monitor.api.getMonitorVideoQuery(config).then((res) => {
+  await monitor.monitor.getMonitorVideoQuery(config).then((res) => {
     response = res.data
   }).catch((error) => {
     console.log(error)

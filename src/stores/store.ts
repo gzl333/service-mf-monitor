@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import monitor from '../api/index'
+import monitor from 'src/api/monitor'
 import { normalize, schema } from 'normalizr'
 import { Dialog } from 'quasar'
 
@@ -181,9 +181,9 @@ export const useStore = defineStore('monitor', {
           }
         })
       }
-      if (!this.tables.organizationTable.isLoaded) {
-        void this.loadOrganizationTable()
-      }
+      // if (!this.tables.organizationTable.isLoaded) {
+      //   void this.loadOrganizationTable()
+      // }
     },
     async loadDataCenterTable () {
       this.tables.dataCenterTable = {
@@ -191,7 +191,7 @@ export const useStore = defineStore('monitor', {
         allIds: [],
         isLoaded: false
       }
-      const respDataCenter = await monitor.monitor.api.getRegistry()
+      const respDataCenter = await monitor.registry.getRegistry()
       const dataCenter = new schema.Entity('dataCenter', {})
       respDataCenter.data.registries.forEach((data: Record<string, never>) => {
         const normalizedData = normalize(data, dataCenter)
@@ -210,7 +210,7 @@ export const useStore = defineStore('monitor', {
         allIds: [],
         isLoaded: false
       }
-      const respService = await monitor.monitor.api.getService()
+      const respService = await monitor.service.getService()
       const data_center = new schema.Entity('data_center')
       const service = new schema.Entity('service', { data_center })
       respService.data.results.forEach((data: Record<string, never>) => {
@@ -230,7 +230,7 @@ export const useStore = defineStore('monitor', {
         allIds: [],
         isLoaded: false
       }
-      const respOrganization = await monitor.monitor.api.getMonitorOrganization({ query: { page: 1, page_size: 9999 } })
+      const respOrganization = await monitor.monitor.getMonitorOrganization({ query: { page: 1, page_size: 9999 } })
       const count = respOrganization.data.count
       const organization = new schema.Entity('organization', {})
       respOrganization.data.results.forEach((data: Record<string, never>) => {
@@ -246,7 +246,7 @@ export const useStore = defineStore('monitor', {
           if (i + 1 === Math.floor(count / 1000)) {
             pageSize = count - (1000 * Math.floor(count / 1000))
           }
-          const respOrganization = await monitor.monitor.api.getMonitorOrganization({ query: { page: i + 2, page_size: pageSize } })
+          const respOrganization = await monitor.monitor.getMonitorOrganization({ query: { page: i + 2, page_size: pageSize } })
           const organization = new schema.Entity('organization', {})
           respOrganization.data.results.forEach((data: Record<string, never>) => {
             const normalizedData = normalize(data, organization)

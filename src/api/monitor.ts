@@ -7,10 +7,12 @@ import { axiosMonitor } from 'boot/axios'
 export const apiBaseHarbor = axiosMonitor.defaults.baseURL
 // 导出使用，封装了baseUrl的全部api函数，可直接调用
 export default {
-  api: {
+  registry: {
     getRegistry () {
       return axiosMonitor.get('/registry')
-    },
+    }
+  },
+  service: {
     getService (payload?: {
       query?: {
         page?: number;
@@ -23,7 +25,9 @@ export default {
         params: payload?.query
       }
       return axiosMonitor.get('/service', config)
-    },
+    }
+  },
+  monitor: {
     getMonitorVideoQuery (payload: { query: { query: string } }) {
       const config = {
         params: payload.query

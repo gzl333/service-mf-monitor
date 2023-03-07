@@ -26,7 +26,7 @@ const {
 const { tc } = i18n.global
 const isDisable = ref(false)
 const onOKClick = () => {
-  monitor.api.deleteMonitorWebsite({ path: { id: props.task_Id } }).then(() => {
+  monitor.monitor.deleteMonitorWebsite({ path: { id: props.task_Id } }).then(() => {
     onDialogOK()
     $bus.emit('renovate', true)
     Notify.create({

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, watch, onUnmounted, onBeforeMount, computed } from 'vue'
+import { ref, watch, onUnmounted, computed } from 'vue'
 import { useStore, ServiceUnitInterface } from 'stores/store'
 // import { useRoute, useRouter } from 'vue-router'
 import StorageCluster from 'components/Federation/StorageCluster.vue'
 import { i18n } from 'boot/i18n'
-import monitor from '../api/index'
+import monitor from 'src/api/monitor'
 
 // const props = defineProps({
 //   foo: {
@@ -23,6 +23,7 @@ const organizations = computed(() => store.getAllMonitoringOrganization())
 const storageUnitsObj = ref<Record<string, ServiceUnitInterface[]>>({})
 // 用于备份所有的单元，模糊搜索时用到
 const allStorageUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
+const allExpendUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
 // 传输给子组件的数据
 const propsUnitData = ref<Record<string, unknown>>({})
 let timer: NodeJS.Timer | null
@@ -77,7 +78,7 @@ const getStorageQuery = async (monitor_unit_id: string) => {
   const storageObject: {[key: string]: string } = {}
   for (const query of storageQuery) {
     config.query.query = query
-    await monitor.monitor.api.getMonitorCephQuery(config).then((res) => {
+    await monitor.monitor.getMonitorCephQuery(config).then((res) => {
       if (res.data[0].value !== null) {
         storageObject[query as keyof typeof storageObject] = res.data[0].value[1]
       } else {
@@ -90,36 +91,43 @@ const getStorageQuery = async (monitor_unit_id: string) => {
   }
   return storageObject
 }
-const openPanel = async (organization_id: string) => {
-  const unitObj: { [key: string]: string } = {}
-  const unitCephRes = await monitor.monitor.api.getMonitorUnitCeph({
-    query: {
-      page: 1,
-      page_size: 9999,
-      organization_id
-    }
-  })
-  unitObj[organization_id] = unitCephRes.data.results
-  Object.assign(storageUnitsObj.value, unitObj)
-  Object.assign(allStorageUnitsObjData, unitObj)
-  allStorageUnitsObjData[organization_id].forEach(unit => {
-    getStorageQuery(unit.id).then((res) => {
-      propsUnitData.value[unit.id] = res
-      renovateShow.value[unit.id] = true
+const getAllUnit = () => {
+  for (const organization of organizations.value) {
+    const unitObj: { [key: string]: string } = {}
+    // 获取机构下所有单元
+    monitor.monitor.getMonitorUnitCeph({ query: { page: 1, page_size: 9999, organization_id: organization.id } }).then((unitCephRes) => {
+      unitObj[organization.id] = unitCephRes.data.results
+      Object.assign(storageUnitsObj.value, unitObj)
+      Object.assign(allStorageUnitsObjData, unitObj)
+    }).catch((error) => {
+      console.log(error)
     })
-  })
-  if (!isIntervalOpen.value) {
-    timer = setInterval(() => {
-      refreshAllUnit()
-    }, filterSelection.value.value * 1000)
-    isIntervalOpen.value = true
-    isDisable.value = false
+  }
+}
+getAllUnit()
+const openPanel = async (organization_id: string) => {
+  if (allStorageUnitsObjData[organization_id].length > 0) {
+    const unitObj: { [key: string]: unknown } = {}
+    unitObj[organization_id] = allStorageUnitsObjData[organization_id]
+    Object.assign(allExpendUnitsObjData, unitObj)
+    allStorageUnitsObjData[organization_id].forEach(unit => {
+      getStorageQuery(unit.id).then((res) => {
+        propsUnitData.value[unit.id] = res
+        renovateShow.value[unit.id] = true
+      })
+    })
+    if (!isIntervalOpen.value) {
+      timer = setInterval(() => {
+        refreshAllUnit()
+      }, filterSelection.value.value * 1000)
+      isIntervalOpen.value = true
+      isDisable.value = false
+    }
   }
 }
 const closePanel = (organization_id: string) => {
-  Reflect.deleteProperty(storageUnitsObj.value, organization_id)
-  Reflect.deleteProperty(allStorageUnitsObjData, organization_id)
-  if (Object.keys(storageUnitsObj.value).length === 0) {
+  Reflect.deleteProperty(allExpendUnitsObjData, organization_id)
+  if (Object.keys(allExpendUnitsObjData).length === 0) {
     clearInterval(Number(timer))
     isIntervalOpen.value = false
     isDisable.value = true
@@ -127,13 +135,13 @@ const closePanel = (organization_id: string) => {
 }
 const refreshAllUnit = () => {
   isDisable.value = true
-  Object.keys(allStorageUnitsObjData).forEach((org, orgIndex) => {
-    allStorageUnitsObjData[org].forEach((unit, unitIndex) => {
+  Object.keys(allExpendUnitsObjData).forEach((org, orgIndex) => {
+    allExpendUnitsObjData[org].forEach((unit, unitIndex) => {
       renovateShow.value[unit.id] = false
       getStorageQuery(unit.id).then((res) => {
         propsUnitData.value[unit.id] = res
         renovateShow.value[unit.id] = true
-        if (orgIndex === Object.keys(allStorageUnitsObjData).length - 1 && unitIndex === allStorageUnitsObjData[org].length - 1) {
+        if (orgIndex === Object.keys(allExpendUnitsObjData).length - 1 && unitIndex === allExpendUnitsObjData[org].length - 1) {
           isDisable.value = false
         }
       })
@@ -151,8 +159,8 @@ const keywordSearch = () => {
   if (keyword.value === '' || keyword.value === null) {
     storageUnitsObj.value = { ...allStorageUnitsObjData }
   } else {
-    Object.keys(storageUnitsObj.value).forEach(item => {
-      storageUnitsObj.value[item] = allStorageUnitsObjData[item].filter(state => state.name.indexOf(keyword.value.trim()) > -1 || state.name_en.indexOf(keyword.value.trim()) > -1)
+    Object.keys(allExpendUnitsObjData).forEach(item => {
+      storageUnitsObj.value[item] = allExpendUnitsObjData[item].filter(state => state.name.indexOf(keyword.value.trim()) > -1 || state.name_en.indexOf(keyword.value.trim()) > -1)
     })
   }
 }
@@ -164,14 +172,7 @@ watch(filterSelection, () => {
 })
 watch(organizations, () => {
   if (organizations.value.length > 0) {
-    openPanel(organizations.value[0].id)
-    isDisable.value = false
-  }
-})
-onBeforeMount(() => {
-  if (organizations.value.length > 0) {
-    openPanel(organizations.value[0].id)
-    isDisable.value = false
+    getAllUnit()
   }
 })
 onUnmounted(() => {
@@ -196,18 +197,23 @@ onUnmounted(() => {
           <div class="q-mt-lg">
             <q-list bordered>
               <q-expansion-item
-                v-for="(org, index) in organizations"
+                v-for="org in organizations"
                 :key="org.id"
-                header-class="bg-grey-3"
-                :default-opened="index === 0"
+                expand-icon-class="text-primary"
+                header-class="bg-grey-1"
                 @show="openPanel(org.id)"
                 @hide="closePanel(org.id)"
               >
                 <template v-slot:header>
                   <q-item-section>
-                    <div class="text-subtitle1">{{ i18n.global.locale === 'zh' ? org.name : org.name_en }}</div>
-                    <div>{{ org?.abbreviation }}</div>
-<!--                    <div>{{ org.country + '-' + org.city }}</div>-->
+                    <div class="row justify-between items-center">
+                      <div>
+                        <div class="text-subtitle1">{{ i18n.global.locale === 'zh' ? org.name : org.name_en }}</div>
+                        <div>{{ org?.abbreviation }}</div>
+                      </div>
+                      <div class="text-h6">{{ storageUnitsObj[org.id]?.length }}</div>
+                    </div>
+                    <q-separator/>
                   </q-item-section>
                 </template>
                 <q-card>

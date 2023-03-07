@@ -3,7 +3,7 @@ import { ref, computed, onBeforeMount, onBeforeUnmount } from 'vue'
 // import { navigateToUrl } from 'single-spa'
 import { useStore } from 'stores/store'
 // import { useRoute, useRouter } from 'vue-router'
-import monitor from '../../api/index'
+import monitor from 'src/api/monitor'
 import { date } from 'quasar'
 import { i18n } from 'boot/i18n'
 import $bus from 'src/hooks/bus'
@@ -51,7 +51,7 @@ const changePageSize = () => {
 }
 const getAllTaskData = async () => {
   isLoad.value = true
-  const res = await monitor.monitor.api.getMonitorWebsite({ query: { page: paginationTable.value.page, page_size: paginationTable.value.rowsPerPage } })
+  const res = await monitor.monitor.getMonitorWebsite({ query: { page: paginationTable.value.page, page_size: paginationTable.value.rowsPerPage } })
   if (res.status === 200) {
     tableRow.value = res.data.results
     paginationTable.value.count = res.data.count

@@ -5,7 +5,7 @@ import { ref } from 'vue'
 import { /* useRoute,  */useRouter } from 'vue-router'
 import { i18n } from 'boot/i18n'
 import { Notify } from 'quasar'
-import monitor from '../../api/index'
+import monitor from 'src/api/monitor'
 // const props = defineProps({
 //   foo: {
 //     type: String,
@@ -32,7 +32,7 @@ const visible = ref(false)
 const urlReg = /^([hH][tT]{2}[pP]:\/\/|[hH][tT]{2}[pP][sS]:\/\/)(([A-Za-z0-9-~]+).)+([A-Za-z0-9-~/])+$/
 const onSubmit = async () => {
   visible.value = true
-  await monitor.monitor.api.postMonitorWebsite({ body: query.value }).then((res) => {
+  await monitor.monitor.postMonitorWebsite({ body: query.value }).then((res) => {
     if (res.status === 200) {
       Notify.create({
         classes: 'notification-positive shadow-15',

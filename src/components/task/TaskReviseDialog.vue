@@ -32,7 +32,7 @@ const visible = ref(false)
 const urlReg = /^([hH][tT]{2}[pP]:\/\/|[hH][tT]{2}[pP][sS]:\/\/)(([A-Za-z0-9-~]+).)+([A-Za-z0-9-~/])+$/
 const onSubmit = async () => {
   visible.value = true
-  await monitor.api.putMonitorWebsite({ body: query.value, path: { id: props.taskObj.id } }).then((res) => {
+  await monitor.monitor.putMonitorWebsite({ body: query.value, path: { id: props.taskObj.id } }).then((res) => {
     if (res.status === 200) {
       onDialogOK()
       $bus.emit('renovate', true)
