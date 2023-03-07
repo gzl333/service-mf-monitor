@@ -8,12 +8,25 @@ export default {
 
   // layout
   综合监控: 'Monitor',
+  网站监控: 'Web Monitor',
   视频会议: 'Meeting Services',
   主机集群: 'Server Clusters',
   存储集群: 'Storage Clusters',
   发布时间: 'Release Time',
 
   // page
+  // WebIndex
+  网站: 'Web',
+  新建: 'New',
+  // TaskList
+  任务id: 'Id',
+  任务名称: 'Name',
+  监控url: 'Url',
+  备注: 'Remarks',
+  创建时间: 'Creation Time',
+  操作: 'Operate',
+  修改: 'Revise',
+  删除: 'Delete',
   // MeetingPage
   全部: 'All',
   在线: 'Online',

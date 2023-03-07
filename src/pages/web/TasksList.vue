@@ -22,12 +22,12 @@ const store = useStore()
 // const router = useRouter()
 const { tc } = i18n.global
 const columns = computed(() => [
-  { name: 'id', label: '任务id', align: 'center', field: 'id' },
-  { name: 'name', label: '任务名称', align: 'center', field: 'name' },
-  { name: 'url', label: '监控url', align: 'center', field: 'url' },
+  { name: 'id', label: (() => tc('任务id'))(), align: 'center', field: 'id' },
+  { name: 'name', label: (() => tc('任务名称'))(), align: 'center', field: 'name' },
+  { name: 'url', label: (() => tc('监控url'))(), align: 'center', field: 'url' },
   // { name: 'user', label: '用户', align: 'center', field: 'user' },
-  { name: 'remark', label: '备注', align: 'center', field: 'remark' },
-  { name: 'creation', label: '创建时间', align: 'center', field: 'creation' },
+  { name: 'remark', label: (() => tc('备注'))(), align: 'center', field: 'remark' },
+  { name: 'creation', label: (() => tc('创建时间'))(), align: 'center', field: 'creation' },
   {
     name: 'operation',
     label: (() => tc('操作'))(),
