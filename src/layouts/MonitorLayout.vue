@@ -46,8 +46,8 @@ console.log('table', store.tables)
 
             <q-item
               clickable
-              :active="activeItem === 'tasks'"
-              @click="activeItem = 'tasks'; navigateToUrl('/my/monitor/tasks')"
+              :active="activeItem === 'web'"
+              @click="activeItem = 'web'; navigateToUrl('/my/monitor/web')"
               active-class="active-item"
             >
               <q-item-section class="column items-center">

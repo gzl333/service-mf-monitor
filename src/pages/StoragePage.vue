@@ -19,7 +19,7 @@ import monitor from '../api/index'
 // const router = useRouter()
 const { tc } = i18n.global
 const store = useStore()
-const organizations = computed(() => store.getPersonalAvailableCoupon())
+const organizations = computed(() => store.getAllMonitoringOrganization())
 const storageUnitsObj = ref<Record<string, ServiceUnitInterface[]>>({})
 // 用于备份所有的单元，模糊搜索时用到
 const allStorageUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
@@ -206,18 +206,26 @@ onUnmounted(() => {
                 <template v-slot:header>
                   <q-item-section>
                     <div class="text-subtitle1">{{ i18n.global.locale === 'zh' ? org.name : org.name_en }}</div>
-                    <div>{{ org.country + '-' + org.city }}</div>
+                    <div>{{ org?.abbreviation }}</div>
+<!--                    <div>{{ org.country + '-' + org.city }}</div>-->
                   </q-item-section>
                 </template>
                 <q-card>
-                  <div v-for="monitor in storageUnitsObj[org.id]" :key="monitor.id">
-                    <div class="row justify-between items-center q-mt-md">
-                      <div class="text-subtitle1 text-weight-bold q-ml-sm">
-                        {{ i18n.global.locale === 'zh' ? monitor.name : monitor.name_en }}
+                  <div v-if="storageUnitsObj[org.id]?.length > 0">
+                    <div v-for="monitor in storageUnitsObj[org.id]" :key="monitor.id">
+                      <div class="row justify-between items-center q-mt-md">
+                        <div class="text-subtitle1 text-weight-bold q-ml-sm">
+                          {{ i18n.global.locale === 'zh' ? monitor.name : monitor.name_en }}
+                        </div>
+                        <q-icon class="q-mr-sm" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]" @click="refreshUint(monitor.id)"/>
                       </div>
-                      <q-icon class="q-mr-sm" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]" @click="refreshUint(monitor.id)"/>
+                      <storage-cluster :unit-ceph-data="propsUnitData[monitor.id]" :unit-id="monitor.id" :grafana-url="monitor.grafana_url"></storage-cluster>
                     </div>
-                    <storage-cluster :unit-ceph-data="propsUnitData[monitor.id]" :unit-id="monitor.id" :grafana-url="monitor.grafana_url"></storage-cluster>
+                  </div>
+                  <div v-else>
+                    <div class="text-center text-h6 q-py-lg">
+                      {{ tc('暂无监控单元') }}
+                    </div>
                   </div>
                 </q-card>
               </q-expansion-item>

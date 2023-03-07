@@ -19,7 +19,8 @@ const store = useStore()
 // const route = useRoute()
 // const router = useRouter()
 const { tc } = i18n.global
-const organizations = computed(() => store.getPersonalAvailableCoupon())
+const organizations = computed(() => store.getAllMonitoringOrganization())
+console.log(organizations)
 const serverUnitsObj = ref<Record<string, ServiceUnitInterface[]>>({})
 // 用于备份所有的单元，模糊搜索时用到
 const allServerUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
@@ -218,20 +219,28 @@ onUnmounted(() => {
                 <template v-slot:header>
                   <q-item-section>
                     <div class="text-subtitle1">{{ i18n.global.locale === 'zh' ? item.name : item.name_en }}</div>
-                    <div>{{ item.country + '-' + item.city }}</div>
+                    <div>{{ item?.abbreviation }}</div>
+<!--                    <div>{{ item.country + '-' + item.city }}</div>-->
                   </q-item-section>
                 </template>
                 <q-card>
-                  <div v-for="monitor in serverUnitsObj[item.id]" :key="monitor.id">
-                    <div class="row justify-between items-center q-mt-md">
-                      <div class="text-subtitle1 text-weight-bold q-ml-sm">
-                        {{ i18n.global.locale === 'zh' ? monitor.name : monitor.name_en }}
+                  <div v-if="serverUnitsObj[item.id]?.length > 0">
+                    <div v-for="monitor in serverUnitsObj[item.id]" :key="monitor.id">
+                      <div class="row justify-between items-center q-mt-md">
+                        <div class="text-subtitle1 text-weight-bold q-ml-sm">
+                          {{ i18n.global.locale === 'zh' ? monitor.name : monitor.name_en }}
+                        </div>
+                        <q-icon class="q-mr-sm" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]"
+                                @click="refreshUint(monitor.id)"/>
                       </div>
-                      <q-icon class="q-mr-sm" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]"
-                              @click="refreshUint(monitor.id)"/>
+                      <server-cluster :unit-servers-data="propsUnitData[monitor.id]" :unit-id="monitor.id"
+                                      :grafana-url="monitor.grafana_url"></server-cluster>
                     </div>
-                    <server-cluster :unit-servers-data="propsUnitData[monitor.id]" :unit-id="monitor.id"
-                                    :grafana-url="monitor.grafana_url"></server-cluster>
+                  </div>
+                  <div v-else>
+                    <div class="text-center text-h6 q-py-lg">
+                      {{ tc('暂无监控单元') }}
+                    </div>
                   </div>
                 </q-card>
               </q-expansion-item>

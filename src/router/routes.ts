@@ -4,20 +4,20 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/my/monitor',
     component: () => import('layouts/MonitorLayout.vue'),
-    redirect: '/my/monitor/tasks',
+    redirect: '/my/monitor/web',
     children: [
       {
-        path: 'tasks',
-        component: () => import('pages/monitor/MonitoringIndex.vue'),
-        redirect: '/my/monitor/tasks/list',
+        path: 'web',
+        component: () => import('pages/web/WebIndex.vue'),
+        redirect: '/my/monitor/web/list',
         children: [
           {
             path: 'list',
-            component: () => import('pages/monitor/TasksList.vue')
+            component: () => import('pages/web/TasksList.vue')
           },
           {
             path: 'create',
-            component: () => import('pages/monitor/TaskCreate.vue'),
+            component: () => import('pages/web/TaskCreate.vue'),
             props: true // 接收url中的参数
           }
         ]

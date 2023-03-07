@@ -163,10 +163,10 @@ export const useStore = defineStore('monitor', {
     }
   }),
   getters: {
-    getPersonalAvailableCoupon: state => (): OrganizationInterface[] => {
-      const allOrganizations: OrganizationInterface[] = []
-      state.tables.organizationTable.allIds.forEach(id => {
-        const organization = state.tables.organizationTable.byId[id]
+    getAllMonitoringOrganization: state => (): DataCenterInterface[] => {
+      const allOrganizations: DataCenterInterface[] = []
+      state.tables.dataCenterTable.allIds.forEach(id => {
+        const organization = state.tables.dataCenterTable.byId[id]
         allOrganizations.unshift(organization)
       })
       return allOrganizations

@@ -53,5 +53,6 @@ export default {
   // StorageCluster
   集群容量: 'Cluster Capacity',
   当前容量: 'Current Capacity',
-  OSD状态: 'OSD Status'
+  OSD状态: 'OSD Status',
+  暂无监控单元: 'No Monitoring Unit'
 }
