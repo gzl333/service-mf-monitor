@@ -196,45 +196,45 @@ onUnmounted(() => {
           </div>
           <div class="q-mt-lg">
             <q-list bordered>
-              <q-expansion-item
-                v-for="org in organizations"
-                :key="org.id"
-                expand-icon-class="text-primary"
-                header-class="bg-grey-1"
-                @show="openPanel(org.id)"
-                @hide="closePanel(org.id)"
-              >
-                <template v-slot:header>
-                  <q-item-section>
-                    <div class="row justify-between items-center">
-                      <div>
-                        <div class="text-subtitle1">{{ i18n.global.locale === 'zh' ? org.name : org.name_en }}</div>
-                        <div>{{ org?.abbreviation }}</div>
-                      </div>
-                      <div class="text-h6">{{ storageUnitsObj[org.id]?.length }}</div>
-                    </div>
-                    <q-separator/>
-                  </q-item-section>
-                </template>
-                <q-card>
-                  <div v-if="storageUnitsObj[org.id]?.length > 0">
-                    <div v-for="monitor in storageUnitsObj[org.id]" :key="monitor.id">
-                      <div class="row justify-between items-center q-mt-md">
-                        <div class="text-subtitle1 text-weight-bold q-ml-sm">
-                          {{ i18n.global.locale === 'zh' ? monitor.name : monitor.name_en }}
+              <div v-for="org in organizations" :key="org.id">
+                <q-expansion-item
+                  expand-icon-class="text-primary"
+                  header-class="bg-grey-2"
+                  @show="openPanel(org.id)"
+                  @hide="closePanel(org.id)"
+                >
+                  <template v-slot:header>
+                    <q-item-section>
+                      <div class="row justify-between items-center">
+                        <div>
+                          <div class="text-subtitle1">{{ i18n.global.locale === 'zh' ? org.name : org.name_en }}</div>
+                          <div>{{ org?.abbreviation }}</div>
                         </div>
-                        <q-icon class="q-mr-sm" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]" @click="refreshUint(monitor.id)"/>
+                        <div class="text-h6 text-primary">{{ storageUnitsObj[org.id]?.length }}</div>
                       </div>
-                      <storage-cluster :unit-ceph-data="propsUnitData[monitor.id]" :unit-id="monitor.id" :grafana-url="monitor.grafana_url"></storage-cluster>
+                    </q-item-section>
+                  </template>
+                  <q-card>
+                    <div v-if="storageUnitsObj[org.id]?.length > 0">
+                      <div v-for="monitor in storageUnitsObj[org.id]" :key="monitor.id">
+                        <div class="row justify-between items-center q-mt-md">
+                          <div class="text-subtitle1 text-weight-bold q-ml-sm">
+                            {{ i18n.global.locale === 'zh' ? monitor.name : monitor.name_en }}
+                          </div>
+                          <q-icon class="q-mr-sm" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]" @click="refreshUint(monitor.id)"/>
+                        </div>
+                        <storage-cluster :unit-ceph-data="propsUnitData[monitor.id]" :unit-id="monitor.id" :grafana-url="monitor.grafana_url"></storage-cluster>
+                      </div>
                     </div>
-                  </div>
-                  <div v-else>
-                    <div class="text-center text-h6 q-py-lg">
-                      {{ tc('暂无监控单元') }}
+                    <div v-else>
+                      <div class="text-center text-h6 q-py-lg">
+                        {{ tc('暂无监控单元') }}
+                      </div>
                     </div>
-                  </div>
-                </q-card>
-              </q-expansion-item>
+                  </q-card>
+                </q-expansion-item>
+                <q-separator/>
+              </div>
             </q-list>
           </div>
         </div>

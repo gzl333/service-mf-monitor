@@ -34,6 +34,7 @@ const isIntervalOpen = ref(false)
 const isDisable = ref(true)
 // 用于判断刷新按钮显示和不显示 每一个子组件对应对象里的一个值
 const renovateShow = ref<Record<string, boolean>>({})
+const countObj = ref<Record<string, number>>({})
 const filterSelection = ref({
   label: '每30s刷新',
   labelEn: 'Refresh every 30 seconds',
@@ -91,23 +92,47 @@ const getServerQuery = async (monitor_unit_id: string) => {
   }
   return serverObject
 }
-const getAllUnit = () => {
+// const getData = (organization_id: string, page: number) => {
+//
+// }
+const getAllUnit = async () => {
   for (const organization of organizations.value) {
-    const unitObj: { [key: string]: string } = {}
-    // 获取机构下所有单元
-    monitor.monitor.getMonitorUnitServer({
+    await monitor.monitor.getMonitorUnitServer({
       query: {
         page: 1,
         page_size: 9999,
         organization_id: organization.id
       }
     }).then((res) => {
-      unitObj[organization.id] = res.data.results
-      Object.assign(serverUnitsObj.value, unitObj)
-      Object.assign(allServerUnitsObjData, unitObj)
+      countObj.value[organization.id] = res.data.count
     }).catch((error) => {
       console.log(error)
     })
+    // 获取机构下所有单元
+    const unitArr: ServiceUnitInterface[] = []
+    const numberRequest = Math.ceil(countObj.value[organization.id] / 100)
+    for (let i = 0; i < numberRequest; i++) {
+      const unitObj: { [key: string]: ServiceUnitInterface[] } = {}
+      await monitor.monitor.getMonitorUnitServer({
+        query: {
+          page: i + 1,
+          page_size: 100,
+          organization_id: organization.id
+        }
+      }).then((resp) => {
+        resp.data.results.forEach((unit: ServiceUnitInterface) => {
+          unitArr.unshift(unit)
+        })
+        if (i + 1 === numberRequest) {
+          unitObj[organization.id] = unitArr
+          Object.assign(serverUnitsObj.value, unitObj)
+          Object.assign(allServerUnitsObjData, unitObj)
+        }
+        console.log(serverUnitsObj.value)
+      }).catch((error) => {
+        console.log(error)
+      })
+    }
   }
 }
 getAllUnit()
@@ -212,48 +237,47 @@ onUnmounted(() => {
           </div>
           <div class="q-mt-lg">
             <q-list bordered>
-              <q-expansion-item
-                v-for="item in organizations"
-                :key="item.id"
-                expand-icon-class="text-primary"
-                header-class="bg-grey-1"
-                @show="openPanel(item.id)"
-                @hide="closePanel(item.id)"
-              >
-                <template v-slot:header>
-                  <q-item-section>
-                    <div class="row justify-between items-center">
-                      <div>
-                        <div class="text-subtitle1">{{ i18n.global.locale === 'zh' ? item.name : item.name_en }}</div>
-                        <div>{{ item?.abbreviation }}</div>
-                      </div>
-                      <div class="text-h6">{{ serverUnitsObj[item.id]?.length }}</div>
-                    </div>
-                    <q-separator/>
-                  </q-item-section>
-                </template>
-                <q-card>
-                  <div v-if="serverUnitsObj[item.id]?.length > 0">
-                    <div v-for="monitor in serverUnitsObj[item.id]" :key="monitor.id">
-                      <div class="row justify-between items-center q-mt-md">
-                        <div class="text-subtitle1 text-weight-bold q-ml-sm">
-                          {{ i18n.global.locale === 'zh' ? monitor.name : monitor.name_en }}
+              <div v-for="item in organizations" :key="item.id">
+                <q-expansion-item
+                  expand-icon-class="text-primary"
+                  header-class="bg-grey-2"
+                  @show="openPanel(item.id)"
+                  @hide="closePanel(item.id)"
+                >
+                  <template v-slot:header>
+                    <q-item-section>
+                      <div class="row justify-between items-center">
+                        <div>
+                          <div class="text-subtitle1">{{ i18n.global.locale === 'zh' ? item.name : item.name_en }}</div>
+                          <div>{{ item?.abbreviation }}</div>
                         </div>
-                        <q-icon class="q-mr-sm" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]"
-                                @click="refreshUint(monitor.id)"/>
+                        <div class="text-h6 text-primary">{{ countObj[item.id] }}</div>
                       </div>
-                      <server-cluster :unit-servers-data="propsUnitData[monitor.id]" :unit-id="monitor.id"
-                                      :grafana-url="monitor.grafana_url"></server-cluster>
+                    </q-item-section>
+                  </template>
+                  <q-card>
+                    <div v-if="serverUnitsObj[item.id]?.length > 0">
+                      <div v-for="monitor in serverUnitsObj[item.id]" :key="monitor.id">
+                        <div class="row justify-between items-center q-mt-md">
+                          <div class="text-subtitle1 text-weight-bold q-ml-sm">
+                            {{ i18n.global.locale === 'zh' ? monitor.name : monitor.name_en }}
+                          </div>
+                          <q-icon class="q-mr-sm" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]"
+                                  @click="refreshUint(monitor.id)"/>
+                        </div>
+                        <server-cluster :unit-servers-data="propsUnitData[monitor.id]" :unit-id="monitor.id"
+                                        :grafana-url="monitor.grafana_url"></server-cluster>
+                      </div>
                     </div>
-                  </div>
-                  <div v-else>
-                    <div class="text-center text-h6 q-py-lg">
-                      {{ tc('暂无监控单元') }}
+                    <div v-else>
+                      <div class="text-center text-h6 q-py-lg">
+                        {{ tc('暂无监控单元') }}
+                      </div>
                     </div>
-                  </div>
-                </q-card>
-<!--                <q-separator/>-->
-              </q-expansion-item>
+                  </q-card>
+                </q-expansion-item>
+                <q-separator/>
+              </div>
             </q-list>
           </div>
         </div>

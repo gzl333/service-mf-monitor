@@ -126,7 +126,7 @@ export interface ServiceUnitInterface {
   name: string
   name_en: string
   organization: {
-  bbreviation: string
+  abbreviation: string
   creation: string
   id: string
   name: string
