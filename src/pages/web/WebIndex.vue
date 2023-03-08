@@ -15,7 +15,7 @@ import { i18n } from 'boot/i18n'
 // const emits = defineEmits(['change', 'delete'])
 
 const store = useStore()
-// const route = userRoute()
+// const route = useRoute()
 // const router = useRouter()
 const tc = i18n.global.tc
 const activeItem = ref(store.items.currentPath[1])

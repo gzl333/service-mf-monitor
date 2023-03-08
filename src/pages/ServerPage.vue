@@ -79,48 +79,43 @@ const getServerQuery = async (monitor_unit_id: string) => {
   const serverObject: { [key: string]: string } = {}
   for (const query of serverQuery) {
     config.query.query = query
-    await monitor.monitor.getMonitorServerQuery(config).then((res) => {
-      if (res.data[0].value !== null) {
-        serverObject[query as keyof typeof serverObject] = res.data[0].value[1]
+    const MonitorServerQueryRes = await monitor.monitor.getMonitorServerQuery(config)
+    if (MonitorServerQueryRes.status === 200) {
+      if (MonitorServerQueryRes.data[0].value !== null) {
+        serverObject[query as keyof typeof serverObject] = MonitorServerQueryRes.data[0].value[1]
       } else {
         serverObject[query as keyof typeof serverObject] = '暂无数据'
       }
-    }).catch((error) => {
-      serverObject[query as keyof typeof serverObject] = '获取数据出错'
-      console.log(error)
-    })
+    }
   }
   return serverObject
 }
-// const getData = (organization_id: string, page: number) => {
-//
-// }
 const getAllUnit = async () => {
   for (const organization of organizations.value) {
-    await monitor.monitor.getMonitorUnitServer({
+    const monitorUnitServer = await monitor.monitor.getMonitorUnitServer({
       query: {
         page: 1,
         page_size: 9999,
         organization_id: organization.id
       }
-    }).then((res) => {
-      countObj.value[organization.id] = res.data.count
-    }).catch((error) => {
-      console.log(error)
     })
+    if (monitorUnitServer.status === 200) {
+      countObj.value[organization.id] = monitorUnitServer.data.count
+    }
     // 获取机构下所有单元
     const unitArr: ServiceUnitInterface[] = []
     const numberRequest = Math.ceil(countObj.value[organization.id] / 100)
     for (let i = 0; i < numberRequest; i++) {
       const unitObj: { [key: string]: ServiceUnitInterface[] } = {}
-      await monitor.monitor.getMonitorUnitServer({
+      const monitorUnitServerRes = await monitor.monitor.getMonitorUnitServer({
         query: {
           page: i + 1,
           page_size: 100,
           organization_id: organization.id
         }
-      }).then((resp) => {
-        resp.data.results.forEach((unit: ServiceUnitInterface) => {
+      })
+      if (monitorUnitServerRes.status === 200) {
+        monitorUnitServerRes.data.results.forEach((unit: ServiceUnitInterface) => {
           unitArr.unshift(unit)
         })
         if (i + 1 === numberRequest) {
@@ -128,10 +123,7 @@ const getAllUnit = async () => {
           Object.assign(serverUnitsObj.value, unitObj)
           Object.assign(allServerUnitsObjData, unitObj)
         }
-        console.log(serverUnitsObj.value)
-      }).catch((error) => {
-        console.log(error)
-      })
+      }
     }
   }
 }

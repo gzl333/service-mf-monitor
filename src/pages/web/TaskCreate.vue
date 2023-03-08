@@ -32,7 +32,7 @@ const visible = ref(false)
 const urlReg = /^([hH][tT]{2}[pP]:\/\/|[hH][tT]{2}[pP][sS]:\/\/)(([A-Za-z0-9-~]+).)+([A-Za-z0-9-~/])+$/
 const onSubmit = async () => {
   visible.value = true
-  await monitor.monitor.postMonitorWebsite({ body: query.value }).then((res) => {
+  monitor.monitor.postMonitorWebsite({ body: query.value }).then((res) => {
     if (res.status === 200) {
       Notify.create({
         classes: 'notification-positive shadow-15',
@@ -49,6 +49,7 @@ const onSubmit = async () => {
         url: '',
         remark: ''
       }
+      visible.value = false
     }
   }).catch((error) => {
     Notify.create({
@@ -61,8 +62,8 @@ const onSubmit = async () => {
       timeout: 5000,
       multiLine: false
     })
+    visible.value = false
   })
-  visible.value = false
 }
 const onReset = () => {
   query.value = {

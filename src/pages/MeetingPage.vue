@@ -278,11 +278,10 @@ const getMeetingStatusData = async (query: string) => {
     }
   }
   let response: MeetingStatusInterface[] = []
-  await monitor.monitor.getMonitorVideoQuery(config).then((res) => {
-    response = res.data
-  }).catch((error) => {
-    console.log(error)
-  })
+  const MonitorVideoQuery = await monitor.monitor.getMonitorVideoQuery(config)
+  if (MonitorVideoQuery.status === 200) {
+    response = MonitorVideoQuery.data
+  }
   return response
 }
 // 获得状态信息后处理数据

@@ -19,6 +19,10 @@ const routes: RouteRecordRaw[] = [
             path: 'create',
             component: () => import('pages/web/TaskCreate.vue'),
             props: true // 接收url中的参数
+          },
+          {
+            path: 'detail/:webMonitorTaskId',
+            component: () => import('pages/web/WebMonitorTaskDetail.vue')
           }
         ]
       },

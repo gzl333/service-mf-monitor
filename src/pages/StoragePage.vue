@@ -26,6 +26,7 @@ const allStorageUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
 const allExpendUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
 // 传输给子组件的数据
 const propsUnitData = ref<Record<string, unknown>>({})
+const countObj = ref<Record<string, number>>({})
 let timer: NodeJS.Timer | null
 const keyword = ref('')
 // 用于判断是否可点击
@@ -78,30 +79,65 @@ const getStorageQuery = async (monitor_unit_id: string) => {
   const storageObject: {[key: string]: string } = {}
   for (const query of storageQuery) {
     config.query.query = query
-    await monitor.monitor.getMonitorCephQuery(config).then((res) => {
-      if (res.data[0].value !== null) {
-        storageObject[query as keyof typeof storageObject] = res.data[0].value[1]
+    const MonitorCephQuery = await monitor.monitor.getMonitorCephQuery(config)
+    if (MonitorCephQuery.status === 200) {
+      if (MonitorCephQuery.data[0].value !== null) {
+        storageObject[query as keyof typeof storageObject] = MonitorCephQuery.data[0].value[1]
       } else {
         storageObject[query as keyof typeof storageObject] = '暂无数据'
       }
-    }).catch((error) => {
-      console.log(error)
-      storageObject[query as keyof typeof storageObject] = '获取数据出错'
-    })
+    }
   }
   return storageObject
 }
-const getAllUnit = () => {
+// const getAllUnit = () => {
+//   for (const organization of organizations.value) {
+//     const unitObj: { [key: string]: string } = {}
+//     // 获取机构下所有单元
+//     monitor.monitor.getMonitorUnitCeph({ query: { page: 1, page_size: 9999, organization_id: organization.id } }).then((unitCephRes) => {
+//       unitObj[organization.id] = unitCephRes.data.results
+//       Object.assign(storageUnitsObj.value, unitObj)
+//       Object.assign(allStorageUnitsObjData, unitObj)
+//     }).catch((error) => {
+//       console.log(error)
+//     })
+//   }
+// }
+const getAllUnit = async () => {
   for (const organization of organizations.value) {
-    const unitObj: { [key: string]: string } = {}
-    // 获取机构下所有单元
-    monitor.monitor.getMonitorUnitCeph({ query: { page: 1, page_size: 9999, organization_id: organization.id } }).then((unitCephRes) => {
-      unitObj[organization.id] = unitCephRes.data.results
-      Object.assign(storageUnitsObj.value, unitObj)
-      Object.assign(allStorageUnitsObjData, unitObj)
-    }).catch((error) => {
-      console.log(error)
+    const monitorUnitCeph = await monitor.monitor.getMonitorUnitCeph({
+      query: {
+        page: 1,
+        page_size: 9999,
+        organization_id: organization.id
+      }
     })
+    if (monitorUnitCeph.status === 200) {
+      countObj.value[organization.id] = monitorUnitCeph.data.count
+    }
+    // 获取机构下所有单元
+    const unitArr: ServiceUnitInterface[] = []
+    const numberRequest = Math.ceil(countObj.value[organization.id] / 100)
+    for (let i = 0; i < numberRequest; i++) {
+      const unitObj: { [key: string]: ServiceUnitInterface[] } = {}
+      const monitorUnitServerRes = await monitor.monitor.getMonitorUnitCeph({
+        query: {
+          page: i + 1,
+          page_size: 100,
+          organization_id: organization.id
+        }
+      })
+      if (monitorUnitServerRes.status === 200) {
+        monitorUnitServerRes.data.results.forEach((unit: ServiceUnitInterface) => {
+          unitArr.unshift(unit)
+        })
+        if (i + 1 === numberRequest) {
+          unitObj[organization.id] = unitArr
+          Object.assign(storageUnitsObj.value, unitObj)
+          Object.assign(allStorageUnitsObjData, unitObj)
+        }
+      }
+    }
   }
 }
 getAllUnit()
@@ -210,7 +246,7 @@ onUnmounted(() => {
                           <div class="text-subtitle1">{{ i18n.global.locale === 'zh' ? org.name : org.name_en }}</div>
                           <div>{{ org?.abbreviation }}</div>
                         </div>
-                        <div class="text-h6 text-primary">{{ storageUnitsObj[org.id]?.length }}</div>
+                        <div class="text-h6 text-primary">{{ countObj[org.id] }}</div>
                       </div>
                     </q-item-section>
                   </template>
