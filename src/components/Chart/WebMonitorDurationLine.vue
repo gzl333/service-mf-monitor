@@ -14,6 +14,7 @@ const props = defineProps({
     required: true
   }
 })
+console.log(props)
 const container = ref<HTMLElement>()
 onMounted(() => {
   const chart = echarts.init(container.value!)
@@ -36,7 +37,7 @@ onMounted(() => {
 
 <template>
   <div class="WebMonitorStatusLine" style="width: 100%">
-    <div ref="container" :style="{ width: '100%', height: '400px' }"></div>
+    <div ref="container" :style="{ width: '100%', height: '450px' }"></div>
   </div>
 </template>
 

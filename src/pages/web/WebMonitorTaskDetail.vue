@@ -20,7 +20,20 @@ import WebMonitorDurationLine from 'components/Chart/WebMonitorDurationLine.vue'
 // })
 // const emits = defineEmits(['change', 'delete'])
 interface RequestConsumingInterface {
-  total: string[]
+  metric: {
+    group: string
+    instance: string
+    job: string
+    monitor: string
+    phase: string
+    receive_cluster: string
+    receive_replica: string
+    tenant_id: string
+    url: string
+    urlhash: string
+    __name__: string
+  }
+  values: Array<string | number>[]
 }
 const store = useStore()
 const route = useRoute()
@@ -32,9 +45,7 @@ const statusMonitorTime = ref<Array<string | number>>([])
 const statusCodeMonitor = ref<Array<string | number>>([])
 const statusPieData = ref<Array<number>>([])
 const requestConsumingTime = ref<Array<string>>([])
-const requestConsumingObj = ref<RequestConsumingInterface>({
-  total: []
-})
+const requestConsumingObj = ref<{ [key: string]: string[] }>({})
 let statusNormalTimes = 0
 let statusExceptionsTimes = 0
 const day = new Date()
@@ -107,6 +118,7 @@ const option = computed(() => ({
 }))
 const option1 = computed(() => ({
   grid: {
+    top: 130,
     left: 50,
     right: 50,
     bottom: 50
@@ -114,11 +126,22 @@ const option1 = computed(() => ({
   title: [
     {
       left: 'center',
-      text: 'Gradient along the y axis'
+      text: '近5分钟请求耗时'
     }
   ],
+  legend: {
+    top: 50,
+    data: ['总耗时', '域名解析耗时', 'TCP连接耗时', '数据解析耗时', 'TLS连接耗时', '传输耗时']
+  },
   tooltip: {
-    trigger: 'axis'
+    trigger: 'axis',
+    formatter: function (params: Record<string, any>) {
+      let relVal = params[0].name
+      for (let i = 0, l = params.length; i < l; i++) {
+        relVal += '<br/>' + params[i].marker + params[i].seriesName + ' : ' + params[i].value + '毫秒'
+      }
+      return relVal
+    }
   },
   xAxis: {
     type: 'category',
@@ -131,16 +154,40 @@ const option1 = computed(() => ({
   series: [
     {
       type: 'line',
-      name: 'Direct',
+      name: '总耗时',
       showSymbol: false,
       data: requestConsumingObj.value.total
+    },
+    {
+      type: 'line',
+      name: 'TCP连接耗时',
+      showSymbol: false,
+      data: requestConsumingObj.value.connect
+    },
+    {
+      type: 'line',
+      name: 'dns解析耗时',
+      showSymbol: false,
+      data: requestConsumingObj.value.processing
+    },
+    {
+      type: 'line',
+      name: '数据解析耗时',
+      showSymbol: false,
+      data: requestConsumingObj.value.resolve
+    },
+    {
+      type: 'line',
+      name: 'TLS连接耗时',
+      showSymbol: false,
+      data: requestConsumingObj.value.tls
+    },
+    {
+      type: 'line',
+      name: '传输耗时',
+      showSymbol: false,
+      data: requestConsumingObj.value.transfer
     }
-    // {
-    //   type: 'line',
-    //   name: 'Direct1',
-    //   showSymbol: false,
-    //   data: valueList1
-    // }
   ]
 }))
 const calcNums = (arr: [], status: string) => {
@@ -152,7 +199,7 @@ const calcNums = (arr: [], status: string) => {
     }
   })
 }
-const getWebMonitoringData = async (id: string) => {
+const getWebMonitoringData = (id: string) => {
   monitor.monitor.getMonitorWebsiteQuery({ query: { query: 'http_status_code', detection_point_id: id }, path: { id: taskId } }).then((res) => {
     res.data[0].values.forEach((item: Array<string | number>) => {
       const formattedString = date.formatDate(Number(item[0]) * 1000, 'HH:mm:ss')
@@ -169,11 +216,25 @@ const getWebMonitoringData = async (id: string) => {
     console.log(error)
   })
   monitor.monitor.getMonitorWebsiteQuery({ query: { query: 'duration_seconds', detection_point_id: id }, path: { id: taskId } }).then((res) => {
+    const arr: string[] = []
     res.data[0].values.forEach((item: [number, string]) => {
       const formattedString = date.formatDate(Number(item[0]) * 1000, 'HH:mm:ss')
       requestConsumingTime.value.push(formattedString)
-      requestConsumingObj.value.total.push((Number(item[1]) * 1000).toFixed(2))
+      arr.push((Number(item[1]) * 1000).toFixed(2))
     })
+    requestConsumingObj.value.total = arr
+  }).catch((error) => {
+    console.log(error)
+  })
+  monitor.monitor.getMonitorWebsiteQuery({ query: { query: 'http_duration_seconds', detection_point_id: id }, path: { id: taskId } }).then((res) => {
+    res.data.forEach((types: RequestConsumingInterface) => {
+      const arr: string[] = []
+      types.values.forEach((item: Array<string | number>) => {
+        arr.push((Number(item[1]) * 1000).toFixed(2))
+      })
+      requestConsumingObj.value[types.metric.phase] = arr
+    })
+    console.log(requestConsumingObj.value)
   }).catch((error) => {
     console.log(error)
   })
@@ -183,6 +244,7 @@ const selectPoint = () => {
   statusCodeMonitor.value = []
   statusNormalTimes = 0
   statusExceptionsTimes = 0
+  requestConsumingObj.value = {}
   getWebMonitoringData(pointId.value.value)
 }
 const goBack = () => {
