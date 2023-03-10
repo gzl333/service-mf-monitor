@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onBeforeMount, onBeforeUnmount } from 'vue'
-// import { navigateToUrl } from 'single-spa'
+import { navigateToUrl } from 'single-spa'
 import { useStore } from 'stores/store'
 // import { useRoute, useRouter } from 'vue-router'
-// import WebTaskLineChart from 'components/Chart/WebTaskLineChart.vue'
 import monitor from 'src/api/monitor'
 import { date } from 'quasar'
 import { i18n } from 'boot/i18n'
@@ -74,57 +73,49 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="TasksList">
-<!--    <div class="row justify-between" style="height: 180px">-->
-<!--      <q-card flat bordered class="my-card col-5 no-border-radius">-->
-<!--        <div class="q-mt-sm">-->
-<!--          <div class="text-subtitle1 text-grey-8 q-ml-sm">-->
-<!--            监控任务-->
-<!--          </div>-->
-<!--          <div class="text-h5 q-mt-xs q-ml-lg">-->
-<!--            {{ paginationTable.count }}-->
-<!--          </div>-->
-<!--        </div>-->
-<!--        <div class="q-mt-sm">-->
-<!--          <web-task-line-chart/>-->
-<!--        </div>-->
-<!--        <q-separator class="q-mt-md"/>-->
-<!--        <div class="text-grey-8 q-pb-sm q-ml-sm q-mt-sm">-->
-<!--          <span>最新任务时间：</span>-->
-<!--          <span>{{ date.formatDate(tableRow[0]?.creation, 'YYYY-MM-DD HH:mm') }}</span>-->
-<!--        </div>-->
-<!--      </q-card>-->
-<!--      <q-card flat bordered class="my-card col-5 no-border-radius">-->
-<!--        <div class="q-mt-sm">-->
-<!--          <div class="text-subtitle1 text-grey-8 q-ml-sm">-->
-<!--            实时告警-->
-<!--          </div>-->
-<!--          <div class="text-h5 q-mt-xs q-ml-lg">-->
-<!--            0-->
-<!--          </div>-->
-<!--        </div>-->
-<!--        <q-separator class="q-mt-sm"/>-->
-<!--        <div class="text-grey-8 q-pb-sm q-ml-sm q-mt-sm">-->
-<!--          <span>最新告警信息：</span>-->
-<!--          <div class="row justify-between">-->
-<!--            <div>日志监控告警</div>-->
-<!--            <div class="q-mr-sm">{{ date.formatDate(tableRow[0]?.creation, 'YYYY-MM-DD HH:mm') }}</div>-->
-<!--          </div>-->
-<!--          <div class="row justify-between">-->
-<!--            <div>日志监控告警</div>-->
-<!--            <div class="q-mr-sm">{{ date.formatDate(tableRow[0]?.creation, 'YYYY-MM-DD HH:mm') }}</div>-->
-<!--          </div>-->
-<!--          <div class="row justify-between">-->
-<!--            <div>日志监控告警</div>-->
-<!--            <div class="q-mr-sm">{{ date.formatDate(tableRow[0]?.creation, 'YYYY-MM-DD HH:mm') }}</div>-->
-<!--          </div>-->
-<!--          <div class="row justify-between">-->
-<!--            <div>日志监控告警</div>-->
-<!--            <div class="q-mr-sm">{{ date.formatDate(tableRow[0]?.creation, 'YYYY-MM-DD HH:mm') }}</div>-->
-<!--          </div>-->
-<!--        </div>-->
-<!--      </q-card>-->
-<!--    </div>-->
     <div class="row">
+      <q-card flat bordered class="my-card col-4 no-border-radius">
+        <div class="q-mt-sm row justify-between">
+          <div>
+            <div class="text-subtitle1 text-grey-8 q-ml-sm">
+              当前监控任务
+            </div>
+            <div class="text-h5 q-mt-xs q-ml-lg">
+              {{ paginationTable.count }}
+            </div>
+          </div>
+          <div>
+            <div class="text-subtitle1 text-grey-8 q-mr-sm">
+              实时告警
+            </div>
+            <div class="text-h5 text-negative q-mt-xs q-ml-lg">
+              0
+            </div>
+          </div>
+        </div>
+        <q-separator class="q-mt-sm"/>
+        <div class="text-grey-8 q-pb-sm q-ml-sm q-mt-sm">
+          <span>最新告警信息：</span>
+          <div class="row justify-between">
+            <div>日志监控告警</div>
+            <div class="q-mr-sm">{{ date.formatDate(tableRow[0]?.creation, 'YYYY-MM-DD HH:mm') }}</div>
+          </div>
+          <div class="row justify-between">
+            <div>日志监控告警</div>
+            <div class="q-mr-sm">{{ date.formatDate(tableRow[0]?.creation, 'YYYY-MM-DD HH:mm') }}</div>
+          </div>
+          <div class="row justify-between">
+            <div>日志监控告警</div>
+            <div class="q-mr-sm">{{ date.formatDate(tableRow[0]?.creation, 'YYYY-MM-DD HH:mm') }}</div>
+          </div>
+          <div class="row justify-between">
+            <div>日志监控告警</div>
+            <div class="q-mr-sm">{{ date.formatDate(tableRow[0]?.creation, 'YYYY-MM-DD HH:mm') }}</div>
+          </div>
+        </div>
+      </q-card>
+    </div>
+    <div class="row q-mt-xl">
       <q-table
         flat
         class="col"
@@ -142,7 +133,7 @@ onBeforeUnmount(() => {
         <template v-slot:body="props">
           <q-tr :props="props">
             <q-td key="id" :props="props" class="no-padding">
-<!--              <q-btn flat color="primary" label="查看详情" @click="navigateToUrl(`/my/monitor/web/detail/${props.row.id}`)"/>-->
+              <q-btn flat color="primary" label="查看详情" @click="navigateToUrl(`/my/monitor/web/detail/${props.row.id}`)"/>
               <span>{{ props.row.id }}</span>
             </q-td>
             <q-td key="name" :props="props" class="no-padding">

@@ -112,7 +112,7 @@ console.log('table', store.tables)
 
     <q-page-container>
       <q-page>
-        <q-scroll-area style="height: calc(100vh - 60px)">
+        <q-scroll-area style="height: calc(100vh - 80px)">
           <router-view/>
         </q-scroll-area>
       </q-page>

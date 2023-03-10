@@ -215,7 +215,10 @@ onUnmounted(() => {
     <div class="column">
       <div class="row justify-center">
         <div class="content-fixed-width">
-          <div class="row items-center q-mt-xl">
+          <div class="text-h6 q-pt-lg">
+            {{ tc('主机集群') }}
+          </div>
+          <div class="row items-center q-mt-lg">
             <div class="row col-8">
               <q-input class="col-5" outlined dense clearable :disable="isDisable" v-model="keyword"
                        :label="tc('输入关键字搜索')" @update:model-value="keywordSearch"/>

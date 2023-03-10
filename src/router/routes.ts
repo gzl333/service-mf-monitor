@@ -13,11 +13,11 @@ const routes: RouteRecordRaw[] = [
         children: [
           {
             path: 'list',
-            component: () => import('pages/web/TasksList.vue')
+            component: () => import('pages/web/WebTasksList.vue')
           },
           {
             path: 'create',
-            component: () => import('pages/web/TaskCreate.vue'),
+            component: () => import('pages/web/WebTaskCreate.vue'),
             props: true // 接收url中的参数
           },
           {

@@ -34,12 +34,6 @@ export default {
       }
       return axiosMonitor.get('/monitor/video-meeting/query', config)
     },
-    getMonitorOrganization (payload?: { query: { page: number, page_size: number } }) {
-      const config = {
-        params: payload?.query
-      }
-      return axiosMonitor.get('/monitor/organization', config)
-    },
     getMonitorUnitServer (payload?: { query: { page: number; page_size: number, organization_id: string } }) {
       const config = {
         params: payload?.query
@@ -80,6 +74,24 @@ export default {
     },
     deleteMonitorWebsite (payload: { path: { id: string } }) {
       return axiosMonitor.delete('/monitor/website/' + payload.path.id)
+    },
+    geiMonitorWebsiteDetectionPoint (payload?: { query: { page: number, page_size: number, enable: boolean } }) {
+      const config = {
+        params: payload?.query
+      }
+      return axiosMonitor.get('/monitor/website/detection-point', config)
+    },
+    getMonitorWebsiteQuery (payload: { query: { query: string, detection_point_id: string }, path: { id: string } }) {
+      const config = {
+        params: payload.query
+      }
+      return axiosMonitor.get('/monitor/website/' + payload.path.id + '/query', config)
+    },
+    getMonitorWebsiteQueryRange (payload: { query: { query: string, start: number, end?: number, step?: number, detection_point_id: string }, path: { id: string } }) {
+      const config = {
+        params: payload.query
+      }
+      return axiosMonitor.get('/monitor/website/' + payload.path.id + '/query/range', config)
     }
   }
 }

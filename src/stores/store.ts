@@ -3,8 +3,8 @@ import monitor from 'src/api/monitor'
 import { normalize, schema } from 'normalizr'
 import { Dialog } from 'quasar'
 
-import TaskDeleteDialog from 'components/task/TaskDeleteDialog.vue'
-import TaskReviseDialog from 'components/task/TaskReviseDialog.vue'
+import WebTaskDeleteDialog from 'components/web/WebTaskDeleteDialog.vue'
+import WebTaskReviseDialog from 'components/web/WebTaskReviseDialog.vue'
 export interface DataCenterInterface {
   // 来自registry接口
   id: string
@@ -26,23 +26,6 @@ export interface DataCenterInterface {
   // 来自service接口
   services: string[] // 全部services汇总
   // personalServices: string[] // 用户可用services汇总
-}
-
-export interface OrganizationInterface {
-  abbreviation: string
-  address: string
-  city: string
-  country: string
-  creation: string
-  id: string
-  latitude: number
-  longitude: number
-  modification: string
-  name: string
-  name_en: string
-  postal_code: string
-  remark: string
-  sort_weight: number
 }
 
 export interface ServiceInterface {
@@ -92,31 +75,6 @@ export interface StartPointInterface {
   name: string
 }
 
-export interface StorageUnitInterface {
-  cluster_total_bytes: string
-  cluster_total_used_bytes: string
-  health_status: string
-  osd_down: string
-  osd_in: string
-  osd_out: string
-  osd_up: string
-}
-
-export interface ServerUnitInterface {
-  cpu_usage: string
-  disk_usage: string
-  health_status: string
-  host_count: string
-  host_up_count: string
-  max_cpu_usage: string
-  max_disk_usage: string
-  max_mem_usage: string
-  mem_usage: string
-  min_cpu_usage: string
-  min_disk_usage: string
-  min_mem_usage: string
-}
-
 export interface ServiceUnitInterface {
   creation: string
   dashboard_url: string
@@ -137,6 +95,16 @@ export interface ServiceUnitInterface {
   sort_weight: string
 }
 
+export interface DetectionPointInterface {
+  creation: string
+  enable: boolean
+  id: string
+  modification: string
+  name: string
+  name_en: string
+  remark: string
+}
+
 export const useStore = defineStore('monitor', {
   state: () => ({
     items: {
@@ -155,8 +123,8 @@ export const useStore = defineStore('monitor', {
         allIds: [],
         isLoaded: false
       },
-      organizationTable: {
-        byId: {} as Record<string, OrganizationInterface>,
+      detectionPointTable: {
+        byId: {} as Record<string, DetectionPointInterface>,
         allIds: [],
         isLoaded: false
       }
@@ -170,6 +138,19 @@ export const useStore = defineStore('monitor', {
         allOrganizations.unshift(organization)
       })
       return allOrganizations
+    },
+    getDetectionPointTable: state => (): {value: string, label: string, labelEn: string}[] => {
+      const pointOptions = []
+      for (const service of Object.values(state.tables.detectionPointTable.byId)) {
+        pointOptions.push(
+          {
+            value: service.id,
+            label: service.name,
+            labelEn: service.name_en
+          }
+        )
+      }
+      return pointOptions
     }
   },
   actions: {
@@ -181,9 +162,9 @@ export const useStore = defineStore('monitor', {
           }
         })
       }
-      // if (!this.tables.organizationTable.isLoaded) {
-      //   void this.loadOrganizationTable()
-      // }
+      if (!this.tables.detectionPointTable.isLoaded) {
+        void this.loadDetectionPointTable()
+      }
     },
     async loadDataCenterTable () {
       this.tables.dataCenterTable = {
@@ -224,44 +205,26 @@ export const useStore = defineStore('monitor', {
       })
       this.tables.serviceTable.isLoaded = true
     },
-    async loadOrganizationTable () {
-      this.tables.organizationTable = {
+    async loadDetectionPointTable () {
+      this.tables.detectionPointTable = {
         byId: {},
         allIds: [],
         isLoaded: false
       }
-      const respOrganization = await monitor.monitor.getMonitorOrganization({ query: { page: 1, page_size: 9999 } })
-      const count = respOrganization.data.count
-      const organization = new schema.Entity('organization', {})
-      respOrganization.data.results.forEach((data: Record<string, never>) => {
-        const normalizedData = normalize(data, organization)
-        Object.assign(this.tables.organizationTable.byId, normalizedData.entities.organization)
+      const respDetectionPoint = await monitor.monitor.geiMonitorWebsiteDetectionPoint()
+      const point = new schema.Entity('point', {})
+      respDetectionPoint.data.results.forEach((data: Record<string, never>) => {
+        const normalizedData = normalize(data, point)
+        Object.assign(this.tables.detectionPointTable.byId, normalizedData.entities.point)
         // @ts-ignore
-        this.tables.organizationTable.allIds.unshift(Object.keys(normalizedData.entities.organization)[0])
-        this.tables.organizationTable.allIds = [...new Set(this.tables.organizationTable.allIds)]
+        this.tables.detectionPointTable.allIds.unshift(Object.keys(normalizedData.entities.point)[0])
+        this.tables.detectionPointTable.allIds = [...new Set(this.tables.detectionPointTable.allIds)]
       })
-      if (count > 1000) {
-        for (let i = 0; i < Math.floor(count / 1000); i++) {
-          let pageSize = 1000
-          if (i + 1 === Math.floor(count / 1000)) {
-            pageSize = count - (1000 * Math.floor(count / 1000))
-          }
-          const respOrganization = await monitor.monitor.getMonitorOrganization({ query: { page: i + 2, page_size: pageSize } })
-          const organization = new schema.Entity('organization', {})
-          respOrganization.data.results.forEach((data: Record<string, never>) => {
-            const normalizedData = normalize(data, organization)
-            Object.assign(this.tables.organizationTable.byId, normalizedData.entities.organization)
-            // @ts-ignore
-            this.tables.organizationTable.allIds.unshift(Object.keys(normalizedData.entities.organization)[0])
-            this.tables.organizationTable.allIds = [...new Set(this.tables.organizationTable.allIds)]
-          })
-        }
-      }
-      this.tables.organizationTable.isLoaded = true
+      this.tables.detectionPointTable.isLoaded = true
     },
     triggerDeleteTaskDialog (task_Id: string) {
       Dialog.create({
-        component: TaskDeleteDialog,
+        component: WebTaskDeleteDialog,
         componentProps: {
           task_Id
         }
@@ -269,7 +232,7 @@ export const useStore = defineStore('monitor', {
     },
     triggerReviseTaskDialog (payload: { id: string, name: string, url: string, remark: string }) {
       Dialog.create({
-        component: TaskReviseDialog,
+        component: WebTaskReviseDialog,
         componentProps: {
           taskObj: payload
         }

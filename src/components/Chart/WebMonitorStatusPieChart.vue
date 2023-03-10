@@ -15,19 +15,19 @@ echarts.use([
   LabelLayout
 ])
 
-// const props = defineProps({
-//   chartData: {
-//     type: Array,
-//     required: false
-//   }
-// })
+const props = defineProps({
+  chartData: {
+    type: Array,
+    required: true
+  }
+})
 const container = ref<HTMLElement>()
 // defineExpose({ })
 onMounted(() => {
   const chart = echarts.init(container.value!)
   const option = computed(() => ({
     title: {
-      text: '昨日请求状态分布',
+      text: '请求状态码分布',
       left: 'center'
     },
     tooltip: {
@@ -39,15 +39,11 @@ onMounted(() => {
     },
     series: [
       {
-        name: 'Access From',
         type: 'pie',
         radius: '50%',
         data: [
-          { value: 1048, name: '403' },
-          { value: 735, name: '200' },
-          { value: 580, name: '404' },
-          { value: 484, name: '500' },
-          { value: 300, name: '其他' }
+          { value: props.chartData[0], name: '200', itemStyle: { color: '#00BB00' } },
+          { value: props.chartData[1], name: '异常', itemStyle: { color: '#c00000' } }
         ],
         emphasis: {
           itemStyle: {
