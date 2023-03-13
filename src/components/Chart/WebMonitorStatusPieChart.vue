@@ -28,6 +28,7 @@ onMounted(() => {
   const option = computed(() => ({
     title: {
       text: '请求状态码分布',
+      subtext: '统计时间：当日00：00至现在时间',
       left: 'center'
     },
     tooltip: {

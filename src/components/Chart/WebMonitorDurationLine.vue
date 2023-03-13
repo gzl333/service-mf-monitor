@@ -14,7 +14,6 @@ const props = defineProps({
     required: true
   }
 })
-console.log(props)
 const container = ref<HTMLElement>()
 onMounted(() => {
   const chart = echarts.init(container.value!)

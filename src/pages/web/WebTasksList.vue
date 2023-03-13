@@ -60,6 +60,7 @@ const getAllTaskData = async () => {
 }
 $bus.on('renovate', async (value: boolean) => {
   if (value) {
+    paginationTable.value.page = 1
     await getAllTaskData()
   }
 })
@@ -115,7 +116,7 @@ onBeforeUnmount(() => {
         </div>
       </q-card>
     </div>
-    <div class="row q-mt-xl">
+    <div class="row q-mt-md">
       <q-table
         flat
         class="col"

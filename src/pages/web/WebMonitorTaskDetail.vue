@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from 'vue'
+import { computed, ref, onMounted, watch, onUnmounted } from 'vue'
 // import { navigateToUrl } from 'single-spa'
 import { useStore } from 'stores/store'
 import { useRoute, useRouter } from 'vue-router'
@@ -51,22 +51,51 @@ let statusExceptionsTimes = 0
 const day = new Date()
 const yesterdayTime = String(day.getFullYear()) + '/' + String(day.getMonth() + 1) + '/' + String(day.getDate() - 1) + ' 24:0:0'
 const yesterdayTimeStamp = date.formatDate(yesterdayTime, 'X')
-// const arr = ref([
-//   '200', '400', '200', '200', '200', '401', '200', '200', '403', '200', '200', '404', '200', '200', '200', '200', '500', '200', '200', '200'
-// ])
 const pointId = ref({
   label: '',
   labelEn: '',
   value: ''
 })
-const option = computed(() => ({
+const filterSelection = ref({
+  label: '每30s刷新',
+  labelEn: 'Refresh every 30 seconds',
+  value: 30
+})
+const filterOptions = [
+  {
+    label: '每30s刷新',
+    labelEn: 'Refresh every 30 seconds',
+    value: 30
+  },
+  {
+    label: '每1min刷新',
+    labelEn: 'Refresh every 1 minute',
+    value: 60
+  },
+  {
+    label: '每10min刷新',
+    labelEn: 'Refresh every 10 minutes',
+    value: 600
+  },
+  {
+    label: '每30min刷新',
+    labelEn: 'Refresh every 30 minutes',
+    value: 1800
+  },
+  {
+    label: '每1h刷新',
+    labelEn: 'Refresh every 1 hour',
+    value: 3600
+  }
+]
+const statusOption = computed(() => ({
   grid: {
     left: 50,
     right: 50,
     bottom: 50
   },
   title: {
-    text: '近5分钟实时状态',
+    text: '实时请求状态',
     left: 'center'
   },
   tooltip: {
@@ -116,7 +145,7 @@ const option = computed(() => ({
     }
   ]
 }))
-const option1 = computed(() => ({
+const durationOption = computed(() => ({
   grid: {
     top: 130,
     left: 50,
@@ -126,7 +155,7 @@ const option1 = computed(() => ({
   title: [
     {
       left: 'center',
-      text: '近5分钟请求耗时'
+      text: '实时请求耗时'
     }
   ],
   legend: {
@@ -234,22 +263,31 @@ const getWebMonitoringData = (id: string) => {
       })
       requestConsumingObj.value[types.metric.phase] = arr
     })
-    console.log(requestConsumingObj.value)
   }).catch((error) => {
     console.log(error)
   })
 }
-const selectPoint = () => {
+const refreshData = () => {
   statusMonitorTime.value = []
   statusCodeMonitor.value = []
   statusNormalTimes = 0
   statusExceptionsTimes = 0
+  requestConsumingTime.value = []
   requestConsumingObj.value = {}
   getWebMonitoringData(pointId.value.value)
 }
 const goBack = () => {
   router.go(-1)
 }
+let timer = setInterval(() => {
+  refreshData()
+}, filterSelection.value.value * 1000)
+watch(filterSelection, () => {
+  clearInterval(Number(timer))
+  timer = setInterval(() => {
+    refreshData()
+  }, filterSelection.value.value * 1000)
+})
 watch(detectionPoints, () => {
   if (detectionPoints.value.length > 0) {
     pointId.value = detectionPoints.value[0]
@@ -261,6 +299,9 @@ onMounted(() => {
     pointId.value = detectionPoints.value[0]
     getWebMonitoringData(pointId.value.value)
   }
+})
+onUnmounted(() => {
+  clearInterval(Number(timer))
 })
 </script>
 
@@ -274,22 +315,25 @@ onMounted(() => {
       </div>
     </div>
     <div class="row justify-end">
-      <q-select class="col-3" outlined dense v-model="pointId" :options="detectionPoints" @update:model-value="selectPoint" :label="tc('选择监控站点')" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'"/>
+      <q-select class="col-3 q-mr-sm" outlined dense v-model="pointId" :options="detectionPoints" @update:model-value="refreshData" :label="tc('选择监控站点')" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'"/>
+      <q-select class="col-3" outlined dense v-model="filterSelection"
+                :options="filterOptions"
+                :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')"/>
     </div>
-    <div class="row q-mt-xl justify-between">
+    <div class="row q-mt-xl">
       <div class="col-12">
         <q-card flat bordered class="no-border-radius">
-          <web-monitor-status-line :option="option"/>
+          <web-monitor-status-line :option="statusOption"/>
         </q-card>
       </div>
-      <div class="col-6 q-mt-xl">
+      <div class="col-6 q-mt-md">
         <q-card flat bordered class="no-border-radius">
         <pie-chart :chart-data="statusPieData"></pie-chart>
         </q-card>
       </div>
-      <div class="col-12 q-mt-xl">
+      <div class="col-12 q-mt-md">
         <q-card flat bordered class="no-border-radius">
-          <web-monitor-duration-line :option="option1"/>
+          <web-monitor-duration-line :option="durationOption"/>
         </q-card>
       </div>
     </div>
