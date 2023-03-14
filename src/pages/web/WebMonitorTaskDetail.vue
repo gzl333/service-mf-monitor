@@ -6,10 +6,10 @@ import { useRoute, useRouter } from 'vue-router'
 import monitor from 'src/api/monitor'
 import { i18n } from 'boot/i18n'
 import { date } from 'quasar'
-import PieChart from 'components/Chart/WebMonitorStatusPieChart.vue'
-// import HistogramChart from 'components/Chart/HistogramChart.vue'
-import WebMonitorStatusLine from 'components/Chart/WebMonitorStatusLine.vue'
-import WebMonitorDurationLine from 'components/Chart/WebMonitorDurationLine.vue'
+// import PieChart from 'components/Chart/WebMonitorStatusPieChart.vue'
+import HistogramChart from 'components/Chart/HistogramChart.vue'
+// import WebMonitorStatusLine from 'components/Chart/WebMonitorStatusLine.vue'
+// import WebMonitorDurationLine from 'components/Chart/WebMonitorDurationLine.vue'
 
 // const props = defineProps({
 //   foo: {
@@ -19,289 +19,178 @@ import WebMonitorDurationLine from 'components/Chart/WebMonitorDurationLine.vue'
 //   }
 // })
 // const emits = defineEmits(['change', 'delete'])
-interface RequestConsumingInterface {
-  metric: {
-    group: string
-    instance: string
-    job: string
-    monitor: string
-    phase: string
-    receive_cluster: string
-    receive_replica: string
-    tenant_id: string
-    url: string
-    urlhash: string
-    __name__: string
-  }
-  values: Array<string | number>[]
-}
+// interface RequestConsumingInterface {
+//   metric: {
+//     group: string
+//     instance: string
+//     job: string
+//     monitor: string
+//     phase: string
+//     receive_cluster: string
+//     receive_replica: string
+//     tenant_id: string
+//     url: string
+//     urlhash: string
+//     __name__: string
+//   }
+//   values: Array<string | number>[]
+// }
 const store = useStore()
 const route = useRoute()
 const router = useRouter()
 const { tc } = i18n.global
 const detectionPoints = computed(() => store.getDetectionPointTable())
 const taskId = route.params.webMonitorTaskId as string
-const statusMonitorTime = ref<Array<string | number>>([])
-const statusCodeMonitor = ref<Array<string | number>>([])
-const statusPieData = ref<Array<number>>([])
-const requestConsumingTime = ref<Array<string>>([])
-const requestConsumingObj = ref<{ [key: string]: string[] }>({})
-let statusNormalTimes = 0
-let statusExceptionsTimes = 0
-const day = new Date()
-const yesterdayTime = String(day.getFullYear()) + '/' + String(day.getMonth() + 1) + '/' + String(day.getDate() - 1) + ' 24:0:0'
-const yesterdayTimeStamp = date.formatDate(yesterdayTime, 'X')
-const pointId = ref({
-  label: '',
-  labelEn: '',
-  value: ''
-})
-const filterSelection = ref({
-  label: '每30s刷新',
-  labelEn: 'Refresh every 30 seconds',
-  value: 30
-})
-const filterOptions = [
-  {
-    label: '每30s刷新',
-    labelEn: 'Refresh every 30 seconds',
-    value: 30
-  },
-  {
-    label: '每1min刷新',
-    labelEn: 'Refresh every 1 minute',
-    value: 60
-  },
-  {
-    label: '每10min刷新',
-    labelEn: 'Refresh every 10 minutes',
-    value: 600
-  },
-  {
-    label: '每30min刷新',
-    labelEn: 'Refresh every 30 minutes',
-    value: 1800
-  },
-  {
-    label: '每1h刷新',
-    labelEn: 'Refresh every 1 hour',
-    value: 3600
-  }
-]
-const statusOption = computed(() => ({
-  grid: {
-    left: 50,
-    right: 50,
-    bottom: 50
-  },
-  title: {
-    text: '实时请求状态',
-    left: 'center'
-  },
-  tooltip: {
-    trigger: 'axis',
-    axisPointer: {
-      type: 'cross'
-    }
-  },
-  xAxis: {
-    type: 'category',
-    boundaryGap: false,
-    data: statusMonitorTime.value
-  },
-  yAxis: {
-    type: 'category',
-    show: false
-  },
-  series: [
-    {
-      type: 'line',
-      data: statusCodeMonitor.value,
-      itemStyle: {
-        normal: {
-          label: {
-            show: true,
-            fontSize: 11,
-            formatter: function (param: Record<string, any>) { // 拐点文字回调
-              let currentValue
-              currentValue = param.value
-              if (currentValue !== '200') {
-                currentValue = '状态码异常'
+const nowTime = new Date().getTime()
+const outcome = Math.round(nowTime / 1000 - 600)
+const xAxis = ref<string[]>([])
+const chartSeries = ref<Record<string, unknown>[]>([])
+let lastTimeStamp: number
+const renovateTime = ref(60)
+const color = ['#7cb5ec', '#f7a35c', '#8085e9', '#f15c80', '#e4d354', '#2b908f', '#f45b5b', '#91e8e1', '#058DC7', '#50B432', '#ED561B', '#DDDF00', '#24CBE5', '#64E572', '#FF9655', '#FFF263', '#6AF9C4', '#D47F00', '#00FFFF', '#D4FF55', '#4572A7', '#AA4643', '#89A54E', '#80699B', '#3D96AE', '#DB843D', '#92A8CD', '#A47D7C', '#7FBF55',
+  '#a5c2d5', '#cbab4f', '#76a871', '#a56f8f', '#c12c44', '#9f7961', '#76a871', '#6f83a5', '#0f4fb8', '#106dcf', '#b3d74c', '#74aae3', '#5cdec6', '#3526de', '#9d65ee', '#a8b3e3', '#6bc1b7', '#549ee2', '#6e98d6']
+// const statusPieData = ref<Array<number>>([])
+// let statusNormalTimes = 0
+// let statusExceptionsTimes = 0
+// const day = new Date()
+// const yesterdayTime = String(day.getFullYear()) + '/' + String(day.getMonth() + 1) + '/' + String(day.getDate() - 1) + ' 24:0:0'
+// const yesterdayTimeStamp = date.formatDate(yesterdayTime, 'X')
+// const calcNums = (arr: [], status: string) => {
+//   arr.forEach(ele => {
+//     if (ele[1] === status) {
+//       statusNormalTimes++
+//     } else {
+//       statusExceptionsTimes++
+//     }
+//   })
+// }
+// const arr1 = [200, 200, -401, -402, -403, -404, -500, -501, 200, 200]
+const getWebMonitoringData = (id: string, name: string, start: number, index: number) => {
+  monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_status_code', start, detection_point_id: id, step: 60 }, path: { id: taskId } }).then((resp) => {
+    const seriesData: number[] = []
+    const xTime: string[] = []
+    resp.data[0].values.forEach((item: [number, string]) => {
+      const formattedString = date.formatDate(Number(item[0]) * 1000, 'HH:mm:ss')
+      xTime.push(formattedString)
+      if (item[1] === '200') {
+        seriesData.push(Number(item[1]))
+      } else {
+        seriesData.push(Number(item[1]) * -1)
+      }
+    })
+    // seriesData = arr1
+    lastTimeStamp = resp.data[0].values[resp.data[0].values.length - 1][0]
+    xAxis.value = xTime
+    chartSeries.value.push(
+      {
+        name: name + '-状态码',
+        type: 'bar',
+        yAxisIndex: 1,
+        itemStyle: {
+          normal: {
+            borderWidth: 2,
+            borderColor: color[index],
+            color: function (params: Record<string, any>) { // 根据数值大小设置相关颜色
+              if (params.value === 200) {
+                return 'rgb(145, 204, 117)'
               } else {
-                currentValue = ''
+                return 'rgb(238, 102, 102)'
               }
-              return currentValue
-            }
-          },
-          color: function (param: Record<string, any>) { // 拐点颜色回调
-            if (param.value !== '200') {
-              return '#ff0000'
-            } else {
-              return '#00BB00'
             }
           }
+        },
+        data: seriesData
+      }
+    )
+  }).catch((error) => {
+    console.log(error)
+  })
+  monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'duration_seconds', start: outcome, detection_point_id: id, step: 60 }, path: { id: taskId } }).then((resp) => {
+    const durationSeriesData: string[] = []
+    resp.data[0].values.forEach((item: [number, string]) => {
+      durationSeriesData.push((Number(item[1]) * 1000).toFixed(2))
+    })
+    chartSeries.value.push(
+      {
+        name: name + '-请求耗时',
+        type: 'line',
+        data: durationSeriesData,
+        lineStyle: {
+          color: color[index]
+        },
+        itemStyle: {
+          color: color[index]
         }
       }
-    }
-  ]
-}))
-const durationOption = computed(() => ({
-  grid: {
-    top: 130,
-    left: 50,
-    right: 50,
-    bottom: 50
-  },
-  title: [
-    {
-      left: 'center',
-      text: '实时请求耗时'
-    }
-  ],
-  legend: {
-    top: 50,
-    data: ['总耗时', '域名解析耗时', 'TCP连接耗时', '数据解析耗时', 'TLS连接耗时', '传输耗时']
-  },
-  tooltip: {
-    trigger: 'axis',
-    formatter: function (params: Record<string, any>) {
-      let relVal = params[0].name
-      for (let i = 0, l = params.length; i < l; i++) {
-        relVal += '<br/>' + params[i].marker + params[i].seriesName + ' : ' + params[i].value + '毫秒'
-      }
-      return relVal
-    }
-  },
-  xAxis: {
-    type: 'category',
-    boundaryGap: false,
-    data: requestConsumingTime.value
-  },
-  yAxis: {
-    type: 'value'
-  },
-  series: [
-    {
-      type: 'line',
-      name: '总耗时',
-      showSymbol: false,
-      data: requestConsumingObj.value.total
-    },
-    {
-      type: 'line',
-      name: 'TCP连接耗时',
-      showSymbol: false,
-      data: requestConsumingObj.value.connect
-    },
-    {
-      type: 'line',
-      name: 'dns解析耗时',
-      showSymbol: false,
-      data: requestConsumingObj.value.processing
-    },
-    {
-      type: 'line',
-      name: '数据解析耗时',
-      showSymbol: false,
-      data: requestConsumingObj.value.resolve
-    },
-    {
-      type: 'line',
-      name: 'TLS连接耗时',
-      showSymbol: false,
-      data: requestConsumingObj.value.tls
-    },
-    {
-      type: 'line',
-      name: '传输耗时',
-      showSymbol: false,
-      data: requestConsumingObj.value.transfer
-    }
-  ]
-}))
-const calcNums = (arr: [], status: string) => {
-  arr.forEach(ele => {
-    if (ele[1] === status) {
-      statusNormalTimes++
-    } else {
-      statusExceptionsTimes++
-    }
+    )
+  }).catch((error) => {
+    console.log(error)
   })
+  // monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_status_code', start: Number(yesterdayTimeStamp), detection_point_id: id }, path: { id: taskId } }).then((res) => {
+  //   calcNums(res.data[0].values, '200')
+  //   statusPieData.value = [statusNormalTimes, statusExceptionsTimes]
+  // }).catch((error) => {
+  //   console.log(error)
+  // })
 }
-const getWebMonitoringData = (id: string) => {
-  monitor.monitor.getMonitorWebsiteQuery({ query: { query: 'http_status_code', detection_point_id: id }, path: { id: taskId } }).then((res) => {
-    res.data[0].values.forEach((item: Array<string | number>) => {
-      const formattedString = date.formatDate(Number(item[0]) * 1000, 'HH:mm:ss')
-      statusMonitorTime.value.push(formattedString)
-      statusCodeMonitor.value.push(item[1])
+const getWebMonitoringLastData = (id: string, name: string, start: number) => {
+  monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_status_code', start, detection_point_id: id, step: 60 }, path: { id: taskId } }).then((resp) => {
+    chartSeries.value.forEach((item: Record<string, any>) => {
+      if (item.name.indexOf(name) !== -1 && item.type === 'bar') {
+        item.data.shift()
+        item.data.push(Number(resp.data[0].values[1][1]))
+      }
     })
   }).catch((error) => {
     console.log(error)
   })
-  monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_status_code', start: Number(yesterdayTimeStamp), detection_point_id: id }, path: { id: taskId } }).then((res) => {
-    calcNums(res.data[0].values, '200')
-    statusPieData.value = [statusNormalTimes, statusExceptionsTimes]
-  }).catch((error) => {
-    console.log(error)
-  })
-  monitor.monitor.getMonitorWebsiteQuery({ query: { query: 'duration_seconds', detection_point_id: id }, path: { id: taskId } }).then((res) => {
-    const arr: string[] = []
-    res.data[0].values.forEach((item: [number, string]) => {
-      const formattedString = date.formatDate(Number(item[0]) * 1000, 'HH:mm:ss')
-      requestConsumingTime.value.push(formattedString)
-      arr.push((Number(item[1]) * 1000).toFixed(2))
-    })
-    requestConsumingObj.value.total = arr
-  }).catch((error) => {
-    console.log(error)
-  })
-  monitor.monitor.getMonitorWebsiteQuery({ query: { query: 'http_duration_seconds', detection_point_id: id }, path: { id: taskId } }).then((res) => {
-    res.data.forEach((types: RequestConsumingInterface) => {
-      const arr: string[] = []
-      types.values.forEach((item: Array<string | number>) => {
-        arr.push((Number(item[1]) * 1000).toFixed(2))
-      })
-      requestConsumingObj.value[types.metric.phase] = arr
+  monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'duration_seconds', start, detection_point_id: id, step: 60 }, path: { id: taskId } }).then((resp) => {
+    chartSeries.value.forEach((item: Record<string, any>) => {
+      if (item.name.indexOf(name) !== -1 && item.type === 'line') {
+        item.data.shift()
+        item.data.push(resp.data[0].values[1][1] * 1000)
+      }
     })
   }).catch((error) => {
     console.log(error)
   })
 }
 const refreshData = () => {
-  statusMonitorTime.value = []
-  statusCodeMonitor.value = []
-  statusNormalTimes = 0
-  statusExceptionsTimes = 0
-  requestConsumingTime.value = []
-  requestConsumingObj.value = {}
-  getWebMonitoringData(pointId.value.value)
+  lastTimeStamp = lastTimeStamp + 60
+  const formattedString = date.formatDate(lastTimeStamp * 1000, 'HH:mm:ss')
+  xAxis.value.shift()
+  xAxis.value.push(formattedString)
+  detectionPoints.value.forEach(item => {
+    getWebMonitoringLastData(item.value, item.label, lastTimeStamp - 60)
+  })
 }
 const goBack = () => {
   router.go(-1)
 }
-let timer = setInterval(() => {
+const timer = setInterval(() => {
   refreshData()
-}, filterSelection.value.value * 1000)
-watch(filterSelection, () => {
-  clearInterval(Number(timer))
-  timer = setInterval(() => {
-    refreshData()
-  }, filterSelection.value.value * 1000)
-})
+}, 60000)
+const countDown = setInterval(() => {
+  const nowTimeStamp = Math.round(new Date().getTime() / 1000)
+  renovateTime.value = lastTimeStamp + 60 - nowTimeStamp
+}, 1000)
 watch(detectionPoints, () => {
   if (detectionPoints.value.length > 0) {
-    pointId.value = detectionPoints.value[0]
-    getWebMonitoringData(pointId.value.value)
+    detectionPoints.value.forEach((item, index) => {
+      getWebMonitoringData(item.value, item.label, outcome, index)
+    })
   }
 })
 onMounted(() => {
   if (detectionPoints.value.length > 0) {
-    pointId.value = detectionPoints.value[0]
-    getWebMonitoringData(pointId.value.value)
+    detectionPoints.value.forEach((item, index) => {
+      getWebMonitoringData(item.value, item.label, outcome, index)
+    })
   }
 })
 onUnmounted(() => {
-  clearInterval(Number(timer))
+  clearInterval(timer)
+  clearInterval(countDown)
 })
 </script>
 
@@ -314,28 +203,28 @@ onUnmounted(() => {
         {{ tc('网站监控详情') }}
       </div>
     </div>
-    <div class="row justify-end">
-      <q-select class="col-3 q-mr-sm" outlined dense v-model="pointId" :options="detectionPoints" @update:model-value="refreshData" :label="tc('选择监控站点')" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'"/>
-      <q-select class="col-3" outlined dense v-model="filterSelection"
-                :options="filterOptions"
-                :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')"/>
+    <div class="row justify-end items-center">
+      <div class="text-grey-7">剩余刷新时间</div>
+      <q-circular-progress
+        show-value
+        class="text-light-blue q-ma-md"
+        :value="renovateTime"
+        max="60"
+        size="50px"
+        color="light-blue"
+      />
     </div>
-    <div class="row q-mt-xl">
+    <div class="row q-mt-lg">
       <div class="col-12">
         <q-card flat bordered class="no-border-radius">
-          <web-monitor-status-line :option="statusOption"/>
+          <histogram-chart :x-axis-time="xAxis" :chart-series="chartSeries"/>
         </q-card>
       </div>
-      <div class="col-6 q-mt-md">
-        <q-card flat bordered class="no-border-radius">
-        <pie-chart :chart-data="statusPieData"></pie-chart>
-        </q-card>
-      </div>
-      <div class="col-12 q-mt-md">
-        <q-card flat bordered class="no-border-radius">
-          <web-monitor-duration-line :option="durationOption"/>
-        </q-card>
-      </div>
+<!--      <div class="col-6 q-mt-md">-->
+<!--        <q-card flat bordered class="no-border-radius">-->
+<!--        <pie-chart :chart-data="statusPieData"></pie-chart>-->
+<!--        </q-card>-->
+<!--      </div>-->
     </div>
   </div>
 </template>

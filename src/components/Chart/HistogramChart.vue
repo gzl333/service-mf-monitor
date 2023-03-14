@@ -1,78 +1,132 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts/core'
-import { GridComponent } from 'echarts/components'
-import { BarChart } from 'echarts/charts'
+import {
+  TitleComponent,
+  ToolboxComponent,
+  TooltipComponent,
+  GridComponent,
+  LegendComponent,
+  DataZoomComponent
+} from 'echarts/components'
+import { BarChart, LineChart } from 'echarts/charts'
+import { UniversalTransition } from 'echarts/features'
 import { CanvasRenderer } from 'echarts/renderers'
 
-echarts.use([GridComponent, BarChart, CanvasRenderer])
+echarts.use([
+  TitleComponent,
+  ToolboxComponent,
+  TooltipComponent,
+  GridComponent,
+  LegendComponent,
+  DataZoomComponent,
+  BarChart,
+  LineChart,
+  CanvasRenderer,
+  UniversalTransition
+])
 
-// const props = defineProps({
-//   chartData: {
-//     type: Array,
-//     required: false
-//   }
-// })
+const props = defineProps({
+  xAxisTime: {
+    type: Array,
+    required: true
+  },
+  chartSeries: {
+    type: Array,
+    required: true
+  }
+})
 const container = ref<HTMLElement>()
 // defineExpose({ })
 onMounted(() => {
   const chart = echarts.init(container.value!)
   const option = computed(() => ({
     title: {
-      text: '近5分钟实时状态',
+      text: '实时网站监控汇总图',
       left: 'center'
+    },
+    grid: {
+      top: 120,
+      left: 50,
+      right: 50,
+      bottom: 50
     },
     tooltip: {
       trigger: 'axis',
       axisPointer: {
-        type: 'shadow'
+        type: 'cross',
+        label: {
+          backgroundColor: '#283b56'
+        }
+      },
+      formatter: function (params: Record<string, any>) {
+        let relVal = params[0].name
+        for (let i = 0, l = params.length; i < l; i++) {
+          if (params[i].seriesType === 'bar') {
+            relVal += '<br/>' + params[i].marker + params[i].seriesName + ' : ' + '状态码为' + params[i].value
+          } else {
+            relVal += '<br/>' + params[i].marker + params[i].seriesName + ' : ' + params[i].value + '毫秒'
+          }
+        }
+        return relVal
       }
     },
-    xAxis: {
-      type: 'category',
-      data: ['14:34', '14:35', '14:36', '14:37', '14:38', '14:39', '14:40', '14:41', '14:42', '14:43', '14:44', '14:45', '14:46', '14:47', '14:48', '14:49', '14:50', '14:51', '14:52', '14:53']
+    legend: {
+      padding: [60, 0, 0, 0],
+      itemStyle: {
+        borderWidth: 0
+      }
     },
-    yAxis: {
-      type: 'value',
-      show: false
-    },
-    series: [
+    xAxis: [
       {
-        data: [
-          200,
-          {
-            value: 500,
-            itemStyle: {
-              color: '#a90000'
-            }
-          },
-          400,
-          401,
-          404,
-          404,
-          400,
-          401,
-          404,
-          404,
-          400,
-          401,
-          404,
-          404,
-          400,
-          401,
-          404,
-          404,
-          404,
-          404
-        ],
-        type: 'bar'
+        type: 'category',
+        boundaryGap: true,
+        data: props.xAxisTime
       }
-    ]
+    ],
+    yAxis: [
+      {
+        type: 'value',
+        name: '请求耗时',
+        scale: true,
+        min: 0,
+        boundaryGap: [0.2, 0.2],
+        splitLine: {
+          show: false
+        }
+      },
+      {
+        type: 'value',
+        name: '状态码',
+        max: 600,
+        axisLine: {
+          show: false,
+          lineStyle: {
+            color: '#000000'
+          }
+        },
+        axisTick: {
+          show: false,
+          lineStyle: {
+            color: '#000000'
+          }
+        },
+        axisLabel: {
+          textStyle: {
+            color: '#000000' // 坐标值得具体的颜色
+          }
+        },
+        splitLine: {
+          show: true
+        }
+      }
+    ],
+    series: props.chartSeries
   }))
   chart.setOption(option.value)
-  watch(option, () => {
+  watch(props, () => {
     chart.setOption(option.value)
-  })
+  }, { deep: true })
   const chartResize = () => {
     chart.resize()
   }
@@ -85,7 +139,7 @@ onMounted(() => {
 
 <template>
   <div class="HistogramChart" style="width: 100%">
-    <div ref="container" :style="{ width: '100%', height: '400px' }"></div>
+    <div ref="container" :style="{ width: '100%', height: '600px' }"></div>
   </div>
 </template>
 
