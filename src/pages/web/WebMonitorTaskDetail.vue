@@ -172,7 +172,11 @@ const timer = setInterval(() => {
 }, 60000)
 const countDown = setInterval(() => {
   const nowTimeStamp = Math.round(new Date().getTime() / 1000)
-  renovateTime.value = lastTimeStamp + 60 - nowTimeStamp
+  if (lastTimeStamp + 60 <= nowTimeStamp) {
+    renovateTime.value = lastTimeStamp + 120 - nowTimeStamp
+  } else {
+    renovateTime.value = lastTimeStamp + 60 - nowTimeStamp
+  }
 }, 1000)
 watch(detectionPoints, () => {
   if (detectionPoints.value.length > 0) {
@@ -209,9 +213,10 @@ onUnmounted(() => {
         show-value
         class="text-light-blue q-ma-md"
         :value="renovateTime"
-        max="60"
         size="50px"
+        max="60"
         color="light-blue"
+        track-color="grey-3"
       />
     </div>
     <div class="row q-mt-lg">
