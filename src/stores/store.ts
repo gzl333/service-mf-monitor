@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import monitor from 'src/api/monitor'
 import { normalize, schema } from 'normalizr'
-import { Dialog } from 'quasar'
+import { Dialog, Notify } from 'quasar'
 
 import WebTaskDeleteDialog from 'components/web/WebTaskDeleteDialog.vue'
 import WebTaskReviseDialog from 'components/web/WebTaskReviseDialog.vue'
@@ -105,6 +105,19 @@ export interface DetectionPointInterface {
   remark: string
 }
 
+export interface WebMonitorInterface {
+  creation: string
+  id: string
+  name: string
+  remark: string
+  url: string
+  url_hash: string
+  user: {
+    id: string
+    username: string
+  }
+}
+
 export const useStore = defineStore('monitor', {
   state: () => ({
     items: {
@@ -126,6 +139,11 @@ export const useStore = defineStore('monitor', {
       detectionPointTable: {
         byId: {} as Record<string, DetectionPointInterface>,
         allIds: [],
+        isLoaded: false
+      },
+      webMonitorTable: {
+        byId: {} as Record<string, WebMonitorInterface>,
+        allIds: [] as string[],
         isLoaded: false
       }
     }
@@ -151,6 +169,9 @@ export const useStore = defineStore('monitor', {
         )
       }
       return pointOptions
+    },
+    getWebMonitorTaskTable: state => (): WebMonitorInterface[] => {
+      return Object.values(state.tables.webMonitorTable.byId)
     }
   },
   actions: {
@@ -161,6 +182,9 @@ export const useStore = defineStore('monitor', {
             void this.loadServiceTable()
           }
         })
+      }
+      if (!this.tables.webMonitorTable.isLoaded) {
+        void this.loadWebMonitorTable()
       }
       if (!this.tables.detectionPointTable.isLoaded) {
         void this.loadDetectionPointTable()
@@ -222,6 +246,53 @@ export const useStore = defineStore('monitor', {
       })
       this.tables.detectionPointTable.isLoaded = true
     },
+    async loadWebMonitorTable () {
+      this.tables.webMonitorTable = {
+        byId: {},
+        allIds: [],
+        isLoaded: false
+      }
+      const webMonitorRes = await monitor.monitor.getMonitorWebsite({ query: { page: 1, page_size: 100 } })
+      const web = new schema.Entity('web', {})
+      webMonitorRes.data.results.forEach((data: Record<string, never>) => {
+        const normalizedData = normalize(data, web)
+        Object.assign(this.tables.webMonitorTable.byId, normalizedData.entities.web)
+        // @ts-ignore
+        this.tables.webMonitorTable.allIds.unshift(Object.keys(normalizedData.entities.web)[0])
+        this.tables.webMonitorTable.allIds = [...new Set(this.tables.webMonitorTable.allIds)]
+      })
+      this.tables.webMonitorTable.isLoaded = true
+    },
+    async modifyMonitorTask (payload: { id: string; data: { name: string; url: string; remark?: string } }) {
+      monitor.monitor.putMonitorWebsite({ body: payload.data, path: { id: payload.id } }).then((res) => {
+        if (res.status === 200) {
+          this.tables.webMonitorTable.byId[payload.id].name = res.data.name
+          this.tables.webMonitorTable.byId[payload.id].url = res.data.url
+          this.tables.webMonitorTable.byId[payload.id].remark = res.data.remark
+          Notify.create({
+            classes: 'notification-positive shadow-15',
+            icon: 'check_circle',
+            textColor: 'positive',
+            message: '修改监控任务成功',
+            position: 'bottom',
+            closeBtn: true,
+            timeout: 5000,
+            multiLine: false
+          })
+        }
+      }).catch((error) => {
+        Notify.create({
+          classes: 'notification-negative shadow-15',
+          icon: 'las la-times-circle',
+          textColor: 'negative',
+          message: `修改失败，${error.response.data.message}`,
+          position: 'bottom',
+          closeBtn: true,
+          timeout: 5000,
+          multiLine: false
+        })
+      })
+    },
     triggerDeleteTaskDialog (task_Id: string) {
       Dialog.create({
         component: WebTaskDeleteDialog,
@@ -230,11 +301,11 @@ export const useStore = defineStore('monitor', {
         }
       })
     },
-    triggerReviseTaskDialog (payload: { id: string, name: string, url: string, remark: string }) {
+    triggerReviseTaskDialog (id: string) {
       Dialog.create({
         component: WebTaskReviseDialog,
         componentProps: {
-          taskObj: payload
+          id
         }
       })
     }

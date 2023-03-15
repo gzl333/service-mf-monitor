@@ -1,20 +1,18 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
-// import { useStore } from 'stores/store'
+import { useStore } from 'stores/store'
 // import { useRoute/* , useRouter */ } from 'vue-router'
-import monitor from 'src/api/monitor'
-import { Notify, useDialogPluginComponent } from 'quasar'
+import { useDialogPluginComponent } from 'quasar'
 import { i18n } from 'boot/i18n'
-import $bus from 'src/hooks/bus'
 
 const props = defineProps({
-  taskObj: {
-    type: Object,
+  id: {
+    type: String,
     required: true
   }
 })
 defineEmits([...useDialogPluginComponent.emits])
-// const store = useStore()
+const store = useStore()
 // const route = useRoute()
 const {
   dialogRef,
@@ -24,43 +22,17 @@ const {
 } = useDialogPluginComponent()
 const { tc } = i18n.global
 const query = ref({
-  name: props.taskObj?.name,
-  url: props.taskObj?.url,
-  remark: props.taskObj?.remark
+  name: store.tables.webMonitorTable.byId[props.id].name,
+  url: store.tables.webMonitorTable.byId[props.id].url,
+  remark: store.tables.webMonitorTable.byId[props.id].remark
 })
 const visible = ref(false)
 const urlReg = /^([hH][tT]{2}[pP]:\/\/|[hH][tT]{2}[pP][sS]:\/\/)(([A-Za-z0-9-~]+).)+([A-Za-z0-9-~/])+$/
 const onSubmit = async () => {
   visible.value = true
-  monitor.monitor.putMonitorWebsite({ body: query.value, path: { id: props.taskObj.id } }).then((res) => {
-    if (res.status === 200) {
-      onDialogOK()
-      $bus.emit('renovate', true)
-      Notify.create({
-        classes: 'notification-positive shadow-15',
-        icon: 'check_circle',
-        textColor: 'positive',
-        message: '修改监控任务成功',
-        position: 'bottom',
-        closeBtn: true,
-        timeout: 5000,
-        multiLine: false
-      })
-      visible.value = false
-    }
-  }).catch((error) => {
-    Notify.create({
-      classes: 'notification-negative shadow-15',
-      icon: 'las la-times-circle',
-      textColor: 'negative',
-      message: `修改失败，${error.response.data.message}`,
-      position: 'bottom',
-      closeBtn: true,
-      timeout: 5000,
-      multiLine: false
-    })
-    visible.value = false
-  })
+  await store.modifyMonitorTask({ id: props.id, data: query.value })
+  visible.value = false
+  onDialogOK()
 }
 const onCancelClick = onDialogCancel
 
@@ -110,7 +82,7 @@ const onCancelClick = onDialogCancel
           <q-inner-loading
             :showing="visible"
             color="primary"
-            label="正在创建中"
+            label="正在修改中"
             label-class="text-grey-7"
             label-style="font-size: 1.1em"
           />

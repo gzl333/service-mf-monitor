@@ -1,11 +1,10 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
-// import { useStore } from 'stores/store'
+import { useStore } from 'stores/store'
 // import { useRoute/* , useRouter */ } from 'vue-router'
 import monitor from 'src/api/monitor'
 import { Notify, useDialogPluginComponent } from 'quasar'
 import { i18n } from 'boot/i18n'
-import $bus from 'src/hooks/bus'
 
 const props = defineProps({
   task_Id: {
@@ -15,7 +14,7 @@ const props = defineProps({
 })
 
 defineEmits([...useDialogPluginComponent.emits])
-// const store = useStore()
+const store = useStore()
 // const route = useRoute()
 const {
   dialogRef,
@@ -27,8 +26,11 @@ const { tc } = i18n.global
 const isDisable = ref(false)
 const onOKClick = () => {
   monitor.monitor.deleteMonitorWebsite({ path: { id: props.task_Id } }).then(() => {
+    console.log(store.tables.webMonitorTable)
+    store.tables.webMonitorTable.allIds = store.tables.webMonitorTable.allIds.filter(id => id !== props.task_Id)
+    Reflect.deleteProperty(store.tables.webMonitorTable.byId, props.task_Id)
+    console.log(store.tables.webMonitorTable)
     onDialogOK()
-    $bus.emit('renovate', true)
     Notify.create({
       classes: 'notification-positive shadow-15',
       icon: 'check_circle',

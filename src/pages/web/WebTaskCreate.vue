@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { navigateToUrl } from 'single-spa'
-// import { useStore } from 'stores/store'
+import { useStore } from 'stores/store'
 import { /* useRoute,  */useRouter } from 'vue-router'
 import { i18n } from 'boot/i18n'
 import { Notify } from 'quasar'
@@ -16,7 +16,7 @@ import monitor from 'src/api/monitor'
 // const emits = defineEmits(['change', 'delete'])
 
 const { tc } = i18n.global
-// const store = useStore()
+const store = useStore()
 // const route = useRoute()
 const router = useRouter()
 const goBack = () => {
@@ -34,6 +34,8 @@ const onSubmit = async () => {
   visible.value = true
   monitor.monitor.postMonitorWebsite({ body: query.value }).then((res) => {
     if (res.status === 200) {
+      store.tables.webMonitorTable.allIds.unshift(res.data.id)
+      store.tables.webMonitorTable.byId[res.data.id] = res.data
       Notify.create({
         classes: 'notification-positive shadow-15',
         icon: 'check_circle',

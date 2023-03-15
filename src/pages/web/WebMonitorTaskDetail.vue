@@ -6,10 +6,7 @@ import { useRoute, useRouter } from 'vue-router'
 import monitor from 'src/api/monitor'
 import { i18n } from 'boot/i18n'
 import { date } from 'quasar'
-// import PieChart from 'components/Chart/WebMonitorStatusPieChart.vue'
-import HistogramChart from 'components/Chart/HistogramChart.vue'
-// import WebMonitorStatusLine from 'components/Chart/WebMonitorStatusLine.vue'
-// import WebMonitorDurationLine from 'components/Chart/WebMonitorDurationLine.vue'
+import WebHistogramLineChart from 'components/Chart/WebHistogramLineChart.vue'
 
 // const props = defineProps({
 //   foo: {
@@ -19,22 +16,6 @@ import HistogramChart from 'components/Chart/HistogramChart.vue'
 //   }
 // })
 // const emits = defineEmits(['change', 'delete'])
-// interface RequestConsumingInterface {
-//   metric: {
-//     group: string
-//     instance: string
-//     job: string
-//     monitor: string
-//     phase: string
-//     receive_cluster: string
-//     receive_replica: string
-//     tenant_id: string
-//     url: string
-//     urlhash: string
-//     __name__: string
-//   }
-//   values: Array<string | number>[]
-// }
 const store = useStore()
 const route = useRoute()
 const router = useRouter()
@@ -92,9 +73,9 @@ const getWebMonitoringData = (id: string, name: string, start: number, index: nu
             borderColor: color[index],
             color: function (params: Record<string, any>) { // 根据数值大小设置相关颜色
               if (params.value === 200) {
-                return 'rgb(145, 204, 117)'
+                return '#ccff99'
               } else {
-                return 'rgb(238, 102, 102)'
+                return '#FFAEB9'
               }
             }
           }
@@ -207,29 +188,29 @@ onUnmounted(() => {
         {{ tc('网站监控详情') }}
       </div>
     </div>
-    <div class="row justify-end items-center">
-      <div class="text-grey-7">剩余刷新时间</div>
-      <q-circular-progress
-        show-value
-        class="text-light-blue q-ma-md"
-        :value="renovateTime"
-        size="50px"
-        max="60"
-        color="light-blue"
-        track-color="grey-3"
-      />
+    <div class="row justify-between items-center">
+      <div>当前监控任务url：{{ store.tables.webMonitorTable.byId[taskId]?.url }}</div>
+      <div class="row items-center">
+        <div class="text-grey-7">剩余刷新时间</div>
+        <q-circular-progress
+          show-value
+          class="text-light-blue q-ma-md"
+          :value="renovateTime"
+          size="50px"
+          max="60"
+          color="light-blue"
+          track-color="grey-3"
+        >
+          {{ renovateTime }}s
+        </q-circular-progress>
+      </div>
     </div>
     <div class="row q-mt-lg">
       <div class="col-12">
         <q-card flat bordered class="no-border-radius">
-          <histogram-chart :x-axis-time="xAxis" :chart-series="chartSeries"/>
+          <web-histogram-line-chart :x-axis-time="xAxis" :chart-series="chartSeries"/>
         </q-card>
       </div>
-<!--      <div class="col-6 q-mt-md">-->
-<!--        <q-card flat bordered class="no-border-radius">-->
-<!--        <pie-chart :chart-data="statusPieData"></pie-chart>-->
-<!--        </q-card>-->
-<!--      </div>-->
     </div>
   </div>
 </template>
