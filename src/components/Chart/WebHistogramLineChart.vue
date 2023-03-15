@@ -31,6 +31,10 @@ const props = defineProps({
     type: Array,
     required: true
   },
+  legendData: {
+    type: Array,
+    required: true
+  },
   chartSeries: {
     type: Array,
     required: true
@@ -75,7 +79,8 @@ onMounted(() => {
       padding: [60, 0, 0, 0],
       itemStyle: {
         borderWidth: 0
-      }
+      },
+      data: props.legendData
     },
     xAxis: [
       {

@@ -26,10 +26,8 @@ const { tc } = i18n.global
 const isDisable = ref(false)
 const onOKClick = () => {
   monitor.monitor.deleteMonitorWebsite({ path: { id: props.task_Id } }).then(() => {
-    console.log(store.tables.webMonitorTable)
     store.tables.webMonitorTable.allIds = store.tables.webMonitorTable.allIds.filter(id => id !== props.task_Id)
     Reflect.deleteProperty(store.tables.webMonitorTable.byId, props.task_Id)
-    console.log(store.tables.webMonitorTable)
     onDialogOK()
     Notify.create({
       classes: 'notification-positive shadow-15',

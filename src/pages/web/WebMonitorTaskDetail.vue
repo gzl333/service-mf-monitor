@@ -16,6 +16,21 @@ import WebHistogramLineChart from 'components/Chart/WebHistogramLineChart.vue'
 //   }
 // })
 // const emits = defineEmits(['change', 'delete'])
+interface WebMonitorInterface {
+  metric: {
+    group: string
+    instance: string
+    job: string
+    monitor: string
+    receive_cluster: string
+    receive_replica: string
+    tenant_id: string
+    url: string
+    urlhash: string
+    __name__: string
+  },
+  values: [number, string][]
+}
 const store = useStore()
 const route = useRoute()
 const router = useRouter()
@@ -26,16 +41,16 @@ const nowTime = new Date().getTime()
 const outcome = Math.round(nowTime / 1000 - 600)
 const xAxis = ref<string[]>([])
 const chartSeries = ref<Record<string, unknown>[]>([])
+const legendData = ref<Record<string, unknown>[]>([])
 let lastTimeStamp: number
 const renovateTime = ref(60)
 const color = ['#7cb5ec', '#f7a35c', '#8085e9', '#f15c80', '#e4d354', '#2b908f', '#f45b5b', '#91e8e1', '#058DC7', '#50B432', '#ED561B', '#DDDF00', '#24CBE5', '#64E572', '#FF9655', '#FFF263', '#6AF9C4', '#D47F00', '#00FFFF', '#D4FF55', '#4572A7', '#AA4643', '#89A54E', '#80699B', '#3D96AE', '#DB843D', '#92A8CD', '#A47D7C', '#7FBF55',
   '#a5c2d5', '#cbab4f', '#76a871', '#a56f8f', '#c12c44', '#9f7961', '#76a871', '#6f83a5', '#0f4fb8', '#106dcf', '#b3d74c', '#74aae3', '#5cdec6', '#3526de', '#9d65ee', '#a8b3e3', '#6bc1b7', '#549ee2', '#6e98d6']
+// const now = new Date()
+// const currentTime = String(now.getFullYear()) + '/' + String(now.getMonth() + 1) + '/' + String(now.getDate() - 1)
 // const statusPieData = ref<Array<number>>([])
 // let statusNormalTimes = 0
 // let statusExceptionsTimes = 0
-// const day = new Date()
-// const yesterdayTime = String(day.getFullYear()) + '/' + String(day.getMonth() + 1) + '/' + String(day.getDate() - 1) + ' 24:0:0'
-// const yesterdayTimeStamp = date.formatDate(yesterdayTime, 'X')
 // const calcNums = (arr: [], status: string) => {
 //   arr.forEach(ele => {
 //     if (ele[1] === status) {
@@ -50,18 +65,30 @@ const getWebMonitoringData = (id: string, name: string, start: number, index: nu
   monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_status_code', start, detection_point_id: id, step: 60 }, path: { id: taskId } }).then((resp) => {
     const seriesData: number[] = []
     const xTime: string[] = []
-    resp.data[0].values.forEach((item: [number, string]) => {
-      const formattedString = date.formatDate(Number(item[0]) * 1000, 'HH:mm:ss')
-      xTime.push(formattedString)
-      if (item[1] === '200') {
-        seriesData.push(Number(item[1]))
-      } else {
-        seriesData.push(Number(item[1]) * -1)
-      }
+    const xTimeStamp: number[] = []
+    resp.data.forEach((item: WebMonitorInterface, index: number) => {
+      item.values.forEach((item1: [number, string]) => {
+        if (index === 0) {
+          const formattedString = date.formatDate(Number(item1[0]) * 1000, 'HH:mm:ss')
+          xTime.push(formattedString)
+          xTimeStamp.push(item1[0])
+        }
+        if (item1[1] === '200') {
+          seriesData.push(Number(item1[1]))
+        } else {
+          seriesData.push(Number(item1[1]) * -1)
+        }
+      })
     })
     // seriesData = arr1
-    lastTimeStamp = resp.data[0].values[resp.data[0].values.length - 1][0]
     xAxis.value = xTime
+    lastTimeStamp = xTimeStamp[xTimeStamp.length - 1]
+    legendData.value.push({
+      name: name + '-状态码',
+      itemStyle: {
+        color: color[index]
+      }
+    })
     chartSeries.value.push(
       {
         name: name + '-状态码',
@@ -88,8 +115,16 @@ const getWebMonitoringData = (id: string, name: string, start: number, index: nu
   })
   monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'duration_seconds', start: outcome, detection_point_id: id, step: 60 }, path: { id: taskId } }).then((resp) => {
     const durationSeriesData: string[] = []
-    resp.data[0].values.forEach((item: [number, string]) => {
-      durationSeriesData.push((Number(item[1]) * 1000).toFixed(2))
+    resp.data.forEach((item: WebMonitorInterface) => {
+      item.values.forEach((item1: [number, string]) => {
+        durationSeriesData.push((Number(item1[1]) * 1000).toFixed(2))
+      })
+    })
+    legendData.value.push({
+      name: name + '-请求耗时',
+      itemStyle: {
+        color: color[index]
+      }
     })
     chartSeries.value.push(
       {
@@ -208,7 +243,7 @@ onUnmounted(() => {
     <div class="row q-mt-lg">
       <div class="col-12">
         <q-card flat bordered class="no-border-radius">
-          <web-histogram-line-chart :x-axis-time="xAxis" :chart-series="chartSeries"/>
+          <web-histogram-line-chart :x-axis-time="xAxis" :chart-series="chartSeries" :legend-data="legendData"/>
         </q-card>
       </div>
     </div>
