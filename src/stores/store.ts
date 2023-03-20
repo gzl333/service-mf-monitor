@@ -160,7 +160,7 @@ export const useStore = defineStore('monitor', {
     getDetectionPointTable: state => (): {value: string, label: string, labelEn: string}[] => {
       const pointOptions = []
       for (const service of Object.values(state.tables.detectionPointTable.byId)) {
-        pointOptions.push(
+        pointOptions.unshift(
           {
             value: service.id,
             label: service.name,

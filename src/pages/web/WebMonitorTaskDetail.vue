@@ -31,6 +31,22 @@ interface WebMonitorInterface {
   },
   values: [number, string][]
 }
+interface WebMonitorDurationInterface {
+  metric: {
+    group: string
+    instance: string
+    job: string
+    monitor: string
+    phase: string
+    receive_cluster: string
+    receive_replica: string
+    tenant_id: string
+    url: string
+    urlhash: string
+    __name__: string
+  },
+  values: [number, string][]
+}
 const store = useStore()
 const route = useRoute()
 const router = useRouter()
@@ -41,130 +57,158 @@ const nowTime = new Date().getTime()
 const outcome = Math.round(nowTime / 1000 - 600)
 const xAxis = ref<string[]>([])
 const chartSeries = ref<Record<string, unknown>[]>([])
-const legendData = ref<Record<string, unknown>[]>([])
 let lastTimeStamp: number
 const renovateTime = ref(60)
-const color = ['#7cb5ec', '#f7a35c', '#8085e9', '#f15c80', '#e4d354', '#2b908f', '#f45b5b', '#91e8e1', '#058DC7', '#50B432', '#ED561B', '#DDDF00', '#24CBE5', '#64E572', '#FF9655', '#FFF263', '#6AF9C4', '#D47F00', '#00FFFF', '#D4FF55', '#4572A7', '#AA4643', '#89A54E', '#80699B', '#3D96AE', '#DB843D', '#92A8CD', '#A47D7C', '#7FBF55',
-  '#a5c2d5', '#cbab4f', '#76a871', '#a56f8f', '#c12c44', '#9f7961', '#76a871', '#6f83a5', '#0f4fb8', '#106dcf', '#b3d74c', '#74aae3', '#5cdec6', '#3526de', '#9d65ee', '#a8b3e3', '#6bc1b7', '#549ee2', '#6e98d6']
-// const now = new Date()
-// const currentTime = String(now.getFullYear()) + '/' + String(now.getMonth() + 1) + '/' + String(now.getDate() - 1)
-// const statusPieData = ref<Array<number>>([])
-// let statusNormalTimes = 0
-// let statusExceptionsTimes = 0
-// const calcNums = (arr: [], status: string) => {
-//   arr.forEach(ele => {
-//     if (ele[1] === status) {
-//       statusNormalTimes++
-//     } else {
-//       statusExceptionsTimes++
-//     }
-//   })
+const statusObj = ref<Record<string, any>>({})
+// const obj1: any = {
+//   'a1cfc71a-be4f-11ed-b6f8-c800dfc12405': [
+//     [1678948657, '200'],
+//     [1678948717, '200'],
+//     [1678948777, '404'],
+//     [1678948837, '200'],
+//     [1678948897, '500'],
+//     [1678948957, '200'],
+//     [1678949017, '200'],
+//     [1678949077, '401'],
+//     [1678949137, '200'],
+//     [1678949197, '200']
+//   ],
+//   'cd34c504-be4f-11ed-8273-c800dfc12405': [
+//     [1678948657, '200'],
+//     [1678948717, '200'],
+//     [1678948777, '404'],
+//     [1678948837, '200'],
+//     [1678948897, '500'],
+//     [1678948957, '200'],
+//     [1678949017, '200'],
+//     [1678949077, '401'],
+//     [1678949137, '200'],
+//     [1678949197, '200']
+//   ]
 // }
-// const arr1 = [200, 200, -401, -402, -403, -404, -500, -501, 200, 200]
-const getWebMonitoringData = (id: string, name: string, start: number, index: number) => {
-  monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_status_code', start, detection_point_id: id, step: 60 }, path: { id: taskId } }).then((resp) => {
-    const seriesData: number[] = []
+const color = ['#7cb5ec', '#f7a35c', '#8085e9', '#a5c2d5', '#cbab4f', '#76a871', '#a56f8f', '#c12c44', '#9f7961', '#76a871', '#6f83a5',
+  '#0f4fb8', '#106dcf', '#b3d74c', '#74aae3', '#5cdec6', '#3526de', '#9d65ee', '#a8b3e3', '#6bc1b7', '#549ee2', '#6e98d6']
+const getWebMonitoringData = async (id: string, name: string, start: number, index: number) => {
+  await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_status_code', start, detection_point_id: id, step: 60 }, path: { id: taskId } }).then((resp) => {
+    const seriesData: [number, string][] = []
     const xTime: string[] = []
     const xTimeStamp: number[] = []
     resp.data.forEach((item: WebMonitorInterface, index: number) => {
       item.values.forEach((item1: [number, string]) => {
         if (index === 0) {
-          const formattedString = date.formatDate(Number(item1[0]) * 1000, 'HH:mm:ss')
+          const formattedString = date.formatDate(item1[0] * 1000, 'HH:mm:ss')
           xTime.push(formattedString)
           xTimeStamp.push(item1[0])
         }
-        if (item1[1] === '200') {
-          seriesData.push(Number(item1[1]))
-        } else {
-          seriesData.push(Number(item1[1]) * -1)
-        }
+        seriesData.push(item1)
       })
     })
-    // seriesData = arr1
+    statusObj.value[id] = seriesData
     xAxis.value = xTime
     lastTimeStamp = xTimeStamp[xTimeStamp.length - 1]
-    legendData.value.push({
-      name: name + '-状态码',
-      itemStyle: {
-        color: color[index]
+  }).catch((error) => {
+    console.log(error)
+  })
+  await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_duration_seconds', start: outcome, detection_point_id: id, step: 60 }, path: { id: taskId } }).then((resp) => {
+    let durationSeriesData: string[] = []
+    let stageName = ''
+    resp.data.forEach((item: WebMonitorDurationInterface, index1: number) => {
+      durationSeriesData = []
+      item.values.forEach((item1: [number, string], index2: number) => {
+        if (statusObj.value[id][index2][1] === '200') {
+          durationSeriesData.push((Number(item1[1]) * 1000).toFixed(2))
+        } else {
+          durationSeriesData.push((Number(item1[1]) * 1000 * -1).toFixed(2))
+        }
+      })
+      if (item.metric.phase === 'connect') {
+        stageName = 'TCP连接建立耗时'
+      } else if (item.metric.phase === 'processing') {
+        stageName = '处理请求耗时'
+      } else if (item.metric.phase === 'resolve') {
+        stageName = 'DNS解析耗时'
+      } else if (item.metric.phase === 'tls') {
+        stageName = 'TLS连接协商耗时'
+      } else {
+        stageName = '转移响应耗时'
       }
+      chartSeries.value.push(
+        {
+          name: name + '-' + stageName,
+          id: id + '-' + item.metric.phase + index,
+          type: 'bar',
+          stack: 'bar' + index,
+          itemStyle: {
+            normal: {
+              label: {
+                show: true,
+                fontSize: 12,
+                distance: 10,
+                position: 'bottom',
+                // 自定义顶部文字写判断
+                formatter: function (val: Record<string, any>) {
+                  if (val.seriesId.indexOf('transfer') !== -1) {
+                    const index = val.seriesId.lastIndexOf('-')
+                    const str = val.seriesId.slice(0, index)
+                    // return '200' + ' ' + val.dataIndex + ' ' + val.componentIndex + ' ' + val.seriesIndex
+                    const status = statusObj.value[str][val.dataIndex][1]
+                    if (status === '200') {
+                      return '{a|' + status + '}'
+                    } else {
+                      return '{b|' + status + '}'
+                    }
+                  } else if (val.seriesId.indexOf('connect') !== -1) {
+                    if (val.seriesIndex === 0) {
+                      return `探针${val.seriesIndex + 1}`
+                    } else if (val.seriesIndex > 0 && val.seriesIndex % 5 === 0) {
+                      return `探针${val.seriesIndex / 5 + 1}`
+                    }
+                  } else {
+                    return ''
+                  }
+                },
+                rich: {
+                  a: {
+                    color: 'green',
+                    lineHeight: 10
+                  },
+                  b: {
+                    color: 'red',
+                    lineHeight: 10
+                  }
+                }
+              },
+              color: color[index1]
+            }
+          },
+          data: durationSeriesData
+        }
+      )
     })
-    chartSeries.value.push(
-      {
-        name: name + '-状态码',
-        type: 'bar',
-        yAxisIndex: 1,
-        itemStyle: {
-          normal: {
-            borderWidth: 2,
-            borderColor: color[index],
-            color: function (params: Record<string, any>) { // 根据数值大小设置相关颜色
-              if (params.value === 200) {
-                return '#ccff99'
-              } else {
-                return '#FFAEB9'
-              }
+  }).catch((error) => {
+    console.log(error)
+  })
+}
+const getWebMonitoringLastData = async (id: string, name: string, start: number) => {
+  await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_status_code', start, detection_point_id: id, step: 60 }, path: { id: taskId } }).then((resp) => {
+    statusObj.value[id].shift()
+    statusObj.value[id].push(resp.data[0].values[1])
+  }).catch((error) => {
+    console.log(error)
+  })
+  await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_duration_seconds', start, detection_point_id: id, step: 60 }, path: { id: taskId } }).then((resp) => {
+    chartSeries.value.forEach((item: Record<string, any>) => {
+      if (item.name.indexOf(name) !== -1) {
+        item.data.shift()
+        resp.data.forEach((item1: WebMonitorDurationInterface) => {
+          if (item1.metric.phase === item.id.slice(item.id.lastIndexOf('-') + 1, item.id.length - 1)) {
+            if (item1.values.length === 1) {
+              item.data.push((Number(item1.values[0][1]) * 1000).toFixed(2))
+            } else {
+              item.data.push((Number(item1.values[1][1]) * 1000).toFixed(2))
             }
           }
-        },
-        data: seriesData
-      }
-    )
-  }).catch((error) => {
-    console.log(error)
-  })
-  monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'duration_seconds', start: outcome, detection_point_id: id, step: 60 }, path: { id: taskId } }).then((resp) => {
-    const durationSeriesData: string[] = []
-    resp.data.forEach((item: WebMonitorInterface) => {
-      item.values.forEach((item1: [number, string]) => {
-        durationSeriesData.push((Number(item1[1]) * 1000).toFixed(2))
-      })
-    })
-    legendData.value.push({
-      name: name + '-请求耗时',
-      itemStyle: {
-        color: color[index]
-      }
-    })
-    chartSeries.value.push(
-      {
-        name: name + '-请求耗时',
-        type: 'line',
-        data: durationSeriesData,
-        lineStyle: {
-          color: color[index]
-        },
-        itemStyle: {
-          color: color[index]
-        }
-      }
-    )
-  }).catch((error) => {
-    console.log(error)
-  })
-  // monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_status_code', start: Number(yesterdayTimeStamp), detection_point_id: id }, path: { id: taskId } }).then((res) => {
-  //   calcNums(res.data[0].values, '200')
-  //   statusPieData.value = [statusNormalTimes, statusExceptionsTimes]
-  // }).catch((error) => {
-  //   console.log(error)
-  // })
-}
-const getWebMonitoringLastData = (id: string, name: string, start: number) => {
-  monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_status_code', start, detection_point_id: id, step: 60 }, path: { id: taskId } }).then((resp) => {
-    chartSeries.value.forEach((item: Record<string, any>) => {
-      if (item.name.indexOf(name) !== -1 && item.type === 'bar') {
-        item.data.shift()
-        item.data.push(Number(resp.data[0].values[1][1]))
-      }
-    })
-  }).catch((error) => {
-    console.log(error)
-  })
-  monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'duration_seconds', start, detection_point_id: id, step: 60 }, path: { id: taskId } }).then((resp) => {
-    chartSeries.value.forEach((item: Record<string, any>) => {
-      if (item.name.indexOf(name) !== -1 && item.type === 'line') {
-        item.data.shift()
-        item.data.push(resp.data[0].values[1][1] * 1000)
+        })
       }
     })
   }).catch((error) => {
@@ -224,7 +268,10 @@ onUnmounted(() => {
       </div>
     </div>
     <div class="row justify-between items-center">
-      <div>当前监控任务url：{{ store.tables.webMonitorTable.byId[taskId]?.url }}</div>
+      <div>
+        <div>当前监控任务url：{{ store.tables.webMonitorTable.byId[taskId]?.url }}</div>
+        <div v-for="(item, index) in detectionPoints" :key="item.value">{{ `探针${index + 1}：${item.label}` }}</div>
+      </div>
       <div class="row items-center">
         <div class="text-grey-7">剩余刷新时间</div>
         <q-circular-progress
@@ -243,7 +290,7 @@ onUnmounted(() => {
     <div class="row q-mt-lg">
       <div class="col-12">
         <q-card flat bordered class="no-border-radius">
-          <web-histogram-line-chart :x-axis-time="xAxis" :chart-series="chartSeries" :legend-data="legendData"/>
+          <web-histogram-line-chart :x-axis-time="xAxis" :chart-series="chartSeries"/>
         </q-card>
       </div>
     </div>

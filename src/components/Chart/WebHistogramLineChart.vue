@@ -31,12 +31,8 @@ const props = defineProps({
     type: Array,
     required: true
   },
-  legendData: {
-    type: Array,
-    required: true
-  },
   chartSeries: {
-    type: Array,
+    type: Object,
     required: true
   }
 })
@@ -51,7 +47,7 @@ onMounted(() => {
     },
     grid: {
       top: 120,
-      left: 50,
+      left: 70,
       right: 50,
       bottom: 50
     },
@@ -63,24 +59,18 @@ onMounted(() => {
           backgroundColor: '#283b56'
         }
       },
-      formatter: function (params: Record<string, any>) {
+      formatter: function (params: any) {
         let relVal = params[0].name
         for (let i = 0, l = params.length; i < l; i++) {
-          if (params[i].seriesType === 'bar') {
-            relVal += '<br/>' + params[i].marker + params[i].seriesName + ' : ' + '状态码为' + params[i].value
+          if (i >= 0 && i % 5 === 0) {
+            relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<br/>
+${params[i].marker}${params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${params[i].value}毫秒`
           } else {
-            relVal += '<br/>' + params[i].marker + params[i].seriesName + ' : ' + params[i].value + '毫秒'
+            relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value + '毫秒'
           }
         }
         return relVal
       }
-    },
-    legend: {
-      padding: [60, 0, 0, 0],
-      itemStyle: {
-        borderWidth: 0
-      },
-      data: props.legendData
     },
     xAxis: [
       {
@@ -94,35 +84,12 @@ onMounted(() => {
         type: 'value',
         name: '请求耗时',
         scale: true,
-        min: 0,
         boundaryGap: [0.2, 0.2],
         splitLine: {
           show: false
-        }
-      },
-      {
-        type: 'value',
-        name: '状态码',
-        max: 600,
-        axisLine: {
-          show: false,
-          lineStyle: {
-            color: '#000000'
-          }
-        },
-        axisTick: {
-          show: false,
-          lineStyle: {
-            color: '#000000'
-          }
         },
         axisLabel: {
-          textStyle: {
-            color: '#000000' // 坐标值得具体的颜色
-          }
-        },
-        splitLine: {
-          show: true
+          formatter: '{value} 毫秒'
         }
       }
     ],
@@ -149,6 +116,6 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-.LineChart {
+.WebHistogramLineChart {
 }
 </style>
