@@ -104,7 +104,7 @@ const onReset = () => {
         <div class="row">
           <div class="col-2 q-mt-sm text-subtitle1 text-grey">监控地址</div>
           <div class="col-10">
-            <q-input outlined dense clearable v-model="query.url" label="请输入监控地址" lazy-rules="ondemand" :rules="[val => val && val.length > 0 || '监控地址不能为空', val => urlReg.test(val) || '监控地址不是合法地址']"
+            <q-input outlined dense clearable v-model="query.url" label="请输入监控地址" lazy-rules="ondemand" :rules="[val => val && val.length > 0 || '监控地址不能为空', val => urlReg.test(val) || '地址不合法，请输入http://或者https://开头的地址']"
             />
           </div>
         </div>

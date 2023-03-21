@@ -30,6 +30,9 @@ const visible = ref(false)
 const urlReg = /^([hH][tT]{2}[pP]:\/\/|[hH][tT]{2}[pP][sS]:\/\/)(([A-Za-z0-9-~]+).)+([A-Za-z0-9-~/])+$/
 const onSubmit = async () => {
   visible.value = true
+  if (query.value.remark === null) {
+    query.value.remark = ''
+  }
   await store.modifyMonitorTask({ id: props.id, data: query.value })
   visible.value = false
   onDialogOK()
@@ -65,7 +68,7 @@ const onCancelClick = onDialogCancel
             <div class="col-2 q-mt-sm text-grey">监控地址</div>
             <div class="col-10">
               <q-input outlined dense clearable v-model="query.url" lazy-rules="ondemand"
-                       :rules="[val => val && val.length > 0 || '监控地址不能为空', val => urlReg.test(val) || '监控地址不是合法地址']"
+                       :rules="[val => val && val.length > 0 || '监控地址不能为空', val => urlReg.test(val) || '地址不合法，请输入http://或者https://开头的地址']"
               />
             </div>
           </div>

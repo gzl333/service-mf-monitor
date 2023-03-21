@@ -32,7 +32,7 @@ const props = defineProps({
     required: true
   },
   chartSeries: {
-    type: Object,
+    type: Array,
     required: true
   }
 })
@@ -59,14 +59,31 @@ onMounted(() => {
           backgroundColor: '#283b56'
         }
       },
-      formatter: function (params: any) {
+      formatter: function (params: Record<string, any>) {
+        // console.log(params)
+        const totalArr = []
+        let num = 0
+        for (let i = 0, l = params.length; i < l; i++) {
+          if ((i + 1) % 5 === 0) {
+            num += Number(params[i].value)
+            totalArr.push(num.toFixed(2))
+            num = 0
+          } else {
+            num += Number(params[i].value)
+          }
+        }
         let relVal = params[0].name
         for (let i = 0, l = params.length; i < l; i++) {
           if (i >= 0 && i % 5 === 0) {
-            relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<br/>
-${params[i].marker}${params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${params[i].value}毫秒`
+            relVal += '<br/>' + params[i].seriesName.slice(0, params[i].seriesName.indexOf('-')) + ' 总耗时' + totalArr[i / 5] + '毫秒<br/>' +
+params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + '：' + params[i].value + '毫秒'
           } else {
-            relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value + '毫秒'
+            if ((i + 1) % 5 === 0) {
+              relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value + '毫秒' +
+                '<br/>' + '<hr/>'
+            } else {
+              relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value + '毫秒'
+            }
           }
         }
         return relVal
@@ -95,9 +112,28 @@ ${params[i].marker}${params[i].seriesName.slice(params[i].seriesName.indexOf('-'
     ],
     series: props.chartSeries
   }))
-  chart.setOption(option.value)
+  const emptyOption = {
+    title: {
+      text: '正在获取监控数据中,大约一分钟后会产生监控数据',
+      x: 'center',
+      y: 'center',
+      textStyle: {
+        fontSize: 20,
+        fontWeight: 'normal'
+      }
+    }
+  }
+  if (props.chartSeries?.length > 0 && props.xAxisTime?.length > 0) {
+    chart.setOption(option.value, true)
+  } else {
+    chart.setOption(emptyOption)
+  }
   watch(props, () => {
-    chart.setOption(option.value)
+    if (props.chartSeries?.length > 0 && props.xAxisTime?.length > 0) {
+      chart.setOption(option.value, true)
+    } else {
+      chart.setOption(emptyOption)
+    }
   }, { deep: true })
   const chartResize = () => {
     chart.resize()

@@ -56,21 +56,9 @@ const isLoad = ref(false)
         <q-separator class="q-mt-sm"/>
         <div class="text-grey-8 q-pb-sm q-ml-sm q-mt-sm">
           <span>最新告警信息：</span>
-          <div class="row justify-between">
-            <div>日志监控告警</div>
-            <div class="q-mr-sm">{{ date.formatDate(webMonitorTaskRow[0]?.creation, 'YYYY-MM-DD HH:mm') }}</div>
-          </div>
-          <div class="row justify-between">
-            <div>日志监控告警</div>
-            <div class="q-mr-sm">{{ date.formatDate(webMonitorTaskRow[0]?.creation, 'YYYY-MM-DD HH:mm') }}</div>
-          </div>
-          <div class="row justify-between">
-            <div>日志监控告警</div>
-            <div class="q-mr-sm">{{ date.formatDate(webMonitorTaskRow[0]?.creation, 'YYYY-MM-DD HH:mm') }}</div>
-          </div>
-          <div class="row justify-between">
-            <div>日志监控告警</div>
-            <div class="q-mr-sm">{{ date.formatDate(webMonitorTaskRow[0]?.creation, 'YYYY-MM-DD HH:mm') }}</div>
+          <div class="row justify-center q-mt-lg">
+            <div>暂无监控告警信息</div>
+<!--            <div class="q-mr-sm">{{ date.formatDate(webMonitorTaskRow[0]?.creation, 'YYYY-MM-DD HH:mm') }}</div>-->
           </div>
         </div>
       </q-card>
