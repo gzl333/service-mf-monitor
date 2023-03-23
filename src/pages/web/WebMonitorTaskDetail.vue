@@ -5,7 +5,7 @@ import { useStore } from 'stores/store'
 import { useRoute, useRouter } from 'vue-router'
 import monitor from 'src/api/monitor'
 import { i18n } from 'boot/i18n'
-import { date } from 'quasar'
+import { date, Notify } from 'quasar'
 import WebHistogramLineChart from 'components/Chart/WebHistogramLineChart.vue'
 
 // const props = defineProps({
@@ -39,13 +39,17 @@ const { tc } = i18n.global
 const detectionPoints = computed(() => store.getDetectionPointTable())
 const taskId = route.params.webMonitorTaskId as string
 const nowTime = new Date().getTime()
-const outcome = Math.round(nowTime / 1000 - 600)
+const startTimeStamp = Math.round(nowTime / 1000 - 1800)
+const durationTotalArr: {[key: string]: [number, string][]} = {}
 const xAxis = ref<string[]>([])
 const chartSeries = ref<Record<string, unknown>[]>([])
-const lastTimeStamp: any = ref()
-const renovateTime = ref(60)
 const statusObj = ref<Record<string, any>>({})
+const lastTimeStamp = ref()
+const renovateTime = ref(60)
 const isNewCreate = ref(true)
+const isHaveChange = ref(false)
+// 存在x轴时间戳数组
+const xTimeStamp: number[] = []
 // const obj1: any = {
 //   'a1cfc71a-be4f-11ed-b6f8-c800dfc12405': [
 //     [1678948657, '200'],
@@ -83,8 +87,6 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
     const seriesData: [number, string][] = []
     // 存在x轴时间数据数组
     const xTime: string[] = []
-    // 存在x轴时间戳数组
-    const xTimeStamp: number[] = []
     statusResp.data.forEach((status: WebMonitorInterface, index: number) => {
       status.values.forEach((item: [number, string]) => {
         // 时间数据只存储一次，避免多次存储
@@ -103,9 +105,9 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
     // lastTimeStamp为x轴最后一次时间，用于计算下一次刷新的时间
     lastTimeStamp.value = xTimeStamp[xTimeStamp.length - 1]
   }
-  const durationTotalResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'duration_seconds', start: outcome, detection_point_id: detectId, step: 60 }, path: { id: taskId } })
-  const durationTotalArr = durationTotalResp.data[0].values
-  const durationResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_duration_seconds', start: outcome, detection_point_id: detectId, step: 60 }, path: { id: taskId } })
+  const durationTotalResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'duration_seconds', start, detection_point_id: detectId, step: 60 }, path: { id: taskId } })
+  durationTotalArr[detectId] = durationTotalResp.data[0].values
+  const durationResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_duration_seconds', start, detection_point_id: detectId, step: 60 }, path: { id: taskId } })
   if (durationResp.status === 200 && durationResp.data.length > 0) {
     // 存放耗时数据数组
     let durationSeriesData: string[] = []
@@ -154,7 +156,7 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
                   // connect为底部一段柱状图
                   // 其他区间的柱状图label返回空
                   if (val.seriesId.indexOf('transfer') !== -1) {
-                    return (durationTotalArr[val.dataIndex][1] * 1000).toFixed(2)
+                    return (Number(durationTotalArr[detectId][val.dataIndex][1]) * 1000).toFixed(2)
                   } else if (val.seriesId.indexOf('tls') !== -1) {
                     // seriesId为每个柱状图的id
                     const index = val.seriesId.lastIndexOf('-')
@@ -166,16 +168,16 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
                       status = statusObj.value[str][val.dataIndex][1]
                     }
                     if (status === '200') {
-                      return '{a|' + status + '}'
+                      return ''
                     } else {
                       return '{b|' + status + '}'
                     }
                   } else if (val.seriesId.indexOf('connect') !== -1) {
                     if (val.seriesIndex === 0) {
-                      return `探针${val.seriesIndex + 1}`
+                      return `${val.seriesIndex + 1}`
                     } else if (val.seriesIndex > 0 && val.seriesIndex % 5 === 0) {
                       // seriesIndex为按照顺序叠加的每一段柱状图的索引，每个整体为5段，所以seriesIndex为5的倍数，用于判断第几个探针
-                      return `探针${val.seriesIndex / 5 + 1}`
+                      return `${val.seriesIndex / 5 + 1}`
                     }
                   } else {
                     return ''
@@ -208,39 +210,42 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
 const getWebMonitoringLastData = async (id: string, name: string, start: number) => {
   const statusResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_status_code', start, detection_point_id: id, step: 60 }, path: { id: taskId } })
   if (statusResp.status === 200) {
-    // 将数组中最早时间第一个值删除，向数组最后添加最新时刻的数据
-    if (statusObj.value[id].length >= 10) {
-      statusObj.value[id].shift()
-    }
-    if (statusResp.data[0].values.length === 1) {
-      statusObj.value[id].push(statusResp.data[0].values[0])
-      lastTimeStamp.value = statusResp.data[0].values[0][0]
-    } else {
-      statusObj.value[id].push(statusResp.data[0].values[1])
-      lastTimeStamp.value = statusResp.data[0].values[1][0]
+    if (statusResp.data[0].values[statusResp.data[0].values.length - 1][0] !== xTimeStamp[xTimeStamp.length - 1]) {
+      isHaveChange.value = true
+      xTimeStamp.shift()
+      xTimeStamp.push(statusResp.data[0].values[statusResp.data[0].values.length - 1][0])
+      // 将数组中最早时间第一个值删除，向数组最后添加最新时刻的数据
+      if (statusObj.value[id].length >= 10) {
+        statusObj.value[id].shift()
+      }
+      statusObj.value[id].push(statusResp.data[0].values[statusResp.data[0].values.length - 1])
+      lastTimeStamp.value = statusResp.data[0].values[statusResp.data[0].values.length - 1][0]
     }
   }
-  const durationResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_duration_seconds', start, detection_point_id: id, step: 60 }, path: { id: taskId } })
-  if (durationResp.status === 200) {
-    chartSeries.value.forEach((bar: Record<string, any>) => {
-      // 根据探针名找到该探针的图表数据
-      if (bar.name.indexOf(name) !== -1) {
-        if (bar.data.length >= 10) {
-          bar.data.shift()
-        }
-        durationResp.data.forEach((duration: WebMonitorInterface) => {
-          // 判断是哪个阶段耗时，替换数据
-          if (duration.metric.phase === bar.id.slice(bar.id.lastIndexOf('-') + 1, bar.id.length)) {
-            // 刷新时因为存在时间误差，后端可能返回一个值或两个值
-            if (duration.values.length === 1) {
-              bar.data.push((Number(duration.values[0][1]) * 1000).toFixed(2))
-            } else {
-              bar.data.push((Number(duration.values[1][1]) * 1000).toFixed(2))
-            }
+  if (isHaveChange.value) {
+    const durationTotalResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'duration_seconds', start, detection_point_id: id, step: 60 }, path: { id: taskId } })
+    if (durationTotalResp.status === 200) {
+      durationTotalArr[id].shift()
+      durationTotalArr[id].push(durationTotalResp.data[0].values[durationTotalResp.data[0].values.length - 1])
+    }
+    const durationResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_duration_seconds', start, detection_point_id: id, step: 60 }, path: { id: taskId } })
+    if (durationResp.status === 200) {
+      chartSeries.value.forEach((bar: Record<string, any>) => {
+        // 根据探针名找到该探针的图表数据
+        if (bar.name.indexOf(name) !== -1) {
+          if (bar.data.length >= 10) {
+            bar.data.shift()
           }
-        })
-      }
-    })
+          durationResp.data.forEach((duration: WebMonitorInterface) => {
+            // 判断是哪个阶段耗时，替换数据
+            if (duration.metric.phase === bar.id.slice(bar.id.lastIndexOf('-') + 1, bar.id.length)) {
+              // 刷新时因为存在时间误差，后端可能返回一个值或两个值
+              bar.data.push((Number(duration.values[duration.values.length - 1][1]) * 1000).toFixed(2))
+            }
+          })
+        }
+      })
+    }
   }
 }
 // 每一分钟动态刷新一次数据
@@ -248,32 +253,37 @@ let dynamicRefreshTimer: NodeJS.Timer | null
 // 计算刷新倒计时
 let countDownTimer: NodeJS.Timer | null
 const refreshData = async () => {
+  isHaveChange.value = false
   const formattedString = date.formatDate((lastTimeStamp.value + 60) * 1000, 'HH:mm:ss')
   for (const detect of detectionPoints.value) {
     await getWebMonitoringLastData(detect.value, detect.label, lastTimeStamp.value)
   }
-  // 动态删除添加x轴的值
-  if (xAxis.value.length >= 10) {
-    xAxis.value.shift()
-  }
-  xAxis.value.push(formattedString)
-
-  clearInterval(Number(dynamicRefreshTimer))
-  dynamicRefreshTimer = setInterval(() => {
-    if (!isNewCreate.value) {
-      refreshData()
+  if (isHaveChange.value) {
+    // 动态删除添加x轴的值
+    if (xAxis.value.length >= 10) {
+      xAxis.value.shift()
     }
-  }, 60000)
-  renovateTime.value = 60
-  // 每次刷新时，最新时间需要加上60秒
-  // lastTimeStamp = lastTimeStamp + 60
+    xAxis.value.push(formattedString)
+    clearInterval(Number(dynamicRefreshTimer))
+    dynamicRefreshTimer = setInterval(() => {
+      if (!isNewCreate.value) {
+        refreshData()
+      }
+    }, 60000)
+    renovateTime.value = 60
+  } else {
+    Notify.create({
+      message: '已是最新数据',
+      color: 'secondary',
+      position: 'bottom',
+      timeout: 3000,
+      multiLine: false
+    })
+  }
 }
 const refreshAll = () => {
-  isNewCreate.value = true
-  xAxis.value = []
-  chartSeries.value = []
   const nowTime = new Date().getTime()
-  const startTime = Math.round(nowTime / 1000 - 600)
+  const startTime = Math.round(nowTime / 1000 - 1800)
   detectionPoints.value.forEach((item, index) => {
     getWebMonitoringData(item.value, item.label, startTime, index)
   })
@@ -285,19 +295,11 @@ const firstRefreshTimer = setTimeout(() => {
   if (isNewCreate.value) {
     refreshAll()
   }
-}, 80000)
+}, 70000)
 watch(isNewCreate, () => {
   if (!isNewCreate.value) {
     countDownTimer = setInterval(() => {
       if (!isNewCreate.value) {
-        // 当前时间戳
-        // const nowTimeStamp = Math.round(new Date().getTime() / 1000)
-        // // 存在时间误差
-        // if (lastTimeStamp + 60 <= nowTimeStamp) {
-        //   renovateTime.value = lastTimeStamp + 120 - nowTimeStamp
-        // } else {
-        //   renovateTime.value = lastTimeStamp + 60 - nowTimeStamp
-        // }
         if (renovateTime.value > 0) {
           renovateTime.value--
         }
@@ -317,14 +319,14 @@ watch(isNewCreate, () => {
 watch(detectionPoints, () => {
   if (detectionPoints.value.length > 0) {
     detectionPoints.value.forEach((item, index) => {
-      getWebMonitoringData(item.value, item.label, outcome, index)
+      getWebMonitoringData(item.value, item.label, startTimeStamp, index)
     })
   }
 })
 onMounted(() => {
   if (detectionPoints.value.length > 0) {
     detectionPoints.value.forEach((item, index) => {
-      getWebMonitoringData(item.value, item.label, outcome, index)
+      getWebMonitoringData(item.value, item.label, startTimeStamp, index)
     })
   }
 })
@@ -364,7 +366,7 @@ onUnmounted(() => {
       <div>
         <div v-for="(item, index) in detectionPoints" :key="item.value">{{ `探针${index + 1}：${item.label}` }}</div>
       </div>
-      <div class="row items-center" v-show="!isNewCreate">
+      <div class="row items-center">
         <div class="text-grey-7">剩余刷新时间</div>
         <q-circular-progress
           show-value

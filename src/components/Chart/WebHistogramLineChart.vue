@@ -60,7 +60,6 @@ onMounted(() => {
         }
       },
       formatter: function (params: Record<string, any>) {
-        // console.log(params)
         const date = new Date()
         const year = date.getFullYear()
         const month = date.getMonth() + 1
