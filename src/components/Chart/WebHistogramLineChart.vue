@@ -61,6 +61,11 @@ onMounted(() => {
       },
       formatter: function (params: Record<string, any>) {
         // console.log(params)
+        const date = new Date()
+        const year = date.getFullYear()
+        const month = date.getMonth() + 1
+        const day = date.getDate()
+        const today = year + '-' + month + '-' + day
         const totalArr = []
         let num = 0
         for (let i = 0, l = params.length; i < l; i++) {
@@ -72,11 +77,11 @@ onMounted(() => {
             num += Number(params[i].value)
           }
         }
-        let relVal = params[0].name
+        let relVal = today + ' ' + params[0].name
         for (let i = 0, l = params.length; i < l; i++) {
           if (i >= 0 && i % 5 === 0) {
-            relVal += '<br/>' + params[i].seriesName.slice(0, params[i].seriesName.indexOf('-')) + ' 总耗时' + totalArr[i / 5] + '毫秒<br/>' +
-params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + '：' + params[i].value + '毫秒'
+            relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> 总耗时${totalArr[i / 5]}毫秒</span><br/>
+              ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${params[i].value}毫秒`
           } else {
             if ((i + 1) % 5 === 0) {
               relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value + '毫秒' +
@@ -126,13 +131,13 @@ params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') 
   if (props.chartSeries?.length > 0 && props.xAxisTime?.length > 0) {
     chart.setOption(option.value, true)
   } else {
-    chart.setOption(emptyOption)
+    chart.setOption(emptyOption, true)
   }
   watch(props, () => {
     if (props.chartSeries?.length > 0 && props.xAxisTime?.length > 0) {
       chart.setOption(option.value, true)
     } else {
-      chart.setOption(emptyOption)
+      chart.setOption(emptyOption, true)
     }
   }, { deep: true })
   const chartResize = () => {

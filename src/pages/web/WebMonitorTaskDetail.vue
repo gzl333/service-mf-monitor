@@ -42,7 +42,7 @@ const nowTime = new Date().getTime()
 const outcome = Math.round(nowTime / 1000 - 600)
 const xAxis = ref<string[]>([])
 const chartSeries = ref<Record<string, unknown>[]>([])
-let lastTimeStamp: number
+const lastTimeStamp: any = ref()
 const renovateTime = ref(60)
 const statusObj = ref<Record<string, any>>({})
 const isNewCreate = ref(true)
@@ -91,6 +91,7 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
         if (index === 0) {
           // 时间戳转化为HH:mm:ss格式
           const formattedString = date.formatDate(item[0] * 1000, 'HH:mm:ss')
+          // const formattedString = date.formatDate(item[0] * 1000, 'YYYY-MM-DD HH:mm:ss')
           xTime.push(formattedString)
           xTimeStamp.push(item[0])
         }
@@ -100,8 +101,10 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
     statusObj.value[detectId] = seriesData
     xAxis.value = xTime
     // lastTimeStamp为x轴最后一次时间，用于计算下一次刷新的时间
-    lastTimeStamp = xTimeStamp[xTimeStamp.length - 1]
+    lastTimeStamp.value = xTimeStamp[xTimeStamp.length - 1]
   }
+  const durationTotalResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'duration_seconds', start: outcome, detection_point_id: detectId, step: 60 }, path: { id: taskId } })
+  const durationTotalArr = durationTotalResp.data[0].values
   const durationResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_duration_seconds', start: outcome, detection_point_id: detectId, step: 60 }, path: { id: taskId } })
   if (durationResp.status === 200 && durationResp.data.length > 0) {
     // 存放耗时数据数组
@@ -144,13 +147,15 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
                 show: true,
                 fontSize: 12,
                 distance: 10,
-                position: 'bottom',
+                position: duration.metric.phase === 'transfer' ? 'top' : duration.metric.phase === 'tls' ? 'inside' : 'bottom',
                 // 自定义顶部文字写判断
                 formatter: function (val: Record<string, any>) {
                   // transfer为最顶部一段柱状图，echarts label不能控制单独某一段，只能控制一个整体
                   // connect为底部一段柱状图
                   // 其他区间的柱状图label返回空
                   if (val.seriesId.indexOf('transfer') !== -1) {
+                    return (durationTotalArr[val.dataIndex][1] * 1000).toFixed(2)
+                  } else if (val.seriesId.indexOf('tls') !== -1) {
                     // seriesId为每个柱状图的id
                     const index = val.seriesId.lastIndexOf('-')
                     // 从柱状图id中截取出来探针id
@@ -209,8 +214,10 @@ const getWebMonitoringLastData = async (id: string, name: string, start: number)
     }
     if (statusResp.data[0].values.length === 1) {
       statusObj.value[id].push(statusResp.data[0].values[0])
+      lastTimeStamp.value = statusResp.data[0].values[0][0]
     } else {
       statusObj.value[id].push(statusResp.data[0].values[1])
+      lastTimeStamp.value = statusResp.data[0].values[1][0]
     }
   }
   const durationResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_duration_seconds', start, detection_point_id: id, step: 60 }, path: { id: taskId } })
@@ -236,18 +243,30 @@ const getWebMonitoringLastData = async (id: string, name: string, start: number)
     })
   }
 }
+// 每一分钟动态刷新一次数据
+let dynamicRefreshTimer: NodeJS.Timer | null
+// 计算刷新倒计时
+let countDownTimer: NodeJS.Timer | null
 const refreshData = async () => {
-  const formattedString = date.formatDate((lastTimeStamp + 60) * 1000, 'HH:mm:ss')
+  const formattedString = date.formatDate((lastTimeStamp.value + 60) * 1000, 'HH:mm:ss')
+  for (const detect of detectionPoints.value) {
+    await getWebMonitoringLastData(detect.value, detect.label, lastTimeStamp.value)
+  }
   // 动态删除添加x轴的值
   if (xAxis.value.length >= 10) {
     xAxis.value.shift()
   }
   xAxis.value.push(formattedString)
-  for (const detect of detectionPoints.value) {
-    await getWebMonitoringLastData(detect.value, detect.label, lastTimeStamp)
-  }
+
+  clearInterval(Number(dynamicRefreshTimer))
+  dynamicRefreshTimer = setInterval(() => {
+    if (!isNewCreate.value) {
+      refreshData()
+    }
+  }, 60000)
+  renovateTime.value = 60
   // 每次刷新时，最新时间需要加上60秒
-  lastTimeStamp = lastTimeStamp + 60
+  // lastTimeStamp = lastTimeStamp + 60
 }
 const refreshAll = () => {
   isNewCreate.value = true
@@ -262,10 +281,6 @@ const refreshAll = () => {
 const goBack = () => {
   router.go(-1)
 }
-// 每一分钟动态刷新一次数据
-let dynamicRefreshTimer: NodeJS.Timer | null
-// 计算刷新倒计时
-let countDownTimer: NodeJS.Timer | null
 const firstRefreshTimer = setTimeout(() => {
   if (isNewCreate.value) {
     refreshAll()
@@ -276,12 +291,15 @@ watch(isNewCreate, () => {
     countDownTimer = setInterval(() => {
       if (!isNewCreate.value) {
         // 当前时间戳
-        const nowTimeStamp = Math.round(new Date().getTime() / 1000)
-        // 存在时间误差
-        if (lastTimeStamp + 60 <= nowTimeStamp) {
-          renovateTime.value = lastTimeStamp + 120 - nowTimeStamp
-        } else {
-          renovateTime.value = lastTimeStamp + 60 - nowTimeStamp
+        // const nowTimeStamp = Math.round(new Date().getTime() / 1000)
+        // // 存在时间误差
+        // if (lastTimeStamp + 60 <= nowTimeStamp) {
+        //   renovateTime.value = lastTimeStamp + 120 - nowTimeStamp
+        // } else {
+        //   renovateTime.value = lastTimeStamp + 60 - nowTimeStamp
+        // }
+        if (renovateTime.value > 0) {
+          renovateTime.value--
         }
       }
     }, 1000)
@@ -326,23 +344,27 @@ onUnmounted(() => {
         {{ tc('网站监控详情') }}
       </div>
     </div>
-    <div class="row justify-center q-gutter-x-lg">
-      <div>监控任务名称：{{ store.tables.webMonitorTable.byId[taskId]?.name }}</div>
-      <div>监控任务url：{{ store.tables.webMonitorTable.byId[taskId]?.url }}</div>
-      <div>备注：
-        <span v-if="store.tables.webMonitorTable.byId[taskId]?.remark !== ''">
-          {{ store.tables.webMonitorTable.byId[taskId]?.remark }}
-      </span>
-        <span v-else>
-          暂无备注
-        </span>
+    <div class="row justify-center">
+      <div class="text-h6">
+        <div>
+          <span>监控任务名称：</span>
+          <span class="text-primary">{{ store.tables.webMonitorTable.byId[taskId]?.name }}</span>
+        </div>
+        <div>
+          <span>监控任务url：</span>
+          <span class="text-primary">{{ store.tables.webMonitorTable.byId[taskId]?.url }}</span>
+        </div>
+        <div>
+          <span>备注：</span>
+          <span class="text-primary">{{ store.tables.webMonitorTable.byId[taskId]?.remark === '' ? '暂无备注' : store.tables.webMonitorTable.byId[taskId]?.remark }}</span>
+        </div>
       </div>
     </div>
     <div class="row justify-between items-center">
       <div>
         <div v-for="(item, index) in detectionPoints" :key="item.value">{{ `探针${index + 1}：${item.label}` }}</div>
       </div>
-      <div class="row items-center" v-if="!isNewCreate">
+      <div class="row items-center" v-show="!isNewCreate">
         <div class="text-grey-7">剩余刷新时间</div>
         <q-circular-progress
           show-value
@@ -355,7 +377,7 @@ onUnmounted(() => {
         >
           {{ renovateTime }}s
         </q-circular-progress>
-        <q-btn flat color="primary" label="刷新" @click="refreshAll"/>
+        <q-btn flat color="primary" label="更新数据" @click="refreshData"/>
       </div>
     </div>
     <div class="row q-mt-lg">
