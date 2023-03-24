@@ -2,9 +2,11 @@ import { defineStore } from 'pinia'
 import monitor from 'src/api/monitor'
 import { normalize, schema } from 'normalizr'
 import { Dialog, Notify } from 'quasar'
-
+import { i18n } from 'boot/i18n'
 import WebTaskDeleteDialog from 'components/web/WebTaskDeleteDialog.vue'
 import WebTaskReviseDialog from 'components/web/WebTaskReviseDialog.vue'
+
+const { tc } = i18n.global
 export interface DataCenterInterface {
   // 来自registry接口
   id: string
@@ -273,7 +275,7 @@ export const useStore = defineStore('monitor', {
             classes: 'notification-positive shadow-15',
             icon: 'check_circle',
             textColor: 'positive',
-            message: '修改监控任务成功',
+            message: `${tc('修改监控任务成功')}`,
             position: 'bottom',
             closeBtn: true,
             timeout: 5000,
@@ -285,7 +287,7 @@ export const useStore = defineStore('monitor', {
           classes: 'notification-negative shadow-15',
           icon: 'las la-times-circle',
           textColor: 'negative',
-          message: `修改失败，${error.response.data.message}`,
+          message: `${tc('修改失败')}，${error.response.data.message}`,
           position: 'bottom',
           closeBtn: true,
           timeout: 5000,

@@ -48,40 +48,15 @@ const lastTimeStamp = ref()
 const renovateTime = ref(60)
 const isNewCreate = ref(true)
 const isHaveChange = ref(false)
+const tab = ref('recent')
 // 存在x轴时间戳数组
 const xTimeStamp: number[] = []
-// const obj1: any = {
-//   'a1cfc71a-be4f-11ed-b6f8-c800dfc12405': [
-//     [1678948657, '200'],
-//     [1678948717, '200'],
-//     [1678948777, '404'],
-//     [1678948837, '200'],
-//     [1678948897, '500'],
-//     [1678948957, '200'],
-//     [1678949017, '200'],
-//     [1678949077, '401'],
-//     [1678949137, '200'],
-//     [1678949197, '200']
-//   ],
-//   'cd34c504-be4f-11ed-8273-c800dfc12405': [
-//     [1678948657, '200'],
-//     [1678948717, '200'],
-//     [1678948777, '404'],
-//     [1678948837, '200'],
-//     [1678948897, '500'],
-//     [1678948957, '200'],
-//     [1678949017, '200'],
-//     [1678949077, '401'],
-//     [1678949137, '200'],
-//     [1678949197, '200']
-//   ]
-// }
 const color = ['#7cb5ec', '#f7a35c', '#8085e9', '#a5c2d5', '#cbab4f', '#76a871', '#a56f8f', '#c12c44', '#9f7961', '#76a871', '#6f83a5',
   '#0f4fb8', '#106dcf', '#b3d74c', '#74aae3', '#5cdec6', '#3526de', '#9d65ee', '#a8b3e3', '#6bc1b7', '#549ee2', '#6e98d6']
-const getWebMonitoringData = async (detectId: string, name: string, start: number, index: number) => {
+const getWebMonitoringData = async (detectId: string, name: string, start: number, step:number, index: number) => {
   // 先请求获取状态码，再去请求获取耗时，因为图表通过正负区分方向，状态码异常时需要 * -1，所以需要先获取状态码之后再去请求耗时
   // 一次请求数据时间段为十分钟
-  const statusResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_status_code', start, detection_point_id: detectId, step: 60 }, path: { id: taskId } })
+  const statusResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_status_code', start, detection_point_id: detectId, step }, path: { id: taskId } })
   if (statusResp.status === 200 && statusResp.data.length > 0) {
     // 存放状态元组
     const seriesData: [number, string][] = []
@@ -92,9 +67,13 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
         // 时间数据只存储一次，避免多次存储
         if (index === 0) {
           // 时间戳转化为HH:mm:ss格式
-          const formattedString = date.formatDate(item[0] * 1000, 'HH:mm:ss')
-          // const formattedString = date.formatDate(item[0] * 1000, 'YYYY-MM-DD HH:mm:ss')
-          xTime.push(formattedString)
+          if (step === 60) {
+            const formattedString = date.formatDate(item[0] * 1000, 'HH:mm:ss')
+            xTime.push(formattedString)
+          } else {
+            const formattedString = date.formatDate(item[0] * 1000, 'MM-DD HH:mm')
+            xTime.push(formattedString)
+          }
           xTimeStamp.push(item[0])
         }
         seriesData.push(item)
@@ -105,9 +84,9 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
     // lastTimeStamp为x轴最后一次时间，用于计算下一次刷新的时间
     lastTimeStamp.value = xTimeStamp[xTimeStamp.length - 1]
   }
-  const durationTotalResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'duration_seconds', start, detection_point_id: detectId, step: 60 }, path: { id: taskId } })
+  const durationTotalResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'duration_seconds', start, detection_point_id: detectId, step }, path: { id: taskId } })
   durationTotalArr[detectId] = durationTotalResp.data[0].values
-  const durationResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_duration_seconds', start, detection_point_id: detectId, step: 60 }, path: { id: taskId } })
+  const durationResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_duration_seconds', start, detection_point_id: detectId, step }, path: { id: taskId } })
   if (durationResp.status === 200 && durationResp.data.length > 0) {
     // 存放耗时数据数组
     let durationSeriesData: string[] = []
@@ -273,7 +252,7 @@ const refreshData = async () => {
     renovateTime.value = 60
   } else {
     Notify.create({
-      message: '已是最新数据',
+      message: tc('已是最新数据'),
       color: 'secondary',
       position: 'bottom',
       timeout: 3000,
@@ -281,34 +260,61 @@ const refreshData = async () => {
     })
   }
 }
-const refreshAll = () => {
-  const nowTime = new Date().getTime()
-  const startTime = Math.round(nowTime / 1000 - 1800)
+const refreshAll = (time: number, step: number) => {
   detectionPoints.value.forEach((item, index) => {
-    getWebMonitoringData(item.value, item.label, startTime, index)
+    getWebMonitoringData(item.value, item.label, time, step, index)
   })
+}
+const changeChatTab = (val: string) => {
+  clearInterval(Number(dynamicRefreshTimer))
+  clearInterval(Number(countDownTimer))
+  xAxis.value = []
+  chartSeries.value = []
+  const nowTime = new Date().getTime()
+  if (val === 'recent') {
+    const startTime = Math.round(nowTime / 1000 - 1800)
+    refreshAll(startTime, 60)
+  } else if (val === 'day') {
+    const startTime = Math.round(nowTime / 1000 - 86400)
+    const step = 2880
+    refreshAll(startTime, step)
+  } else if (val === 'week') {
+    const startTime = Math.round(nowTime / 1000 - 604800)
+    const step = 20160
+    refreshAll(startTime, step)
+  } else {
+    const startTime = Math.round(nowTime / 1000 - 2592000)
+    const step = 86400
+    refreshAll(startTime, step)
+  }
+  renovateTime.value = 60
+  countDownTimer = setInterval(() => {
+    if (renovateTime.value > 0) {
+      renovateTime.value--
+    }
+  }, 1000)
+  dynamicRefreshTimer = setInterval(() => {
+    refreshData()
+  }, 60000)
 }
 const goBack = () => {
   router.go(-1)
 }
 const firstRefreshTimer = setTimeout(() => {
   if (isNewCreate.value) {
-    refreshAll()
+    const startTime = Math.round(nowTime / 1000 - 1800)
+    refreshAll(startTime, 60)
   }
 }, 70000)
 watch(isNewCreate, () => {
   if (!isNewCreate.value) {
     countDownTimer = setInterval(() => {
-      if (!isNewCreate.value) {
-        if (renovateTime.value > 0) {
-          renovateTime.value--
-        }
+      if (renovateTime.value > 0) {
+        renovateTime.value--
       }
     }, 1000)
     dynamicRefreshTimer = setInterval(() => {
-      if (!isNewCreate.value) {
-        refreshData()
-      }
+      refreshData()
     }, 60000)
   } else {
     clearInterval(Number(dynamicRefreshTimer))
@@ -319,14 +325,14 @@ watch(isNewCreate, () => {
 watch(detectionPoints, () => {
   if (detectionPoints.value.length > 0) {
     detectionPoints.value.forEach((item, index) => {
-      getWebMonitoringData(item.value, item.label, startTimeStamp, index)
+      getWebMonitoringData(item.value, item.label, startTimeStamp, 60, index)
     })
   }
 })
 onMounted(() => {
   if (detectionPoints.value.length > 0) {
     detectionPoints.value.forEach((item, index) => {
-      getWebMonitoringData(item.value, item.label, startTimeStamp, index)
+      getWebMonitoringData(item.value, item.label, startTimeStamp, 60, index)
     })
   }
 })
@@ -349,25 +355,25 @@ onUnmounted(() => {
     <div class="row justify-center">
       <div class="text-h6">
         <div>
-          <span>监控任务名称：</span>
+          <span>{{ tc('监控任务名称') }}：</span>
           <span class="text-primary">{{ store.tables.webMonitorTable.byId[taskId]?.name }}</span>
         </div>
         <div>
-          <span>监控任务url：</span>
+          <span>{{ tc('监控任务url') }}：</span>
           <span class="text-primary">{{ store.tables.webMonitorTable.byId[taskId]?.url }}</span>
         </div>
         <div>
-          <span>备注：</span>
-          <span class="text-primary">{{ store.tables.webMonitorTable.byId[taskId]?.remark === '' ? '暂无备注' : store.tables.webMonitorTable.byId[taskId]?.remark }}</span>
+          <span>{{ tc('备注') }}：</span>
+          <span class="text-primary">{{ store.tables.webMonitorTable.byId[taskId]?.remark === '' ? tc('暂无备注') : store.tables.webMonitorTable.byId[taskId]?.remark }}</span>
         </div>
       </div>
     </div>
     <div class="row justify-between items-center">
       <div>
-        <div v-for="(item, index) in detectionPoints" :key="item.value">{{ `探针${index + 1}：${item.label}` }}</div>
+        <div v-for="(item, index) in detectionPoints" :key="item.value">{{ `${tc('探针')}${index + 1}：${ i18n.global.locale === 'zh' ? item.label : item.labelEn}` }}</div>
       </div>
       <div class="row items-center">
-        <div class="text-grey-7">剩余刷新时间</div>
+        <div class="text-grey-7">{{ tc('剩余刷新时间') }}</div>
         <q-circular-progress
           show-value
           class="text-light-blue q-ma-md"
@@ -379,14 +385,85 @@ onUnmounted(() => {
         >
           {{ renovateTime }}s
         </q-circular-progress>
-        <q-btn flat color="primary" label="更新数据" @click="refreshData"/>
+        <q-btn flat no-caps color="primary" :label="tc('更新数据')" @click="refreshData"/>
       </div>
     </div>
-    <div class="row q-mt-lg">
-      <div class="col-12">
-        <q-card flat bordered class="no-border-radius">
-          <web-histogram-line-chart :x-axis-time="xAxis" :chart-series="chartSeries"/>
-        </q-card>
+    <div>
+      <div class="col-auto">
+        <q-tabs
+            class="col-auto"
+            v-model="tab"
+            active-color="primary"
+            align="left"
+            inline-label
+            @update:model-value="changeChatTab"
+          >
+            <q-tab class="q-px-none q-py-none q-mr-md"
+                   no-caps
+                   :ripple="false"
+                   name="recent"
+                   icon="las la-clock"
+                   :label="tc('最近实时数据')"/>
+            <q-tab class="q-px-none q-py-none q-mr-md"
+                   no-caps
+                   :ripple="false"
+                   name="day"
+                   icon="las la-calendar-check"
+                   :label="tc('最近一天数据')"/>
+            <q-tab class="q-px-none q-py-none q-mr-md"
+                   no-caps
+                   :ripple="false"
+                   name="week"
+                   icon="las la-clipboard-list"
+                   :label="tc('最近一周数据')"/>
+            <q-tab class="q-px-none q-py-none q-mr-md"
+                   no-caps
+                   :ripple="false"
+                   name="month"
+                   icon="las la-calendar"
+                   :label="tc('最近一个月数据')"/>
+          </q-tabs>
+        <q-separator/>
+      </div>
+      <div>
+        <q-tab-panels v-model="tab">
+          <q-tab-panel class="q-pa-none overflow-hidden" name="recent">
+            <div class="row q-mt-lg">
+              <div class="col-12">
+                <q-card flat bordered class="no-border-radius">
+                  <web-histogram-line-chart :x-axis-time="xAxis" :chart-series="chartSeries"/>
+                </q-card>
+              </div>
+            </div>
+          </q-tab-panel>
+          <q-tab-panel class="q-pa-none overflow-hidden" name="day">
+            <div class="row q-mt-lg">
+              <div class="col-12">
+                <q-card flat bordered class="no-border-radius">
+                  <web-histogram-line-chart :x-axis-time="xAxis" :chart-series="chartSeries"/>
+                </q-card>
+              </div>
+            </div>
+          </q-tab-panel>
+          <q-tab-panel class="q-pa-none overflow-hidden" name="week">
+            <div class="row q-mt-lg">
+              <div class="col-12">
+                <q-card flat bordered class="no-border-radius">
+                  <web-histogram-line-chart :x-axis-time="xAxis" :chart-series="chartSeries"/>
+                </q-card>
+              </div>
+            </div>
+          </q-tab-panel>
+          <q-tab-panel class="q-pa-none overflow-hidden" name="month">
+            <div class="row q-mt-lg">
+              <div class="col-12">
+                <q-card flat bordered class="no-border-radius">
+                  <web-histogram-line-chart :x-axis-time="xAxis" :chart-series="chartSeries"/>
+                </q-card>
+              </div>
+            </div>
+          </q-tab-panel>
+        </q-tab-panels>
       </div>
     </div>
   </div>

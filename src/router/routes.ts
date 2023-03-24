@@ -8,21 +8,21 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         path: 'web',
-        component: () => import('pages/web/WebIndex.vue'),
+        component: () => import('pages/web/WebMonitorIndex.vue'),
         redirect: '/my/monitor/web/list',
         children: [
           {
             path: 'list',
-            component: () => import('pages/web/WebTasksList.vue')
+            component: () => import('pages/web/WebMonitorTasksList.vue')
           },
           {
             path: 'create',
-            component: () => import('pages/web/WebTaskCreate.vue'),
+            component: () => import('pages/web/WebMonitorTaskCreate.vue'),
             props: true // 接收url中的参数
           },
           {
             path: 'detail/:webMonitorTaskId',
-            component: () => import('pages/web/WebMonitorTaskDetail.vue')
+            component: () => import('pages/web/WebMonitorDetailIndex.vue')
           }
         ]
       },

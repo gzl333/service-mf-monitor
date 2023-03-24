@@ -10,15 +10,20 @@ export default {
   综合监控: 'Monitor',
   网站监控: 'Web Monitor',
   视频会议: 'Meeting Services',
-  主机集群: 'Server Clusters',
+  服务器: 'Server',
   存储集群: 'Storage Clusters',
   发布时间: 'Release Time',
 
   // page
-  // WebIndex
+  // WebMonitorIndex
   网站: 'Web',
   新建: 'New',
-  // TaskList
+  // WebMonitorTasksList
+  当前监控任务: 'Current Monitor Task Quantity',
+  实时告警: 'Real-time Alarm',
+  最新告警信息: 'Latest Alarm Information',
+  暂无监控告警信息: 'No monitoring alarm information',
+  查看详情: 'Detail',
   任务id: 'Id',
   任务名称: 'Name',
   监控url: 'Url',
@@ -27,6 +32,31 @@ export default {
   操作: 'Operate',
   修改: 'Revise',
   删除: 'Delete',
+  // WebMonitorTaskCreate
+  新建监控任务: 'Create A New Monitoring Task',
+  请输入任务名称: 'Please enter a task name',
+  任务名称不能为空: 'Task name cannot be empty',
+  请输入监控地址: 'Please enter the url',
+  监控地址: 'Url',
+  监控地址不能为空: 'The Url cannot be empty',
+  '地址不合法，请输入http://或者https://开头的地址': 'The address is illegal. Please enter an address beginning with http:// or https://',
+  请输入备注: 'Please enter remarks',
+  创建: 'Create',
+  重置: 'Reset',
+  正在创建中: 'Creating',
+  // WebMonitorDetailIndex
+  网站监控详情: 'Website Monitoring Details',
+  监控任务名称: 'Monitoring Task Name',
+  监控任务url: 'Monitoring Task Url',
+  暂无备注: 'No Remarks',
+  探针: 'Detection Point',
+  剩余刷新时间: 'Remaining Refresh Time',
+  更新数据: 'Update Data',
+  最近实时数据: 'Recent Real-Time Data',
+  最近一天数据: 'Latest Day Data',
+  最近一周数据: 'Latest Week Data',
+  最近一个月数据: 'Latest Month Data',
+  已是最新数据: 'Is already the latest data',
   // MeetingPage
   全部: 'All',
   在线: 'Online',
@@ -67,5 +97,21 @@ export default {
   集群容量: 'Cluster Capacity',
   当前容量: 'Current Capacity',
   OSD状态: 'OSD Status',
-  暂无监控单元: 'No Monitoring Unit'
+  暂无监控单元: 'No Monitoring Unit',
+  // WebTaskDeleteDialog
+  确认要删除该任务吗: 'Are you sure you want to delete this task',
+  此操作是不可逆的: 'This operation is irreversible',
+  确认: 'Confirm',
+  取消: 'Cancel',
+  删除成功: 'Delete succeeded',
+  删除失败: 'Delete failed',
+  // WebTaskReviseDialog
+  修改监控任务: 'Modify Monitoring Tasks',
+  正在修改中: 'Modifying',
+  // WebHistogramLineChart
+  实时网站监控汇总图: 'Summary Of Real-Time Website Monitoring',
+  毫秒: 'ms',
+  总耗时: 'Total Time Spent',
+  请求耗时: 'Request Time Consuming',
+  '正在获取监控数据中,大约一分钟后会产生监控数据': 'Obtaining monitoring data. Monitoring data will be generated in about one minute.'
 }

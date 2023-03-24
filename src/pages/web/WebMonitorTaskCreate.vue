@@ -95,37 +95,37 @@ const onReset = () => {
         @reset="onReset"
       >
         <div class="row">
-          <div class="col-2 q-mt-sm text-subtitle1 text-grey">任务名称</div>
+          <div class="col-2 q-mt-sm text-subtitle1 text-grey">{{ tc('任务名称') }}</div>
           <div class="col-10">
-            <q-input outlined dense clearable v-model="query.name" label="请输入任务名称" lazy-rules="ondemand" :rules="[val => val && val.length > 0 || '任务名称不能为空']"
+            <q-input outlined dense clearable v-model="query.name" :label="tc('请输入任务名称')" lazy-rules="ondemand" :rules="[val => val && val.length > 0 || tc('任务名称不能为空')]"
           />
           </div>
         </div>
         <div class="row">
-          <div class="col-2 q-mt-sm text-subtitle1 text-grey">监控地址</div>
+          <div class="col-2 q-mt-sm text-subtitle1 text-grey">{{ tc('监控地址') }}</div>
           <div class="col-10">
-            <q-input outlined dense clearable v-model="query.url" label="请输入监控地址" lazy-rules="ondemand" :rules="[val => val && val.length > 0 || '监控地址不能为空', val => urlReg.test(val) || '地址不合法，请输入http://或者https://开头的地址']"
+            <q-input outlined dense clearable v-model="query.url" :label="tc('请输入监控地址')" lazy-rules="ondemand" :rules="[val => val && val.length > 0 || tc('监控地址不能为空'), val => urlReg.test(val) || tc('地址不合法，请输入http://或者https://开头的地址')]"
             />
           </div>
         </div>
         <div class="row">
-          <div class="col-2 q-mt-sm text-subtitle1 text-grey">备注</div>
+          <div class="col-2 q-mt-sm text-subtitle1 text-grey">{{ tc('备注') }}</div>
           <div class="col-10">
-            <q-input outlined dense clearable v-model="query.remark" label="请输入备注"/>
+            <q-input outlined dense clearable v-model="query.remark" :label="tc('请输入备注')"/>
           </div>
         </div>
         <div class="row">
           <div class="col-2">
-            <q-btn no-caps unelevated label="创建" type="submit" color="primary"/>
+            <q-btn no-caps unelevated :label="tc('创建')" type="submit" color="primary"/>
           </div>
           <div>
-            <q-btn no-caps unelevated label="重置" type="reset" color="primary"/>
+            <q-btn no-caps unelevated :label="tc('重置')" type="reset" color="primary"/>
           </div>
         </div>
         <q-inner-loading
           :showing="visible"
           color="primary"
-          label="正在创建中"
+          :label="tc('正在创建中')"
           label-class="text-grey-7"
           label-style="font-size: 1.1em"
         />

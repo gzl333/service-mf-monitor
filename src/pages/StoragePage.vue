@@ -142,7 +142,7 @@ const getAllUnit = async () => {
 }
 getAllUnit()
 const openPanel = async (organization_id: string) => {
-  if (allStorageUnitsObjData[organization_id].length > 0) {
+  if (allStorageUnitsObjData[organization_id] && allStorageUnitsObjData[organization_id].length > 0) {
     const unitObj: { [key: string]: unknown } = {}
     unitObj[organization_id] = allStorageUnitsObjData[organization_id]
     Object.assign(allExpendUnitsObjData, unitObj)
@@ -222,11 +222,11 @@ onUnmounted(() => {
       <div class="row justify-center">
         <div class="content-fixed-width">
           <div class="text-h6 q-pt-lg">
-            {{ tc('存储集群') }}
+            ceph
           </div>
           <div class="row q-mt-lg">
             <div class="col-8 row">
-              <q-input class="col-5" :disable="isDisable" outlined dense clearable v-model="keyword" label="输入关键字搜索" @update:model-value="keywordSearch"/>
+              <q-input class="col-5" :disable="isDisable" outlined dense clearable v-model="keyword" :label="tc('输入关键字搜索')" @update:model-value="keywordSearch"/>
             </div>
             <div class="col-4 row justify-end items-center">
               <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="!isDisable" @click="refreshAllUnit"/>

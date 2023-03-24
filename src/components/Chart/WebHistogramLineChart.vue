@@ -25,7 +25,7 @@ echarts.use([
   CanvasRenderer,
   UniversalTransition
 ])
-
+import { i18n } from 'boot/i18n'
 const props = defineProps({
   xAxisTime: {
     type: Array,
@@ -38,11 +38,12 @@ const props = defineProps({
 })
 const container = ref<HTMLElement>()
 // defineExpose({ })
+const { tc } = i18n.global
 onMounted(() => {
   const chart = echarts.init(container.value!)
   const option = computed(() => ({
     title: {
-      text: '实时网站监控汇总图',
+      text: tc('实时网站监控汇总图'),
       left: 'center'
     },
     grid: {
@@ -79,14 +80,14 @@ onMounted(() => {
         let relVal = today + ' ' + params[0].name
         for (let i = 0, l = params.length; i < l; i++) {
           if (i >= 0 && i % 5 === 0) {
-            relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> 总耗时${totalArr[i / 5]}毫秒</span><br/>
-              ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${params[i].value}毫秒`
+            relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('总耗时') + totalArr[i / 5] + tc('毫秒')}</span><br/>
+              ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${params[i].value + tc('毫秒')}`
           } else {
             if ((i + 1) % 5 === 0) {
-              relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value + '毫秒' +
+              relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value + tc('毫秒') +
                 '<br/>' + '<hr/>'
             } else {
-              relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value + '毫秒'
+              relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value + tc('毫秒')
             }
           }
         }
@@ -103,7 +104,7 @@ onMounted(() => {
     yAxis: [
       {
         type: 'value',
-        name: '请求耗时',
+        name: tc('请求耗时'),
         scale: true,
         boundaryGap: [0.2, 0.2],
         splitLine: {
@@ -118,7 +119,7 @@ onMounted(() => {
   }))
   const emptyOption = {
     title: {
-      text: '正在获取监控数据中,大约一分钟后会产生监控数据',
+      text: tc('正在获取监控数据中,大约一分钟后会产生监控数据'),
       x: 'center',
       y: 'center',
       textStyle: {

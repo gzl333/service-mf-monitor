@@ -76,7 +76,7 @@ console.log('table', store.tables)
             >
               <q-item-section class="column items-center">
                 <q-icon name="las la-server" size="lg"/>
-                <div class="active-text text-center">{{ tc('主机集群') }}</div>
+                <div class="active-text text-center">{{ tc('服务器') }}</div>
               </q-item-section>
             </q-item>
 
@@ -88,7 +88,7 @@ console.log('table', store.tables)
             >
               <q-item-section class="column items-center">
                 <q-icon name="las la-database" size="lg"/>
-                <div class="active-text text-center">{{ tc('存储集群') }}</div>
+                <div class="active-text text-center">ceph</div>
               </q-item-section>
             </q-item>
 

@@ -44,7 +44,7 @@ const onOKClick = () => {
       classes: 'notification-negative shadow-15',
       icon: 'check_circle',
       textColor: 'negative',
-      message: '删除失败',
+      message: tc('删除失败'),
       position: 'bottom',
       closeBtn: true,
       timeout: 5000,

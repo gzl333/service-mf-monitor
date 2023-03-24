@@ -129,7 +129,7 @@ const getAllUnit = async () => {
 }
 getAllUnit()
 const openPanel = async (organization_id: string) => {
-  if (allServerUnitsObjData[organization_id].length > 0) {
+  if (allServerUnitsObjData[organization_id] && allServerUnitsObjData[organization_id].length > 0) {
     const unitObj: { [key: string]: unknown } = {}
     unitObj[organization_id] = allServerUnitsObjData[organization_id]
     Object.assign(allExpendUnitsObjData, unitObj)
@@ -216,7 +216,7 @@ onUnmounted(() => {
       <div class="row justify-center">
         <div class="content-fixed-width">
           <div class="text-h6 q-pt-lg">
-            {{ tc('主机集群') }}
+            {{ tc('服务器') }}
           </div>
           <div class="row items-center q-mt-lg">
             <div class="row col-8">
