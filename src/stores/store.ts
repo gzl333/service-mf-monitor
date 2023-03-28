@@ -173,7 +173,13 @@ export const useStore = defineStore('monitor', {
       return pointOptions
     },
     getWebMonitorTaskTable: state => (): WebMonitorInterface[] => {
-      return Object.values(state.tables.webMonitorTable.byId)
+      const sortFn = (a: WebMonitorInterface, b: WebMonitorInterface) => new Date(b.creation).getTime() - new Date(a.creation).getTime()
+      const newArr: WebMonitorInterface[] = []
+      Object.values(state.tables.webMonitorTable.byId).forEach((item) => {
+        newArr.unshift(item)
+      })
+      newArr.sort(sortFn)
+      return newArr
     }
   },
   actions: {

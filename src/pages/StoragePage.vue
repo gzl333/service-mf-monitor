@@ -222,7 +222,7 @@ onUnmounted(() => {
       <div class="row justify-center">
         <div class="content-fixed-width">
           <div class="text-h6 q-pt-lg">
-            ceph
+            Ceph
           </div>
           <div class="row q-mt-lg">
             <div class="col-8 row">

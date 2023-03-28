@@ -27,6 +27,10 @@ echarts.use([
 ])
 import { i18n } from 'boot/i18n'
 const props = defineProps({
+  statusObj: {
+    type: Object,
+    required: true
+  },
   xAxisTime: {
     type: Array,
     required: true
@@ -34,10 +38,15 @@ const props = defineProps({
   chartSeries: {
     type: Array,
     required: true
+  },
+  status: {
+    type: String,
+    required: true
   }
 })
 const container = ref<HTMLElement>()
 // defineExpose({ })
+console.log(props)
 const { tc } = i18n.global
 onMounted(() => {
   const chart = echarts.init(container.value!)
@@ -80,7 +89,8 @@ onMounted(() => {
         let relVal = today + ' ' + params[0].name
         for (let i = 0, l = params.length; i < l; i++) {
           if (i >= 0 && i % 5 === 0) {
-            relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('总耗时') + totalArr[i / 5] + tc('毫秒')}</span><br/>
+            const dId = params[i].seriesId.slice(0, params[i].seriesId.lastIndexOf('-'))
+            relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('状态码') + ':' + props.statusObj[dId][params[i].seriesIndex][1] + ' ' + tc('总耗时') + totalArr[i / 5] + tc('毫秒')}</span><br/>
               ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${params[i].value + tc('毫秒')}`
           } else {
             if ((i + 1) % 5 === 0) {
@@ -111,15 +121,15 @@ onMounted(() => {
           show: false
         },
         axisLabel: {
-          formatter: '{value} 毫秒'
+          formatter: `{value} ${tc('毫秒')}`
         }
       }
     ],
     series: props.chartSeries
   }))
-  const emptyOption = {
+  const waitOption = {
     title: {
-      text: tc('正在获取监控数据中,大约一分钟后会产生监控数据'),
+      text: tc('正在获取监控数据,大约一分钟之后会产生监控数据'),
       x: 'center',
       y: 'center',
       textStyle: {
@@ -128,16 +138,36 @@ onMounted(() => {
       }
     }
   }
-  if (props.chartSeries?.length > 0 && props.xAxisTime?.length > 0) {
+  const errorOption = {
+    title: {
+      text: tc('历史数据有误，正在修正中'),
+      x: 'center',
+      y: 'center',
+      textStyle: {
+        fontSize: 20,
+        fontWeight: 'normal'
+      }
+    }
+  }
+  if (props.chartSeries?.length > 0 && props.xAxisTime?.length > 0 && props.status === 'normal') {
     chart.setOption(option.value, true)
   } else {
-    chart.setOption(emptyOption, true)
+    console.log(props.status)
+    if (props.status === 'wait') {
+      chart.setOption(waitOption, true)
+    } else if (props.status === 'error') {
+      chart.setOption(errorOption, true)
+    }
   }
   watch(props, () => {
     if (props.chartSeries?.length > 0 && props.xAxisTime?.length > 0) {
       chart.setOption(option.value, true)
     } else {
-      chart.setOption(emptyOption, true)
+      if (props.status === 'wait') {
+        chart.setOption(waitOption, true)
+      } else if (props.status === 'error') {
+        chart.setOption(errorOption, true)
+      }
     }
   }, { deep: true })
   const chartResize = () => {

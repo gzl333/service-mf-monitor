@@ -88,7 +88,7 @@ console.log('table', store.tables)
             >
               <q-item-section class="column items-center">
                 <q-icon name="las la-database" size="lg"/>
-                <div class="active-text text-center">ceph</div>
+                <div class="active-text text-center">Ceph</div>
               </q-item-section>
             </q-item>
 
