@@ -19,18 +19,20 @@ const { tc } = i18n.global
 const store = useStore()
 // const route = useRoute()
 const router = useRouter()
-const goBack = () => {
-  router.go(-1)
-}
-
 const query = ref({
   name: '',
   url: '',
   remark: ''
 })
 const visible = ref(false)
-const urlReg = /^([hH][tT]{2}[pP]:\/\/|[hH][tT]{2}[pP][sS]:\/\/)(([A-Za-z0-9-~]+).)+([A-Za-z0-9-~/])+$/
+const realm = ref('https')
+const options = [
+  'https', 'http'
+]
+// const urlReg = /^([hH][tT]{2}[pP]:\/\/|[hH][tT]{2}[pP][sS]:\/\/)(([A-Za-z0-9-~]+).)+([A-Za-z0-9-~/])+$/
+const webUrl = ref('')
 const onSubmit = async () => {
+  query.value.url = realm.value + '://' + webUrl.value
   visible.value = true
   monitor.monitor.postMonitorWebsite({ body: query.value }).then((res) => {
     if (res.status === 200) {
@@ -75,6 +77,11 @@ const onReset = () => {
     remark: ''
   }
 }
+const goBack = () => {
+  router.go(-1)
+}
+
+// lazy-rules="ondemand" :rules="[val => val && val.length > 0 || tc('监控地址不能为空'), val => urlReg.test(val) || tc('地址不合法，请输入http://或者https://开头的地址')]"
 </script>
 
 <template>
@@ -103,8 +110,9 @@ const onReset = () => {
         </div>
         <div class="row">
           <div class="col-2 q-mt-sm text-subtitle1 text-grey">{{ tc('监控地址') }}</div>
-          <div class="col-10">
-            <q-input outlined dense clearable v-model="query.url" :label="tc('请输入监控地址')" lazy-rules="ondemand" :rules="[val => val && val.length > 0 || tc('监控地址不能为空'), val => urlReg.test(val) || tc('地址不合法，请输入http://或者https://开头的地址')]"
+          <div class="col-10 row">
+            <q-select class="col-2" outlined dense v-model="realm" :options="options" label="请选择" />
+            <q-input class="col-10" outlined dense clearable v-model="webUrl" :label="tc('请输入监控地址')" lazy-rules="ondemand" :rules="[val => val && val.length > 0 || tc('监控地址不能为空')]"
             />
           </div>
         </div>
