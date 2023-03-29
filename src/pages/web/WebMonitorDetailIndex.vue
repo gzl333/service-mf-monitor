@@ -52,13 +52,14 @@ const tab = ref('recent')
 const chartStatus = ref<'wait' | 'normal' | 'error'>('wait')
 // 存在x轴时间戳数组
 const xTimeStamp: number[] = []
-const color = ['#7cb5ec', '#f7a35c', '#8085e9', '#a5c2d5', '#cbab4f', '#76a871', '#a56f8f', '#c12c44', '#9f7961', '#76a871', '#6f83a5',
+const normalColor = ['#7cb5ec', '#f7a35c', '#8085e9', '#a5c2d5', '#cbab4f', '#76a871', '#a56f8f', '#c12c44', '#9f7961', '#76a871', '#6f83a5',
   '#0f4fb8', '#106dcf', '#b3d74c', '#74aae3', '#5cdec6', '#3526de', '#9d65ee', '#a8b3e3', '#6bc1b7', '#549ee2', '#6e98d6']
+const errorColor = ['#c12c44', '#9f7961', '#76a871', '#6f83a5', '#0f4fb8', '#106dcf', '#b3d74c', '#74aae3', '#5cdec6', '#3526de', '#9d65ee', '#a8b3e3', '#6bc1b7', '#549ee2', '#6e98d6']
 const getWebMonitoringData = async (detectId: string, name: string, start: number, step:number, index: number) => {
   // 先请求获取状态码，再去请求获取耗时，因为图表通过正负区分方向，状态码异常时需要 * -1，所以需要先获取状态码之后再去请求耗时
   // 一次请求数据时间段为十分钟
   const statusResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_status_code', start, detection_point_id: detectId, step }, path: { id: taskId } })
-  if (statusResp.data.findIndex((item: any) => item.metric.monitor === 'example') === -1) {
+  if (statusResp.data.findIndex((item: WebMonitorInterface) => item.metric.monitor === 'example') === -1) {
     if (statusResp.status === 200 && statusResp.data.length > 0) {
       // 存放状态元组
       const seriesData: [number, string][] = []
@@ -162,7 +163,14 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
                     }
                   }
                 },
-                color: color[durationIndex]
+                // color: color[durationIndex]
+                color: function (val: Record<string, any>) {
+                  if (val.value > 0) {
+                    return normalColor[durationIndex]
+                  } else {
+                    return errorColor[durationIndex]
+                  }
+                }
               }
             },
             data: durationSeriesData
