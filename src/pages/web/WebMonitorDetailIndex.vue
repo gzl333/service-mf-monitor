@@ -58,9 +58,7 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
   // 先请求获取状态码，再去请求获取耗时，因为图表通过正负区分方向，状态码异常时需要 * -1，所以需要先获取状态码之后再去请求耗时
   // 一次请求数据时间段为十分钟
   const statusResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_status_code', start, detection_point_id: detectId, step }, path: { id: taskId } })
-  // console.log(statusResp)
-  // console.log(statusResp.data.findIndex(item => item.metric.monitor === 'example'))
-  if (statusResp.data.findIndex(item => item.metric.monitor === 'example') === -1) {
+  if (statusResp.data.findIndex((item: any) => item.metric.monitor === 'example') === -1) {
     if (statusResp.status === 200 && statusResp.data.length > 0) {
       // 存放状态元组
       const seriesData: [number, string][] = []
@@ -177,7 +175,6 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
       }
     }
   } else {
-    console.log(222)
     chartStatus.value = 'error'
   }
 }
@@ -225,7 +222,11 @@ const getWebMonitoringLastData = async (id: string, name: string, start: number)
             // 判断是哪个阶段耗时，替换数据
             if (duration.metric.phase === bar.id.slice(bar.id.lastIndexOf('-') + 1, bar.id.length)) {
               // 刷新时因为存在时间误差，后端可能返回一个值或两个值
-              bar.data.push((Number(duration.values[duration.values.length - 1][1]) * 1000).toFixed(2))
+              if (statusObj.value[id][statusObj.value[id].length - 1][1] === '200') {
+                bar.data.push((Number(duration.values[duration.values.length - 1][1]) * 1000).toFixed(2))
+              } else {
+                bar.data.push((Number(duration.values[duration.values.length - 1][1]) * -1000).toFixed(2))
+              }
             }
           })
         }

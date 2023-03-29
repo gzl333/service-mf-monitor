@@ -46,7 +46,6 @@ const props = defineProps({
 })
 const container = ref<HTMLElement>()
 // defineExpose({ })
-console.log(props)
 const { tc } = i18n.global
 onMounted(() => {
   const chart = echarts.init(container.value!)
@@ -78,27 +77,39 @@ onMounted(() => {
         const totalArr = []
         let num = 0
         for (let i = 0, l = params.length; i < l; i++) {
-          if ((i + 1) % 5 === 0) {
-            num += Number(params[i].value)
+          if (params[i].value > 0) {
+            if ((i + 1) % 5 === 0) {
+              num += Number(params[i].value)
+              totalArr.push(num.toFixed(2))
+              num = 0
+            } else {
+              num += Number(params[i].value)
+            }
+          } else {
+            num += Number(params[i].value * -1)
             totalArr.push(num.toFixed(2))
             num = 0
-          } else {
-            num += Number(params[i].value)
           }
         }
         let relVal = today + ' ' + params[0].name
         for (let i = 0, l = params.length; i < l; i++) {
-          if (i >= 0 && i % 5 === 0) {
-            const dId = params[i].seriesId.slice(0, params[i].seriesId.lastIndexOf('-'))
-            relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('状态码') + ':' + props.statusObj[dId][params[i].seriesIndex][1] + ' ' + tc('总耗时') + totalArr[i / 5] + tc('毫秒')}</span><br/>
+          if (params[i].value > 0) {
+            if (i >= 0 && i % 5 === 0) {
+              const dId = params[i].seriesId.slice(0, params[i].seriesId.lastIndexOf('-'))
+              relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('状态码') + ':' + props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + totalArr[i / 5] + tc('毫秒')}</span><br/>
               ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${params[i].value + tc('毫秒')}`
-          } else {
-            if ((i + 1) % 5 === 0) {
-              relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value + tc('毫秒') +
-                '<br/>' + '<hr/>'
             } else {
-              relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value + tc('毫秒')
+              if ((i + 1) % 5 === 0) {
+                relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value + tc('毫秒') +
+                    '<br/>' + '<hr/>'
+              } else {
+                relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value + tc('毫秒')
+              }
             }
+          } else {
+            const dId = params[i].seriesId.slice(0, params[i].seriesId.lastIndexOf('-'))
+            relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('状态码') + ':' + props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + totalArr[i] + tc('毫秒')}</span><br/>
+              ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${params[i].value * -1 + tc('毫秒')}`
           }
         }
         return relVal
@@ -138,6 +149,17 @@ onMounted(() => {
       }
     }
   }
+  const nullOption = {
+    title: {
+      text: tc('暂无数据，请稍后刷新页面重新查看'),
+      x: 'center',
+      y: 'center',
+      textStyle: {
+        fontSize: 20,
+        fontWeight: 'normal'
+      }
+    }
+  }
   const errorOption = {
     title: {
       text: tc('历史数据有误，正在修正中'),
@@ -152,7 +174,6 @@ onMounted(() => {
   if (props.chartSeries?.length > 0 && props.xAxisTime?.length > 0 && props.status === 'normal') {
     chart.setOption(option.value, true)
   } else {
-    console.log(props.status)
     if (props.status === 'wait') {
       chart.setOption(waitOption, true)
     } else if (props.status === 'error') {
@@ -160,13 +181,16 @@ onMounted(() => {
     }
   }
   watch(props, () => {
-    if (props.chartSeries?.length > 0 && props.xAxisTime?.length > 0) {
+    // console.log(props)
+    if (props.chartSeries?.length > 0 && props.xAxisTime?.length > 0 && props.status === 'normal') {
       chart.setOption(option.value, true)
     } else {
       if (props.status === 'wait') {
         chart.setOption(waitOption, true)
       } else if (props.status === 'error') {
         chart.setOption(errorOption, true)
+      } else if (props.status === 'normal') {
+        chart.setOption(nullOption, true)
       }
     }
   }, { deep: true })
