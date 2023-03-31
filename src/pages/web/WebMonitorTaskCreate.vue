@@ -25,14 +25,14 @@ const query = ref({
   remark: ''
 })
 const visible = ref(false)
-const realm = ref('https')
+const realm = ref('https://')
 const options = [
-  'https', 'http'
+  'https://', 'http://'
 ]
 // const urlReg = /^([hH][tT]{2}[pP]:\/\/|[hH][tT]{2}[pP][sS]:\/\/)(([A-Za-z0-9-~]+).)+([A-Za-z0-9-~/])+$/
 const webUrl = ref('')
 const onSubmit = async () => {
-  query.value.url = realm.value + '://' + webUrl.value
+  query.value.url = realm.value + webUrl.value
   visible.value = true
   monitor.monitor.postMonitorWebsite({ body: query.value }).then((res) => {
     if (res.status === 200) {

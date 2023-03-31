@@ -24,7 +24,7 @@ interface WebMonitorInterface {
     monitor: string
     phase?: string
     receive_cluster: string
-    receive_replica: string
+    receive_replica: 1
     tenant_id: string
     url: string
     urlhash: string
@@ -52,9 +52,8 @@ const tab = ref('recent')
 const chartStatus = ref<'wait' | 'normal' | 'error'>('wait')
 // 存在x轴时间戳数组
 const xTimeStamp: number[] = []
-const normalColor = ['#7cb5ec', '#f7a35c', '#8085e9', '#a5c2d5', '#cbab4f', '#76a871', '#a56f8f', '#c12c44', '#9f7961', '#76a871', '#6f83a5',
-  '#0f4fb8', '#106dcf', '#b3d74c', '#74aae3', '#5cdec6', '#3526de', '#9d65ee', '#a8b3e3', '#6bc1b7', '#549ee2', '#6e98d6']
-const errorColor = ['#c12c44', '#9f7961', '#76a871', '#6f83a5', '#0f4fb8', '#106dcf', '#b3d74c', '#74aae3', '#5cdec6', '#3526de', '#9d65ee', '#a8b3e3', '#6bc1b7', '#549ee2', '#6e98d6']
+const normalColor = ['#8085e9', '#a5c2d5', '#73C0DE', '#8AC070', '#5470C6']
+const errorColor = ['#EE6666', '#FD7F55', '#c12c44', '#FFC936', '#FEA147']
 const getWebMonitoringData = async (detectId: string, name: string, start: number, step:number, index: number) => {
   // 先请求获取状态码，再去请求获取耗时，因为图表通过正负区分方向，状态码异常时需要 * -1，所以需要先获取状态码之后再去请求耗时
   // 一次请求数据时间段为十分钟
@@ -163,7 +162,6 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
                     }
                   }
                 },
-                // color: color[durationIndex]
                 color: function (val: Record<string, any>) {
                   if (val.value > 0) {
                     return normalColor[durationIndex]
@@ -386,7 +384,7 @@ onUnmounted(() => {
         <div v-for="(item, index) in detectionPoints" :key="item.value">{{ `${tc('探针')}${index + 1}：${ i18n.global.locale === 'zh' ? item.label : item.labelEn}` }}</div>
       </div>
       <div class="row items-center" v-if="!isNewCreate">
-        <div class="text-grey-7">{{ tc('剩余刷新时间') }}</div>
+        <div class="text-grey-7">{{ tc('剩余更新新时间') }}</div>
         <q-circular-progress
           show-value
           class="text-light-blue q-ma-md"

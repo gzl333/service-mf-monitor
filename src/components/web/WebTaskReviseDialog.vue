@@ -27,12 +27,17 @@ const query = ref({
   remark: store.tables.webMonitorTable.byId[props.id].remark
 })
 const visible = ref(false)
-const urlReg = /^([hH][tT]{2}[pP]:\/\/|[hH][tT]{2}[pP][sS]:\/\/)(([A-Za-z0-9-~]+).)+([A-Za-z0-9-~/])+$/
+const webUrl = ref(store.tables.webMonitorTable.byId[props.id].url.slice(8))
+const realm = ref('https://')
+const options = [
+  'https://', 'http://'
+]
 const onSubmit = async () => {
   visible.value = true
   if (query.value.remark === null) {
     query.value.remark = ''
   }
+  query.value.url = realm.value + webUrl.value
   await store.modifyMonitorTask({ id: props.id, data: query.value })
   visible.value = false
   onDialogOK()
@@ -66,9 +71,10 @@ const onCancelClick = onDialogCancel
           </div>
           <div class="row q-mt-xs">
             <div class="col-2 q-mt-sm text-grey">{{ tc('监控地址') }}</div>
-            <div class="col-10">
-              <q-input outlined dense clearable v-model="query.url" lazy-rules="ondemand"
-                       :rules="[val => val && val.length > 0 || tc('监控地址不能为空'), val => urlReg.test(val) || tc('地址不合法，请输入http://或者https://开头的地址')]"
+            <div class="col-10 row">
+              <q-select class="col-auto" outlined dense v-model="realm" :options="options" label="请选择" />
+              <q-input class="col" outlined dense clearable v-model="webUrl" lazy-rules="ondemand"
+                       :rules="[val => val && val.length > 0 || tc('监控地址不能为空')]"
               />
             </div>
           </div>
