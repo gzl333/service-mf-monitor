@@ -91,7 +91,12 @@ onMounted(() => {
             num = 0
           }
         }
-        let relVal = today + ' ' + params[0].name
+        let relVal
+        if (params[0].seriesName.indexOf('recent') !== -1) {
+          relVal = today + ' ' + params[0].name
+        } else {
+          relVal = year + '-' + params[0].name
+        }
         for (let i = 0, l = params.length; i < l; i++) {
           if (params[i].value > 0) {
             if (i >= 0 && i % 5 === 0) {
@@ -140,7 +145,7 @@ onMounted(() => {
   }))
   const waitOption = {
     title: {
-      text: tc('正在获取监控数据,大约一分钟之后会产生监控数据'),
+      text: tc('正在获取监控数据中,请稍等'),
       x: 'center',
       y: 'center',
       textStyle: {

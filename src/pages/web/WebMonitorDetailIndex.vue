@@ -120,9 +120,19 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
           stageName = '转移响应耗时'
         }
         // chartSeries为echarts图表数据
+        let type
+        if (step === 60) {
+          type = 'recent'
+        } else if (step === 2880) {
+          type = 'day'
+        } else if (step === 20160) {
+          type = 'week'
+        } else {
+          type = 'month'
+        }
         chartSeries.value.push(
           {
-            name: name + '-' + stageName,
+            name: name + '-' + stageName + '-' + type,
             id: detectId + '-' + duration.metric.phase,
             type: 'bar',
             stack: 'bar' + index,
