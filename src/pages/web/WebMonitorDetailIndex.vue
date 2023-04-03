@@ -58,8 +58,8 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
   // 先请求获取状态码，再去请求获取耗时，因为图表通过正负区分方向，状态码异常时需要 * -1，所以需要先获取状态码之后再去请求耗时
   // 一次请求数据时间段为十分钟
   const statusResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_status_code', start, detection_point_id: detectId, step }, path: { id: taskId } })
-  if (statusResp.data.findIndex((item: WebMonitorInterface) => item.metric.monitor === 'example') === -1) {
-    if (statusResp.status === 200 && statusResp.data.length > 0) {
+  if (statusResp.data.length > 0 && statusResp.data.findIndex((item: WebMonitorInterface) => item.metric.monitor === 'example') === -1) {
+    if (statusResp.status === 200) {
       // 存放状态元组
       const seriesData: [number, string][] = []
       // 存在x轴时间数据数组
@@ -178,10 +178,14 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
       if (isNewCreate.value === true) {
         isNewCreate.value = false
         chartStatus.value = 'normal'
+      } else {
+        chartStatus.value = 'normal'
       }
     }
-  } else {
+  } else if (statusResp.data.length > 0 && statusResp.data.findIndex((item: WebMonitorInterface) => item.metric.monitor === 'example') !== -1) {
     chartStatus.value = 'error'
+  } else if (statusResp.data.length === 0) {
+    chartStatus.value = 'wait'
   }
 }
 // 每一分钟刷新获取数据方法

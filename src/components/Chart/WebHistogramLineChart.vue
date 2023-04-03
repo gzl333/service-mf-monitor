@@ -149,17 +149,17 @@ onMounted(() => {
       }
     }
   }
-  const nullOption = {
-    title: {
-      text: tc('暂无数据，请稍后刷新页面重新查看'),
-      x: 'center',
-      y: 'center',
-      textStyle: {
-        fontSize: 20,
-        fontWeight: 'normal'
-      }
-    }
-  }
+  // const nullOption = {
+  //   title: {
+  //     text: tc('暂无数据，请稍后刷新页面重新查看'),
+  //     x: 'center',
+  //     y: 'center',
+  //     textStyle: {
+  //       fontSize: 20,
+  //       fontWeight: 'normal'
+  //     }
+  //   }
+  // }
   const errorOption = {
     title: {
       text: tc('历史数据有误，正在修正中'),
@@ -181,7 +181,6 @@ onMounted(() => {
     }
   }
   watch(props, () => {
-    // console.log(props)
     if (props.chartSeries?.length > 0 && props.xAxisTime?.length > 0 && props.status === 'normal') {
       chart.setOption(option.value, true)
     } else {
@@ -189,8 +188,6 @@ onMounted(() => {
         chart.setOption(waitOption, true)
       } else if (props.status === 'error') {
         chart.setOption(errorOption, true)
-      } else if (props.status === 'normal') {
-        chart.setOption(nullOption, true)
       }
     }
   }, { deep: true })
