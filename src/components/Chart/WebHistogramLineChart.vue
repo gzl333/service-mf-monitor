@@ -56,7 +56,7 @@ onMounted(() => {
     },
     grid: {
       top: 120,
-      left: 70,
+      left: 85,
       right: 50,
       bottom: 50
     },
@@ -131,13 +131,38 @@ onMounted(() => {
       {
         type: 'value',
         name: tc('请求耗时'),
-        scale: true,
+        // scale: true,
+        max: function (value: Record<string, number>) {
+          if (value.max > 0 && value.max <= 200) {
+            return Math.floor(value.max + 5)
+          } else if (value.max > 200 && value.max <= 10000) {
+            return Math.floor(value.max + 200)
+          } else if (value.max >= 10000 && value.min > 20) {
+            return '10000'
+          } else if (value.max >= 10000 && value.min <= 20) {
+            return '1000'
+          } else if (value.max < 0) {
+            return '0'
+          }
+        },
+        min: function (value: Record<string, number>) {
+          if (value.max >= 10000 && value.min > 20) {
+            return '-1000'
+          } else if (value.max >= 10000 && value.min <= 20) {
+            return '-200'
+          }
+        },
         boundaryGap: [0.2, 0.2],
         splitLine: {
           show: false
         },
+        // axisLabel: {
+        //   formatter: `{value} ${tc('毫秒')}`
+        // }
         axisLabel: {
-          formatter: `{value} ${tc('毫秒')}`
+          formatter: function (value: number) {
+            return Math.abs(value) + '毫秒'
+          }
         }
       }
     ],
@@ -176,15 +201,15 @@ onMounted(() => {
       }
     }
   }
-  if (props.chartSeries?.length > 0 && props.xAxisTime?.length > 0 && props.status === 'normal') {
-    chart.setOption(option.value, true)
-  } else {
-    if (props.status === 'wait') {
-      chart.setOption(waitOption, true)
-    } else if (props.status === 'error') {
-      chart.setOption(errorOption, true)
-    }
-  }
+  // if (props.chartSeries?.length > 0 && props.xAxisTime?.length > 0 && props.status === 'normal') {
+  //   chart.setOption(option.value, true)
+  // } else {
+  //   if (props.status === 'wait') {
+  //     chart.setOption(waitOption, true)
+  //   } else if (props.status === 'error') {
+  //     chart.setOption(errorOption, true)
+  //   }
+  // }
   watch(props, () => {
     if (props.chartSeries?.length > 0 && props.xAxisTime?.length > 0 && props.status === 'normal') {
       chart.setOption(option.value, true)
