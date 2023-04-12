@@ -45,7 +45,6 @@ const props = defineProps({
   }
 })
 const container = ref<HTMLElement>()
-// defineExpose({ })
 const { tc } = i18n.global
 onMounted(() => {
   const chart = echarts.init(container.value!)
@@ -77,7 +76,7 @@ onMounted(() => {
         const totalArr = []
         let num = 0
         for (let i = 0, l = params.length; i < l; i++) {
-          if (params[i].value > 0) {
+          if (params[i].value !== '' && params[i].value > 0) {
             if ((i + 1) % 5 === 0) {
               num += Number(params[i].value)
               totalArr.push(num.toFixed(2))
@@ -85,7 +84,7 @@ onMounted(() => {
             } else {
               num += Number(params[i].value)
             }
-          } else {
+          } else if (params[i].value !== '' && params[i].value < 0) {
             num += Number(params[i].value * -1)
             totalArr.push(num.toFixed(2))
             num = 0
@@ -98,7 +97,7 @@ onMounted(() => {
           relVal = year + '-' + params[0].name
         }
         for (let i = 0, l = params.length; i < l; i++) {
-          if (params[i].value > 0) {
+          if (params[i].value !== '' && params[i].value > 0) {
             if (i >= 0 && i % 5 === 0) {
               const dId = params[i].seriesId.slice(0, params[i].seriesId.lastIndexOf('-'))
               relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('状态码') + ':' + props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + totalArr[i / 5] + tc('毫秒')}</span><br/>
@@ -111,7 +110,7 @@ onMounted(() => {
                 relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value + tc('毫秒')
               }
             }
-          } else {
+          } else if (params[i].value !== '' && params[i].value < 0) {
             const dId = params[i].seriesId.slice(0, params[i].seriesId.lastIndexOf('-'))
             relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('状态码') + ':' + props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + totalArr[i] + tc('毫秒')}</span><br/>
               ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${params[i].value * -1 + tc('毫秒')}`
@@ -131,7 +130,7 @@ onMounted(() => {
       {
         type: 'value',
         name: tc('请求耗时'),
-        // scale: true,
+        scale: true,
         max: function (value: Record<string, number>) {
           if (value.max > 0 && value.max <= 200) {
             return Math.floor(value.max + 5)
@@ -156,9 +155,6 @@ onMounted(() => {
         splitLine: {
           show: false
         },
-        // axisLabel: {
-        //   formatter: `{value} ${tc('毫秒')}`
-        // }
         axisLabel: {
           formatter: function (value: number) {
             return Math.abs(value) + '毫秒'
@@ -168,28 +164,6 @@ onMounted(() => {
     ],
     series: props.chartSeries
   }))
-  const waitOption = {
-    title: {
-      text: tc('正在获取监控数据中,请稍等'),
-      x: 'center',
-      y: 'center',
-      textStyle: {
-        fontSize: 20,
-        fontWeight: 'normal'
-      }
-    }
-  }
-  // const nullOption = {
-  //   title: {
-  //     text: tc('暂无数据，请稍后刷新页面重新查看'),
-  //     x: 'center',
-  //     y: 'center',
-  //     textStyle: {
-  //       fontSize: 20,
-  //       fontWeight: 'normal'
-  //     }
-  //   }
-  // }
   const errorOption = {
     title: {
       text: tc('历史数据有误，正在修正中'),
@@ -201,24 +175,12 @@ onMounted(() => {
       }
     }
   }
-  // if (props.chartSeries?.length > 0 && props.xAxisTime?.length > 0 && props.status === 'normal') {
-  //   chart.setOption(option.value, true)
-  // } else {
-  //   if (props.status === 'wait') {
-  //     chart.setOption(waitOption, true)
-  //   } else if (props.status === 'error') {
-  //     chart.setOption(errorOption, true)
-  //   }
-  // }
   watch(props, () => {
-    if (props.chartSeries?.length > 0 && props.xAxisTime?.length > 0 && props.status === 'normal') {
+    // console.log(props)
+    if (props.status === 'normal') {
       chart.setOption(option.value, true)
     } else {
-      if (props.status === 'wait') {
-        chart.setOption(waitOption, true)
-      } else if (props.status === 'error') {
-        chart.setOption(errorOption, true)
-      }
+      chart.setOption(errorOption, true)
     }
   }, { deep: true })
   const chartResize = () => {

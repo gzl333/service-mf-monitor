@@ -40,7 +40,8 @@ const detectionPoints = computed(() => store.getDetectionPointTable())
 const taskId = route.params.webMonitorTaskId as string
 const nowTime = new Date().getTime()
 const startTimeStamp = Math.round(nowTime / 1000 - 1800)
-const durationTotalArr: {[key: string]: [number, string][]} = {}
+// const durationTotalArr: {[key: string]: [number, string][] | string} = {}
+const durationTotalArr: Record<string, any> = {}
 const xAxis = ref<string[]>([])
 const chartSeries = ref<Record<string, unknown>[]>([])
 const statusObj = ref<Record<string, any>>({})
@@ -49,44 +50,69 @@ const renovateTime = ref(60)
 const isNewCreate = ref(true)
 const isHaveChange = ref(false)
 const tab = ref('recent')
-const chartStatus = ref<'wait' | 'normal' | 'error'>('wait')
+const chartStatus = ref<'normal' | 'error'>('normal')
 // 存在x轴时间戳数组
-const xTimeStamp: number[] = []
+let xTimeStamp: number[] = []
 const normalColor = ['#8085e9', '#a5c2d5', '#73C0DE', '#8AC070', '#5470C6']
 const errorColor = ['#EE6666', '#FD7F55', '#c12c44', '#FFC936', '#FEA147']
+const getXAxis = (start: number, step: number) => {
+  xAxis.value = []
+  xTimeStamp = []
+  let time = start
+  for (let i = 0; i < 30; i++) {
+    if (step === 60) {
+      const formattedString = date.formatDate(time * 1000, 'HH:mm:ss')
+      xAxis.value.push(formattedString)
+    } else {
+      const formattedString = date.formatDate(time * 1000, 'MM-DD HH:mm')
+      xAxis.value.push(formattedString)
+    }
+    xTimeStamp.push(time)
+    time += step
+  }
+  // lastTimeStamp为x轴最后一次时间，用于计算下一次刷新的时间
+  lastTimeStamp.value = xTimeStamp[xTimeStamp.length - 1]
+}
 const getWebMonitoringData = async (detectId: string, name: string, start: number, step:number, index: number) => {
   // 先请求获取状态码，再去请求获取耗时，因为图表通过正负区分方向，状态码异常时需要 * -1，所以需要先获取状态码之后再去请求耗时
   // 一次请求数据时间段为十分钟
   const statusResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_status_code', start, detection_point_id: detectId, step }, path: { id: taskId } })
   if (statusResp.status === 200 && statusResp.data.length > 0 && statusResp.data.findIndex((item: WebMonitorInterface) => item.metric.monitor === 'example') === -1) {
     // 存放状态元组
-    const seriesData: [number, string][] = []
-    // 存在x轴时间数据数组
-    const xTime: string[] = []
-    statusResp.data.forEach((status: WebMonitorInterface, index: number) => {
-      status.values.forEach((item: [number, string]) => {
-        // 时间数据只存储一次，避免多次存储
-        if (index === 0) {
-          // 时间戳转化为HH:mm:ss格式
-          if (step === 60) {
-            const formattedString = date.formatDate(item[0] * 1000, 'HH:mm:ss')
-            xTime.push(formattedString)
-          } else {
-            const formattedString = date.formatDate(item[0] * 1000, 'MM-DD HH:mm')
-            xTime.push(formattedString)
-          }
-          xTimeStamp.push(item[0])
-        }
-        seriesData.push(item)
-      })
+    let seriesData: [number, string][]
+    const stagingStatusData: Array<[number, string] | ''> = []
+    if (statusResp.data[0].values.length <= 30) {
+      seriesData = statusResp.data[0].values
+    } else {
+      seriesData = statusResp.data[0].values.slice(0, -1)
+    }
+    xTimeStamp.forEach(item1 => {
+      const index = seriesData.findIndex(item => item[0] === item1)
+      if (index !== -1) {
+        stagingStatusData.push(seriesData[index])
+      } else {
+        stagingStatusData.push('')
+      }
     })
-    statusObj.value[detectId] = seriesData
-    xAxis.value = xTime
-    // lastTimeStamp为x轴最后一次时间，用于计算下一次刷新的时间
-    lastTimeStamp.value = xTimeStamp[xTimeStamp.length - 1]
+    statusObj.value[detectId] = stagingStatusData
     const durationTotalResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'duration_seconds', start, detection_point_id: detectId, step }, path: { id: taskId } })
     if (durationTotalResp.status === 200 && durationTotalResp.data.length > 0) {
-      durationTotalArr[detectId] = durationTotalResp.data[0].values
+      let seriesData: [number, string][]
+      const stagingTotalData: Array<[number, string] | ''> = []
+      if (durationTotalResp.data[0].values.length <= 30) {
+        seriesData = durationTotalResp.data[0].values
+      } else {
+        seriesData = durationTotalResp.data[0].values.slice(0, -1)
+      }
+      xTimeStamp.forEach(item1 => {
+        const index = seriesData.findIndex(item => item[0] === item1)
+        if (index !== -1) {
+          stagingTotalData.push(seriesData[index])
+        } else {
+          stagingTotalData.push('')
+        }
+      })
+      durationTotalArr[detectId] = stagingTotalData
     }
     const durationResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_duration_seconds', start, detection_point_id: detectId, step }, path: { id: taskId } })
     if (durationResp.status === 200 && durationResp.data.length > 0) {
@@ -96,19 +122,22 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
       let stageName = ''
       durationResp.data.forEach((duration: WebMonitorInterface, durationIndex: number) => {
         durationSeriesData = []
-        duration.values.forEach((item: [number, string], itemIndex: number) => {
-          // 如果状态码异常 需要 * -1
-          if (itemIndex < statusObj.value[detectId].length) {
-            if (statusObj.value[detectId][itemIndex][1] === '200') {
-              // if (durationIndex === 1 && itemIndex === 1) {
-              //   durationSeriesData.push('20000.88')
-              // } else {
-              //   durationSeriesData.push((Number(item[1]) * 1000).toFixed(2))
-              // }
-              durationSeriesData.push((Number(item[1]) * 1000).toFixed(2))
+        let data: [number, string][]
+        if (duration.values.length <= 30) {
+          data = duration.values
+        } else {
+          data = duration.values.slice(0, -1)
+        }
+        xTimeStamp.forEach((item1, index1) => {
+          const index = data.findIndex(item => item[0] === item1)
+          if (index !== -1) {
+            if (statusObj.value[detectId][index1][1] === '200') {
+              durationSeriesData.push((Number(data[index][1]) * 1000).toFixed(2))
             } else {
-              durationSeriesData.push((Number(item[1]) * 1000 * -1).toFixed(2))
+              durationSeriesData.push((Number(data[index][1]) * 1000 * -1).toFixed(2))
             }
+          } else {
+            durationSeriesData.push('')
           }
         })
         if (duration.metric.phase === 'connect') {
@@ -197,8 +226,6 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
     }
   } else if (statusResp.data.length > 0 && statusResp.data.findIndex((item: WebMonitorInterface) => item.metric.monitor === 'example') !== -1) {
     chartStatus.value = 'error'
-  } else if (statusResp.data.length === 0) {
-    chartStatus.value = 'wait'
   }
 }
 // 每一分钟刷新获取数据方法
@@ -287,6 +314,7 @@ const refreshData = async () => {
   }
 }
 const refreshAll = async (time: number, step: number) => {
+  getXAxis(time, step)
   detectionPoints.value.forEach((item, index) => {
     getWebMonitoringData(item.value, item.label, time, step, index)
   })
@@ -294,8 +322,8 @@ const refreshAll = async (time: number, step: number) => {
 const changeChatTab = (val: string) => {
   clearInterval(Number(dynamicRefreshTimer))
   clearInterval(Number(countDownTimer))
-  xAxis.value = []
   chartSeries.value = []
+  statusObj.value = {}
   const nowTime = new Date().getTime()
   if (val === 'recent') {
     const startTime = Math.round(nowTime / 1000 - 1800)
@@ -352,6 +380,7 @@ watch(isNewCreate, () => {
 })
 watch(detectionPoints, () => {
   if (detectionPoints.value.length > 0) {
+    getXAxis(startTimeStamp, 60)
     detectionPoints.value.forEach((item, index) => {
       getWebMonitoringData(item.value, item.label, startTimeStamp, 60, index)
     })
@@ -359,6 +388,7 @@ watch(detectionPoints, () => {
 })
 onMounted(() => {
   if (detectionPoints.value.length > 0) {
+    getXAxis(startTimeStamp, 60)
     detectionPoints.value.forEach((item, index) => {
       getWebMonitoringData(item.value, item.label, startTimeStamp, 60, index)
     })
@@ -432,25 +462,25 @@ onUnmounted(() => {
                    :ripple="false"
                    name="recent"
                    icon="las la-clock"
-                   :label="tc('最近实时数据')"/>
+                   :label="tc('实时数据')"/>
             <q-tab class="q-px-none q-py-none q-mr-md"
                    no-caps
                    :ripple="false"
                    name="day"
                    icon="las la-calendar-check"
-                   :label="tc('最近一天数据')"/>
+                   :label="tc('最近一天')"/>
             <q-tab class="q-px-none q-py-none q-mr-md"
                    no-caps
                    :ripple="false"
                    name="week"
                    icon="las la-clipboard-list"
-                   :label="tc('最近一周数据')"/>
+                   :label="tc('最近一周')"/>
             <q-tab class="q-px-none q-py-none q-mr-md"
                    no-caps
                    :ripple="false"
                    name="month"
                    icon="las la-calendar"
-                   :label="tc('最近一个月数据')"/>
+                   :label="tc('最近一个月')"/>
           </q-tabs>
         <q-separator/>
       </div>
