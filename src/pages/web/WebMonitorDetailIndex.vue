@@ -86,12 +86,12 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
     } else {
       seriesData = statusResp.data[0].values.slice(0, -1)
     }
-    xTimeStamp.forEach(item1 => {
-      const index = seriesData.findIndex(item => item[0] === item1)
+    xTimeStamp.forEach((xTime, xTimeIndex) => {
+      const index = seriesData.findIndex(item => item[0] === xTime)
       if (index !== -1) {
         stagingStatusData.push(seriesData[index])
       } else {
-        stagingStatusData.push('')
+        stagingStatusData.push([xTimeStamp[xTimeIndex], ''])
       }
     })
     statusObj.value[detectId] = stagingStatusData
@@ -104,12 +104,12 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
       } else {
         seriesData = durationTotalResp.data[0].values.slice(0, -1)
       }
-      xTimeStamp.forEach(item1 => {
-        const index = seriesData.findIndex(item => item[0] === item1)
+      xTimeStamp.forEach((xTime, xTimeIndex) => {
+        const index = seriesData.findIndex(item => item[0] === xTime)
         if (index !== -1) {
           stagingTotalData.push(seriesData[index])
         } else {
-          stagingTotalData.push('')
+          stagingTotalData.push([xTimeStamp[xTimeIndex], ''])
         }
       })
       durationTotalArr[detectId] = stagingTotalData
@@ -128,13 +128,18 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
         } else {
           data = duration.values.slice(0, -1)
         }
-        xTimeStamp.forEach((item1, index1) => {
-          const index = data.findIndex(item => item[0] === item1)
+        xTimeStamp.forEach((xTime, xTimeIndex) => {
+          const index = data.findIndex(item => item[0] === xTime)
           if (index !== -1) {
-            if (statusObj.value[detectId][index1][1] === '200') {
-              durationSeriesData.push((Number(data[index][1]) * 1000).toFixed(2))
+            if (statusObj.value[detectId][xTimeIndex][1] === '200') {
+              // if (xTimeIndex === 1) {
+              //   durationSeriesData.push('1200000.11')
+              // } else {
+              durationSeriesData.push((Number(data[index][1]) * 100000).toFixed(2))
+              // }
             } else {
-              durationSeriesData.push((Number(data[index][1]) * 1000 * -1).toFixed(2))
+              // durationSeriesData.push((Number(data[index][1]) * 1000).toFixed(2))
+              durationSeriesData.push((Number(data[index][1]) / 100).toFixed(8))
             }
           } else {
             durationSeriesData.push('')
@@ -205,7 +210,7 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
                   }
                 },
                 color: function (val: Record<string, any>) {
-                  if (val.value > 0) {
+                  if (val.value > 1) {
                     return normalColor[durationIndex]
                   } else {
                     return errorColor[durationIndex]

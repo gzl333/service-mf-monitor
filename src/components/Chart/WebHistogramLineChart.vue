@@ -57,7 +57,7 @@ onMounted(() => {
       top: 120,
       left: 85,
       right: 50,
-      bottom: 50
+      bottom: 70
     },
     tooltip: {
       trigger: 'axis',
@@ -76,7 +76,7 @@ onMounted(() => {
         const totalArr = []
         let num = 0
         for (let i = 0, l = params.length; i < l; i++) {
-          if (params[i].value !== '' && params[i].value > 0) {
+          if (params[i].value !== '' && params[i].value > 1) {
             if ((i + 1) % 5 === 0) {
               num += Number(params[i].value)
               totalArr.push(num.toFixed(2))
@@ -84,9 +84,13 @@ onMounted(() => {
             } else {
               num += Number(params[i].value)
             }
-          } else if (params[i].value !== '' && params[i].value < 0) {
-            num += Number(params[i].value * -1)
-            totalArr.push(num.toFixed(2))
+          } else if (params[i].value !== '' && params[i].value < 1) {
+            // num += Number(params[i].value * -1)
+            // totalArr.push(num.toFixed(2))
+            // num = 0
+            num += params[i].value * 100000
+            totalArr[i] = num.toFixed(2)
+            // totalArr.push(num.toFixed(2))
             num = 0
           }
         }
@@ -97,23 +101,24 @@ onMounted(() => {
           relVal = year + '-' + params[0].name
         }
         for (let i = 0, l = params.length; i < l; i++) {
-          if (params[i].value !== '' && params[i].value > 0) {
+          if (params[i].value !== '' && params[i].value > 1) {
             if (i >= 0 && i % 5 === 0) {
               const dId = params[i].seriesId.slice(0, params[i].seriesId.lastIndexOf('-'))
-              relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('状态码') + ':' + props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + totalArr[i / 5] + tc('毫秒')}</span><br/>
-              ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${params[i].value + tc('毫秒')}`
+              relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('状态码') + ':' +
+              props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + (Number(totalArr[i / 5]) / 100).toFixed(2) + tc('毫秒')}</span><br/>
+              ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${(params[i].value / 100).toFixed(2) + tc('毫秒')}`
             } else {
               if ((i + 1) % 5 === 0) {
-                relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value + tc('毫秒') +
+                relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + (params[i].value / 100).toFixed(2) + tc('毫秒') +
                     '<br/>' + '<hr/>'
               } else {
-                relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value + tc('毫秒')
+                relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + (params[i].value / 100).toFixed(2) + tc('毫秒')
               }
             }
-          } else if (params[i].value !== '' && params[i].value < 0) {
+          } else if (params[i].value !== '' && params[i].value < 1) {
             const dId = params[i].seriesId.slice(0, params[i].seriesId.lastIndexOf('-'))
             relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('状态码') + ':' + props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + totalArr[i] + tc('毫秒')}</span><br/>
-              ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${params[i].value * -1 + tc('毫秒')}`
+              ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${(params[i].value * 100000).toFixed(2) + tc('毫秒')}`
           }
         }
         return relVal
@@ -123,34 +128,36 @@ onMounted(() => {
       {
         type: 'category',
         boundaryGap: true,
+        offset: 35,
         data: props.xAxisTime
       }
     ],
     yAxis: [
       {
-        type: 'value',
+        type: 'log',
         name: tc('请求耗时'),
         scale: true,
-        max: function (value: Record<string, number>) {
-          if (value.max > 0 && value.max <= 200) {
-            return Math.floor(value.max + 5)
-          } else if (value.max > 200 && value.max <= 10000) {
-            return Math.floor(value.max + 200)
-          } else if (value.max >= 10000 && value.min > 20) {
-            return '10000'
-          } else if (value.max >= 10000 && value.min <= 20) {
-            return '1000'
-          } else if (value.max < 0) {
-            return '0'
-          }
-        },
-        min: function (value: Record<string, number>) {
-          if (value.max >= 10000 && value.min > 20) {
-            return '-1000'
-          } else if (value.max >= 10000 && value.min <= 20) {
-            return '-200'
-          }
-        },
+        logBase: 10,
+        // max: function (value: Record<string, number>) {
+        //   if (value.max > 0 && value.max <= 200) {
+        //     return Math.floor(value.max + 5)
+        //   } else if (value.max > 200 && value.max <= 10000) {
+        //     return Math.floor(value.max + 200)
+        //   } else if (value.max >= 10000 && value.min > 20) {
+        //     return '10000'
+        //   } else if (value.max >= 10000 && value.min <= 20) {
+        //     return '1000'
+        //   } else if (value.max < 0) {
+        //     return '0'
+        //   }
+        // },
+        // min: function (value: Record<string, number>) {
+        //   if (value.max >= 10000 && value.min > 20) {
+        //     return '-1000'
+        //   } else if (value.max >= 10000 && value.min <= 20) {
+        //     return '-200'
+        //   }
+        // },
         boundaryGap: [0.2, 0.2],
         splitLine: {
           show: false
@@ -176,7 +183,6 @@ onMounted(() => {
     }
   }
   watch(props, () => {
-    // console.log(props)
     if (props.status === 'normal') {
       chart.setOption(option.value, true)
     } else {
@@ -195,7 +201,7 @@ onMounted(() => {
 
 <template>
   <div class="HistogramChart" style="width: 100%">
-    <div ref="container" :style="{ width: '100%', height: '600px' }"></div>
+    <div ref="container" :style="{ width: '100%', height: '650px' }"></div>
   </div>
 </template>
 
