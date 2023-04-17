@@ -86,6 +86,7 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
     } else {
       seriesData = statusResp.data[0].values.slice(0, -1)
     }
+    seriesData[10][1] = '0'
     xTimeStamp.forEach((xTime, xTimeIndex) => {
       const index = seriesData.findIndex(item => item[0] === xTime)
       if (index !== -1) {
@@ -133,16 +134,19 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
           if (index !== -1) {
             if (statusObj.value[detectId][xTimeIndex][1] === '200') {
               // if (xTimeIndex === 1) {
-              //   durationSeriesData.push('1200000.11')
+              //   durationSeriesData.push('120000000.11')
               // } else {
               durationSeriesData.push((Number(data[index][1]) * 100000).toFixed(2))
               // }
             } else {
-              // durationSeriesData.push((Number(data[index][1]) * 1000).toFixed(2))
               durationSeriesData.push((Number(data[index][1]) / 100).toFixed(8))
             }
           } else {
-            durationSeriesData.push('')
+            if (statusObj.value[detectId][xTimeIndex][1] !== '200' && statusObj.value[detectId][xTimeIndex][1] !== '') {
+              durationSeriesData.push('0.1')
+            } else {
+              durationSeriesData.push('')
+            }
           }
         })
         if (duration.metric.phase === 'connect') {
@@ -178,7 +182,7 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
                 label: {
                   show: true,
                   fontSize: 12,
-                  distance: 10,
+                  distance: 5,
                   position: duration.metric.phase === 'transfer' ? 'top' : duration.metric.phase === 'tls' ? 'inside' : 'bottom',
                   // 自定义顶部文字写判断
                   formatter: function (val: Record<string, any>) {
@@ -278,9 +282,9 @@ const getWebMonitoringLastData = async (id: string, name: string, start: number)
             if (duration.metric.phase === bar.id.slice(bar.id.lastIndexOf('-') + 1, bar.id.length)) {
               // 刷新时因为存在时间误差，后端可能返回一个值或两个值
               if (statusObj.value[id][statusObj.value[id].length - 1][1] === '200') {
-                bar.data.push((Number(duration.values[duration.values.length - 1][1]) * 1000).toFixed(2))
+                bar.data.push((Number(duration.values[duration.values.length - 1][1]) * 100000).toFixed(2))
               } else {
-                bar.data.push((Number(duration.values[duration.values.length - 1][1]) * -1000).toFixed(2))
+                bar.data.push((Number(duration.values[duration.values.length - 1][1]) / 100).toFixed(8))
               }
             }
           })

@@ -37,6 +37,10 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'storage',
         component: () => import('pages/StoragePage.vue')
+      },
+      {
+        path: 'tidb',
+        component: () => import('pages/TidbPage.vue')
       }
     ]
   },

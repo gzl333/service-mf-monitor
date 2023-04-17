@@ -92,6 +92,18 @@ export default {
         params: payload.query
       }
       return axiosMonitor.get('/monitor/website/' + payload.path.id + '/query/range', config)
+    },
+    getMonitorUnitTidb (payload?: { query: { page: number, page_size: number, organization_id: string }}) {
+      const config = {
+        params: payload?.query
+      }
+      return axiosMonitor.get('/monitor/unit/tidb', config)
+    },
+    getMonitorTidbQuery (payload: { query: { monitor_unit_id: string; query: string } }) {
+      const config = {
+        params: payload.query
+      }
+      return axiosMonitor.get('/monitor/tidb/query', config)
     }
   }
 }

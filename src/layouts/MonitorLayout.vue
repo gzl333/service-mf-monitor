@@ -87,10 +87,22 @@ console.log('table', store.tables)
               active-class="active-item"
             >
               <q-item-section class="column items-center">
-                <q-icon name="las la-database" size="lg"/>
+                <q-icon name="las la-table" size="lg"/>
                 <div class="active-text text-center">Ceph</div>
               </q-item-section>
             </q-item>
+
+<!--            <q-item-->
+<!--              clickable-->
+<!--              :active="activeItem === 'tidb'"-->
+<!--              @click="activeItem = 'tidb'; navigateToUrl('/my/monitor/tidb')"-->
+<!--              active-class="active-item"-->
+<!--            >-->
+<!--              <q-item-section class="column items-center">-->
+<!--                <q-icon name="las la-database" size="lg"/>-->
+<!--                <div class="active-text text-center">TiDB</div>-->
+<!--              </q-item-section>-->
+<!--            </q-item>-->
 
           </q-list>
 
