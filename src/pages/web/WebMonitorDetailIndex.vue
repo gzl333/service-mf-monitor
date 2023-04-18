@@ -86,7 +86,7 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
     } else {
       seriesData = statusResp.data[0].values.slice(0, -1)
     }
-    seriesData[10][1] = '0'
+    // seriesData[10][1] = '0'
     xTimeStamp.forEach((xTime, xTimeIndex) => {
       const index = seriesData.findIndex(item => item[0] === xTime)
       if (index !== -1) {

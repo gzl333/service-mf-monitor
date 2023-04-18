@@ -173,7 +173,7 @@ onMounted(() => {
               if (value / 100 > 1) {
                 return value / 100 + '毫秒'
               } else if (value / 100 === 1) {
-                return '0毫秒'
+                return '1毫秒'
               } else {
                 return '0.5毫秒'
               }

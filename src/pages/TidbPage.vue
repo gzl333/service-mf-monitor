@@ -81,18 +81,41 @@ const getStorageQuery = async (monitor_unit_id: string) => {
   // ('server_cpu_usage', '主机CPU使用率'),
   // ('server_mem_usage', '主机内存使用率'),
   // ('server_disk_usage', '主机硬盘使用率')
-  const storageQuery: string[] = ['pd_nodes', 'tidb_nodes', 'tikv_nodes', 'connections_count', 'qps', 'region_count', 'region_health', 'storage_capacity', 'current_storage_size', 'server_cpu_usage', 'server_mem_usage', 'server_disk_usage']
+  const storageQuery: string[] = ['pd_nodes', 'tidb_nodes', 'tikv_nodes', 'region_count', 'region_health', 'storage_capacity', 'current_storage_size', 'storage', 'connections_count', 'qps', 'server_cpu_usage', 'server_mem_usage', 'server_disk_usage']
   const config = {
     query: {
       monitor_unit_id,
       query: ''
     }
   }
-  const storageObject: {[key: string]: any[] } = {}
+  const storageObject: {[key: string]: any[] | number | string } = {}
   for (const query of storageQuery) {
     config.query.query = query
     const MonitorCephQuery = await monitor.monitor.getMonitorTidbQuery(config)
     if (MonitorCephQuery.status === 200 && MonitorCephQuery.data.length > 0) {
+      if (query === 'connections_count') {
+        let totalConnect = 0
+        MonitorCephQuery.data.forEach((item: Record<string, string>) => {
+          totalConnect += Number(item.value[1])
+        })
+        storageObject['totalConnect' as keyof typeof storageObject] = totalConnect
+      }
+      if (query === 'qps') {
+        let totalQbs = 0
+        MonitorCephQuery.data.forEach((item: Record<string, string>) => {
+          totalQbs += Math.round(Number(item.value[1]))
+        })
+        storageObject['totalQbs' as keyof typeof storageObject] = totalQbs
+      }
+      if (query === 'server_cpu_usage' || query === 'server_mem_usage' || query === 'server_disk_usage') {
+        let max = 0
+        MonitorCephQuery.data.forEach((item: Record<string, string>) => {
+          if (Number(item.value[1]) > max) {
+            max = Number(item.value[1])
+          }
+        })
+        storageObject[query + '_max' as keyof typeof storageObject] = max.toFixed(2)
+      }
       storageObject[query as keyof typeof storageObject] = MonitorCephQuery.data
     } else if (MonitorCephQuery.status === 200 && MonitorCephQuery.data.length === 0) {
       storageObject[query as keyof typeof storageObject] = []
@@ -259,7 +282,7 @@ onUnmounted(() => {
                           </div>
                           <q-icon class="q-mr-sm" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]" @click="refreshUint(monitor.id)"/>
                         </div>
-                        <tidb-cluster :unit-ceph-data="propsUnitData[monitor.id]" :unit-id="monitor.id" :grafana-url="monitor.grafana_url"></tidb-cluster>
+                        <tidb-cluster :unit-servers-data="propsUnitData[monitor.id]" :unit-id="monitor.id"></tidb-cluster>
                       </div>
                     </div>
                     <div v-else>

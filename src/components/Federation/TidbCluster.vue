@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import LineChart from 'components/Chart/LineChart.vue'
-import { i18n } from 'boot/i18n'
+// import { watch } from 'vue'
+// import { i18n } from 'boot/i18n'
 
 const props = defineProps({
   unitServersData: {
@@ -10,224 +10,313 @@ const props = defineProps({
   unitId: {
     type: String,
     required: false
-  },
-  grafanaUrl: {
-    type: String,
-    required: false
   }
 })
 // const emits = defineEmits(['is-emit', 'is-back'])
-const { tc } = i18n.global
-const goToGrafana = () => {
-  window.open(props.grafanaUrl)
-}
+// const { tc } = i18n.global
+// watch(props, () => {
+//   console.log(props)
+// })
 </script>
 
 <template>
   <div class="ServerCluster">
-    <div class="row q-mt-sm q-pb-sm q-gutter-x-xs">
-      <div class="col">
-        <q-card flat class="no-border-radius boxRightBorder" style="height: 120px">
-          <div class="text-center">{{ tc('pd节点') }}</div>
-          <div v-if="props.unitServersData?.host_count" class="text-center text-h4 q-mt-lg">
-            {{ props.unitServersData?.host_count }}
-          </div>
-          <div v-else class="row justify-center q-mt-lg">
-            <q-spinner
-              color="primary"
-              size="3em"
-            />
-          </div>
-        </q-card>
-        <q-card flat class="no-border-radius q-mt-xs row boxRightBorder" style="height: 85px">
-            <div class="col">
-              <div class="text-center">{{ tc('tidb节点') }}</div>
-              <div v-if="props.unitServersData?.host_up_count"
-                :class="props.unitServersData?.host_up_count === '暂无数据' || props.unitServersData?.host_up_count === '获取数据出错' ? 'text-center text-h6 q-mt-sm' : 'text-center text-h5 text-positive q-mt-sm'">
-                {{ props.unitServersData?.host_up_count }}
-              </div>
-              <div v-else class="row justify-center q-mt-sm">
-                <q-spinner
-                  color="primary"
-                  size="3em"
-                />
-              </div>
+    <div class="q-pt-md q-pb-lg">
+      <div class="row justify-between" style="height: 140px">
+        <q-card flat class="my-card col-2 text-center no-border-radius edgeBorder">
+          <q-card-section>
+            <div class="text-subtitle1">pd节点</div>
+          </q-card-section>
+          <q-card-section class="q-pt-xs">
+            <div class="text-h4" v-if="props.unitServersData?.pd_nodes">
+              <span class="text-negative">{{props.unitServersData?.pd_nodes.filter(item => item.value[1] !== '1').length}}</span>
+              <span>{{'/' + props.unitServersData?.pd_nodes.length }}</span>
             </div>
-            <q-separator vertical/>
-            <div class="col">
-              <div class="text-center">{{ tc('tivk节点') }}</div>
-              <div v-if="props.unitServersData?.host_count && props.unitServersData?.host_up_count"
-                :class="props.unitServersData?.host_count === '暂无数据' || props.unitServersData?.host_count === '获取数据出错' || props.unitServersData?.host_up_count === '暂无数据' || props.unitServersData?.host_up_count === '获取数据出错' ? 'text-center text-h6 q-mt-sm' : 'text-center text-h5 text-negative q-mt-sm'">
-                {{
-                  props.unitServersData?.host_count !== '暂无数据' && props.unitServersData?.host_count !== '获取数据出错' && props.unitServersData?.host_up_count !== '暂无数据' && props.unitServersData?.host_up_count !== '获取数据出错' ? (parseFloat(props.unitServersData?.host_count) - parseFloat(props.unitServersData?.host_up_count)) : '暂无数据'
-                }}
-              </div>
-              <div v-else class="row justify-center q-mt-sm">
-                <q-spinner
-                  color="primary"
-                  size="3em"
-                />
-              </div>
-            </div>
-        </q-card>
-      </div>
-      <div class="col">
-        <q-card flat bordered class="no-border-radius" style="height: 103px">
-          <div class="text-center">{{ tc('连接数') }}</div>
-          <div v-if="props.unitServersData?.health_status" :class="props.unitServersData?.health_status === '0' ? 'text-positive text-center text-h4 text-weight-bold q-mt-xl' :
-            props.unitServersData?.health_status === '1' ? 'text-warning text-center text-h4 text-weight-bold q-mt-xl' : 'text-negative text-center text-h4 text-weight-bold q-mt-xl'">
-            {{
-              props.unitServersData?.health_status === '0' ? 'Healthy' : props.unitServersData?.health_status === '1' ? 'Warning' : 'Fatal'
-            }}
-          </div>
-          <div v-else class="row justify-center q-mt-md">
-            <q-spinner
-              color="primary"
-              size="3em"
-            />
-          </div>
-        </q-card>
-        <q-card flat bordered class="no-border-radius q-mt-xs" style="height: 103px">
-          <div class="text-center">{{ tc('每秒请求数') }}</div>
-          <div v-if="props.unitServersData?.health_status" :class="props.unitServersData?.health_status === '0' ? 'text-positive text-center text-h4 text-weight-bold q-mt-xl' :
-            props.unitServersData?.health_status === '1' ? 'text-warning text-center text-h4 text-weight-bold q-mt-xl' : 'text-negative text-center text-h4 text-weight-bold q-mt-xl'">
-            {{
-              props.unitServersData?.health_status === '0' ? 'Healthy' : props.unitServersData?.health_status === '1' ? 'Warning' : 'Fatal'
-            }}
-          </div>
-          <div v-else class="row justify-center q-mt-md">
-            <q-spinner
-              color="primary"
-              size="3em"
-            />
-          </div>
-        </q-card>
-      </div>
-      <div class="col">
-        <q-card flat bordered class="no-border-radius" style="height: 103px">
-          <div class="text-center">{{ tc('副本数量') }}</div>
-          <div v-if="props.unitServersData?.health_status" :class="props.unitServersData?.health_status === '0' ? 'text-positive text-center text-h4 text-weight-bold q-mt-xl' :
-            props.unitServersData?.health_status === '1' ? 'text-warning text-center text-h4 text-weight-bold q-mt-xl' : 'text-negative text-center text-h4 text-weight-bold q-mt-xl'">
-            {{
-              props.unitServersData?.health_status === '0' ? 'Healthy' : props.unitServersData?.health_status === '1' ? 'Warning' : 'Fatal'
-            }}
-          </div>
-          <div v-else class="row justify-center q-mt-md">
-            <q-spinner
-              color="primary"
-              size="3em"
-            />
-          </div>
-        </q-card>
-        <q-card flat bordered class="no-border-radius q-mt-xs" style="height: 103px">
-          <div class="text-center">{{ tc('副本状态') }}</div>
-          <div v-if="props.unitServersData?.health_status" :class="props.unitServersData?.health_status === '0' ? 'text-positive text-center text-h4 text-weight-bold q-mt-xl' :
-            props.unitServersData?.health_status === '1' ? 'text-warning text-center text-h4 text-weight-bold q-mt-xl' : 'text-negative text-center text-h4 text-weight-bold q-mt-xl'">
-            {{
-              props.unitServersData?.health_status === '0' ? 'Healthy' : props.unitServersData?.health_status === '1' ? 'Warning' : 'Fatal'
-            }}
-          </div>
-          <div v-else class="row justify-center q-mt-md">
-            <q-spinner
-              color="primary"
-              size="3em"
-            />
-          </div>
-        </q-card>
-      </div>
-      <div class="col">
-        <q-card flat bordered class="no-border-radius" style="height: 103px">
-          <div class="text-center">{{ tc('存储总容量') }}</div>
-          <div v-if="props.unitServersData?.health_status" :class="props.unitServersData?.health_status === '0' ? 'text-positive text-center text-h4 text-weight-bold q-mt-xl' :
-            props.unitServersData?.health_status === '1' ? 'text-warning text-center text-h4 text-weight-bold q-mt-xl' : 'text-negative text-center text-h4 text-weight-bold q-mt-xl'">
-            {{
-              props.unitServersData?.health_status === '0' ? 'Healthy' : props.unitServersData?.health_status === '1' ? 'Warning' : 'Fatal'
-            }}
-          </div>
-          <div v-else class="row justify-center q-mt-md">
-            <q-spinner
-              color="primary"
-              size="3em"
-            />
-          </div>
-        </q-card>
-        <q-card flat bordered class="no-border-radius q-mt-xs" style="height: 103px">
-          <div class="text-center">{{ tc('当前存储容量') }}</div>
-          <div v-if="props.unitServersData?.health_status" :class="props.unitServersData?.health_status === '0' ? 'text-positive text-center text-h4 text-weight-bold q-mt-xl' :
-            props.unitServersData?.health_status === '1' ? 'text-warning text-center text-h4 text-weight-bold q-mt-xl' : 'text-negative text-center text-h4 text-weight-bold q-mt-xl'">
-            {{
-              props.unitServersData?.health_status === '0' ? 'Healthy' : props.unitServersData?.health_status === '1' ? 'Warning' : 'Fatal'
-            }}
-          </div>
-          <div v-else class="row justify-center q-mt-md">
-            <q-spinner
-              color="primary"
-              size="3em"
-            />
-          </div>
-        </q-card>
-      </div>
-      <div class="col">
-        <q-card flat bordered class="no-border-radius" style="height: 120px">
-          <div class="text-center">{{ tc('主机CPU使用率') }}</div>
-          <div v-if="props.unitServersData?.disk_usage">
-            <div class="text-center text-h4 q-mt-md">
-              {{
-                props.unitServersData?.disk_usage && props.unitServersData?.disk_usage !== '暂无数据' && props.unitServersData?.disk_usage !== '获取数据出错' ? (parseFloat(props.unitServersData?.disk_usage).toFixed(2) + '%') : props.unitServersData?.disk_usage
-              }}
-            </div>
-            <line-chart :chartData="[props.unitServersData?.disk_usage, props.unitServersData?.min_disk_usage, props.unitServersData?.max_disk_usage]"></line-chart>
-          </div>
-          <div v-else class="row justify-center q-mt-lg">
-            <q-spinner
-              color="primary"
-              size="3em"
-            />
-          </div>
-        </q-card>
-        <q-card flat bordered class="no-border-radius q-mt-xs row" style="height: 85px">
-          <div class="col">
-              <div class="text-center">{{ tc('主机内存使用率') }}</div>
-              <div v-if="props.unitServersData?.max_disk_usage"
-                :class="props.unitServersData?.max_disk_usage !== '暂无数据' && props.unitServersData?.max_disk_usage !== '获取数据出错' ? 'text-center text-h5 q-mt-md' : 'text-center text-h6 q-mt-md'">
-                {{
-                  props.unitServersData?.max_disk_usage !== '暂无数据' && props.unitServersData?.max_disk_usage !== '获取数据出错' ? (parseFloat(props.unitServersData?.max_disk_usage).toFixed(2) + '%') : props.unitServersData?.max_disk_usage
-                }}
-              </div>
-            <div v-else class="row justify-center q-mt-sm">
+            <div v-else class="row justify-center q-mt-xs">
               <q-spinner
                 color="primary"
-                size="3em"
+                size="2em"
               />
             </div>
+          </q-card-section>
+          <q-tooltip class="bg-white" anchor="center right" self="center left" :offset="[10, 10]">
+            <q-card class="my-card text-black">
+              <q-card-section v-for="(item, index) in props.unitServersData?.pd_nodes" :key="index">
+                <span class="text-grey-8">实例：</span>
+                <span>{{ item.metric.instance }}</span>
+                <span class="q-ml-md text-grey-8">状态：</span>
+                <span :class="item.value[1] === '1' ? 'text-weight-bold text-positive' : 'text-weight-bold text-negative' ">{{ item.value[1] === '1' ? '正常' : '异常' }}</span>
+              </q-card-section>
+            </q-card>
+          </q-tooltip>
+        </q-card>
+        <q-card flat class="my-card col-2 text-center no-border-radius boxLeftBorder">
+          <q-card-section>
+            <div class="text-subtitle1">tidb节点</div>
+          </q-card-section>
+          <q-card-section class="q-pt-xs">
+            <div class="text-h4" v-if="props.unitServersData?.tidb_nodes">
+              <span class="text-negative">{{props.unitServersData?.tidb_nodes.filter(item => item.value[1] !== '1').length}}</span>
+              <span>{{'/' + props.unitServersData?.tidb_nodes.length }}</span>
             </div>
-          <q-separator vertical/>
-          <div class="col">
-              <div class="text-center">{{ tc('主机硬盘使用率') }}</div>
-              <div v-if="props.unitServersData?.min_disk_usage"
-                :class="props.unitServersData?.min_disk_usage !== '暂无数据' && props.unitServersData?.min_disk_usage !== '获取数据出错' ? 'text-center text-h5 q-mt-md' : 'text-center text-h6 q-mt-md'">
-                {{
-                  props.unitServersData?.min_disk_usage !== '暂无数据' && props.unitServersData?.min_disk_usage !== '获取数据出错' ? (parseFloat(props.unitServersData?.min_disk_usage).toFixed(2) + '%') : props.unitServersData?.min_disk_usage
-                }}
-              </div>
-            <div v-else class="row justify-center q-mt-sm">
+            <div v-else class="row justify-center q-mt-xs">
               <q-spinner
                 color="primary"
-                size="3em"
+                size="2em"
               />
             </div>
+          </q-card-section>
+          <q-tooltip class="bg-white" anchor="center right" self="center left" :offset="[10, 10]">
+            <q-card class="my-card text-black">
+              <q-card-section v-for="(item, index) in props.unitServersData?.tidb_nodes" :key="index">
+                <span class="text-grey-8">实例：</span>
+                <span>{{ item.metric.instance }}</span>
+                <span class="q-ml-md text-grey-8">状态：</span>
+                <span :class="item.value[1] === '1' ? 'text-weight-bold text-positive' : 'text-weight-bold text-negative' ">{{ item.value[1] === '1' ? '正常' : '异常' }}</span>
+              </q-card-section>
+            </q-card>
+          </q-tooltip>
+        </q-card>
+        <q-card flat class="my-card col-2 text-center no-border-radius boxLeftBorder">
+          <q-card-section>
+            <div class="text-subtitle1">tikv节点</div>
+          </q-card-section>
+          <q-card-section class="q-pt-xs">
+            <div class="text-h4" v-if="props.unitServersData?.tikv_nodes">
+              <span class="text-negative">{{props.unitServersData?.tikv_nodes.filter(item => item.value[1] !== '1').length}}</span>
+              <span>{{'/' + props.unitServersData?.tikv_nodes.length }}</span>
             </div>
+            <div v-else class="row justify-center q-mt-xs">
+              <q-spinner
+                color="primary"
+                size="2em"
+              />
+            </div>
+          </q-card-section>
+          <q-tooltip class="bg-white" anchor="center right" self="center left" :offset="[10, 10]">
+            <q-card class="my-card text-black">
+              <q-card-section v-for="(item, index) in props.unitServersData?.tikv_nodes" :key="index">
+                <span class="text-grey-8">实例：</span>
+                <span>{{ item.metric.instance }}</span>
+                <span class="q-ml-md text-grey-8">状态：</span>
+                <span :class="item.value[1] === '1' ? 'text-weight-bold text-positive' : 'text-weight-bold text-negative' ">{{ item.value[1] === '1' ? '正常' : '异常' }}</span>
+              </q-card-section>
+            </q-card>
+          </q-tooltip>
+        </q-card>
+        <q-card flat class="my-card col-6 no-border-radius boxLeftBorder">
+          <q-card-section>
+            <div class="text-subtitle1 text-center">Region Health</div>
+          </q-card-section>
+          <div class="row text-center" v-if="props.unitServersData?.region_count && props.unitServersData?.region_health">
+            <div class="col">
+              <div class="text-h5 text-positive">{{ props.unitServersData?.region_count[0].value[1] }}</div>
+              <div>good</div>
+            </div>
+            <div class="col">
+              <div class="text-h5 text-negative">{{ props.unitServersData?.region_health.find(item => item.metric.type.includes('down')).value[1] }}</div>
+              <div>down</div>
+            </div>
+            <div class="col">
+              <div class="text-h5 text-negative">{{ props.unitServersData?.region_health.find(item => item.metric.type.includes('empty')).value[1] }}</div>
+              <div>empty</div>
+            </div>
+            <div class="col">
+              <div class="text-h5 text-grey">{{ props.unitServersData?.region_health.find(item => item.metric.type.includes('extra')).value[1] }}</div>
+              <div>extra</div>
+            </div>
+            <div class="col">
+              <div class="text-h5 text-grey">{{ props.unitServersData?.region_health.find(item => item.metric.type.includes('miss')).value[1] }}</div>
+              <div>miss</div>
+            </div>
+            <div class="col">
+              <div class="text-h5 text-grey">{{ props.unitServersData?.region_health.find(item => item.metric.type.includes('pending')).value[1] }}</div>
+              <div>pending</div>
+            </div>
+            <div class="col">
+              <div class="text-h5 text-grey">{{ props.unitServersData?.region_health.find(item => item.metric.type.includes('oversized')).value[1] }}</div>
+              <div>oversized</div>
+            </div>
+          </div>
+          <div v-else class="row justify-center q-mt-xs">
+            <q-spinner
+              color="primary"
+              size="2em"
+            />
+          </div>
         </q-card>
       </div>
-      <div class="col-1">
-        <q-card flat class="no-border-radius boxLeftBorder" style="height: 209px">
-          <div class="text-center q-mt-xl">
-            <div class="text-primary cursor-pointer" @click="goToGrafana">
-              <div>Go To</div>
-              <div>Grafana</div>
+      <div class="row justify-between q-mt-sm" style="height: 140px">
+        <q-card flat class="my-card col-2 text-center no-border-radius edgeBorder">
+          <q-card-section>
+            <div class="text-subtitle1">集群存储容量</div>
+          </q-card-section>
+          <q-card-section>
+            <div class="row justify-between" v-if="props.unitServersData?.storage_capacity && props.unitServersData?.current_storage_size">
+              <div>
+                <div class="text-h5">{{(props.unitServersData?.storage_capacity[0].value[1] / 1024 / 1024 / 1024 / 1024).toFixed(2)}}TB</div>
+                <div>total</div>
+              </div>
+              <div>
+                <div class="text-h5 text-positive">{{(props.unitServersData?.current_storage_size[0].value[1] / 1024 / 1024 / 1024).toFixed(2)}}GB</div>
+                <div>current</div>
+              </div>
             </div>
-            <div class="q-mt-sm">{{ tc('查看详细信息') }}</div>
-          </div>
+            <div v-else class="row justify-center q-mt-xs">
+              <q-spinner
+                color="primary"
+                size="2em"
+              />
+            </div>
+          </q-card-section>
+        </q-card>
+        <q-card flat class="my-card col-2 text-center no-border-radius boxLeftBorder">
+          <q-card-section>
+            <div class="text-subtitle1">连接数</div>
+          </q-card-section>
+          <q-card-section>
+            <div v-if="props.unitServersData?.connections_count">
+              <div class="text-h5 text-positive">
+                {{ props.unitServersData?.totalConnect}}
+              </div>
+              <div>current</div>
+            </div>
+            <div v-else class="row justify-center q-mt-xs">
+              <q-spinner
+                color="primary"
+                size="2em"
+              />
+            </div>
+          </q-card-section>
+          <q-tooltip class="bg-white" anchor="center right" self="center left" :offset="[10, 10]">
+            <q-card class="my-card text-black">
+              <q-card-section v-for="(item, index) in props.unitServersData?.connections_count" :key="index">
+                <span class="text-grey-8">实例：</span>
+                <span>{{ item.metric.instance }}</span>
+                <span class="q-ml-md text-grey-8">连接数：</span>
+                <span class="text-weight-bold">{{ item.value[1] }}</span>
+              </q-card-section>
+            </q-card>
+          </q-tooltip>
+        </q-card>
+        <q-card flat class="my-card col-2 text-center no-border-radius boxLeftBorder">
+          <q-card-section>
+            <div class="text-subtitle1">QPS</div>
+          </q-card-section>
+          <q-card-section>
+            <div v-if="props.unitServersData?.qps">
+              <div class="text-h5">
+                {{ props.unitServersData?.totalQbs}}
+              </div>
+              <div>current</div>
+            </div>
+            <div v-else class="row justify-center q-mt-xs">
+              <q-spinner
+                color="primary"
+                size="2em"
+              />
+            </div>
+          </q-card-section>
+          <q-tooltip class="bg-white" anchor="center right" self="center left" :offset="[10, 10]">
+            <q-card class="my-card text-black">
+              <div v-for="(item, index) in props.unitServersData?.qps" :key="index" class="q-py-sm q-px-md">
+                <span class="text-grey-8">类别：</span>
+                <span>{{ item.metric.type }}</span>
+                <span class="q-ml-md text-grey-9">每秒请求数：</span>
+                <span class="text-weight-bold">{{ Math.round(item.value[1]) }}</span>
+              </div>
+            </q-card>
+          </q-tooltip>
+        </q-card>
+        <q-card flat class="my-card col-2 text-center no-border-radius boxLeftBorder">
+          <q-card-section class="row justify-between text-subtitle1">
+            <div>主机CPU利用率</div>
+            <div>MAX</div>
+          </q-card-section>
+          <q-card-section>
+            <div v-if="props.unitServersData?.server_cpu_usage">
+              <div class="text-h5">
+                {{ props.unitServersData?.server_cpu_usage_max}}%
+              </div>
+              <div>current</div>
+            </div>
+            <div v-else class="row justify-center q-mt-xs">
+              <q-spinner
+                color="primary"
+                size="2em"
+              />
+            </div>
+          </q-card-section>
+          <q-tooltip class="bg-white" anchor="center right" self="center left" :offset="[10, 10]">
+            <q-card class="my-card text-black">
+              <q-card-section v-for="(item, index) in props.unitServersData?.server_cpu_usage" :key="index">
+                <span class="text-grey-8">实例：</span>
+                <span>{{ item.metric.instance }}</span>
+                <span class="q-ml-md text-grey-8">利用率：</span>
+                <span class="text-weight-bold">{{ Number(item.value[1]).toFixed(2)}}%</span>
+              </q-card-section>
+            </q-card>
+          </q-tooltip>
+        </q-card>
+        <q-card flat class="my-card col-2 text-center no-border-radius boxLeftBorder">
+          <q-card-section class="row justify-between text-subtitle1">
+            <div>主机内存利用率</div>
+            <div>MAX</div>
+          </q-card-section>
+          <q-card-section>
+            <div v-if="props.unitServersData?.server_mem_usage">
+              <div class="text-h5">
+                {{ props.unitServersData?.server_mem_usage_max}}%
+              </div>
+              <div>current</div>
+            </div>
+            <div v-else class="row justify-center q-mt-xs">
+              <q-spinner
+                color="primary"
+                size="2em"
+              />
+            </div>
+          </q-card-section>
+          <q-tooltip class="bg-white" anchor="center right" self="center left" :offset="[10, 10]">
+            <q-card class="my-card text-black">
+              <q-card-section v-for="(item, index) in props.unitServersData?.server_mem_usage" :key="index">
+                <span class="text-grey-8">实例：</span>
+                <span>{{ item.metric.instance }}</span>
+                <span class="q-ml-md text-grey-8">利用率：</span>
+                <span class="text-weight-bold">{{ Number(item.value[1]).toFixed(2) }}%</span>
+              </q-card-section>
+            </q-card>
+          </q-tooltip>
+        </q-card>
+        <q-card flat class="my-card col-2 text-center no-border-radius boxLeftBorder">
+          <q-card-section class="row justify-between text-subtitle1">
+            <div>主机磁盘利用率</div>
+            <div>MAX</div>
+          </q-card-section>
+          <q-card-section>
+            <div v-if="props.unitServersData?.server_disk_usage">
+              <div class="text-h5">
+                {{ props.unitServersData?.server_disk_usage_max}}%
+              </div>
+              <div>current</div>
+            </div>
+            <div v-else class="row justify-center q-mt-xs">
+              <q-spinner
+                color="primary"
+                size="2em"
+              />
+            </div>
+          </q-card-section>
+          <q-tooltip class="bg-white" anchor="bottom middle" self="center left">
+            <q-card class="my-card text-black">
+              <q-card-section v-for="(item, index) in props.unitServersData?.server_disk_usage" :key="index">
+                <span class="text-grey-8">实例：</span>
+                <span>{{ item.metric.instance }}</span>
+                <span class="q-ml-md text-grey-8">利用率：</span>
+                <span class="text-weight-bold">{{ Number(item.value[1]).toFixed(2) }}%</span>
+              </q-card-section>
+            </q-card>
+          </q-tooltip>
         </q-card>
       </div>
     </div>
@@ -245,6 +334,10 @@ const goToGrafana = () => {
     border-top: 1px solid #DDDDDD;
     border-bottom: 1px solid #DDDDDD;
     border-left: 1px solid #DDDDDD;
+  }
+  .edgeBorder {
+    border-top: 1px solid #DDDDDD;
+    border-bottom: 1px solid #DDDDDD;
   }
 }
 </style>
