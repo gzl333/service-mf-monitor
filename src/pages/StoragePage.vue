@@ -19,14 +19,14 @@ import monitor from 'src/api/monitor'
 // const router = useRouter()
 const { tc } = i18n.global
 const store = useStore()
-const organizations = computed(() => store.getAllMonitoringOrganization())
+const organizations = computed(() => store.getAllMonitoringOrganization('ceph'))
 const storageUnitsObj = ref<Record<string, ServiceUnitInterface[]>>({})
 // 用于备份所有的单元，模糊搜索时用到
 const allStorageUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
 const allExpendUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
 // 传输给子组件的数据
 const propsUnitData = ref<Record<string, unknown>>({})
-const countObj = ref<Record<string, number>>({})
+// const countObj = ref<Record<string, number>>({})
 let timer: NodeJS.Timer | null
 const keyword = ref('')
 // 用于判断是否可点击
@@ -105,19 +105,19 @@ const getStorageQuery = async (monitor_unit_id: string) => {
 // }
 const getAllUnit = async () => {
   for (const organization of organizations.value) {
-    const monitorUnitCeph = await monitor.monitor.getMonitorUnitCeph({
-      query: {
-        page: 1,
-        page_size: 9999,
-        organization_id: organization.id
-      }
-    })
-    if (monitorUnitCeph.status === 200) {
-      countObj.value[organization.id] = monitorUnitCeph.data.count
-    }
+    // const monitorUnitCeph = await monitor.monitor.getMonitorUnitCeph({
+    //   query: {
+    //     page: 1,
+    //     page_size: 9999,
+    //     organization_id: organization.id
+    //   }
+    // })
+    // if (monitorUnitCeph.status === 200) {
+    //   countObj.value[organization.id] = monitorUnitCeph.data.count
+    // }
     // 获取机构下所有单元
     const unitArr: ServiceUnitInterface[] = []
-    const numberRequest = Math.ceil(countObj.value[organization.id] / 100)
+    const numberRequest = Math.ceil(store.tables.dataCenterTable.byId[organization.id].cephUnit / 100)
     for (let i = 0; i < numberRequest; i++) {
       const unitObj: { [key: string]: ServiceUnitInterface[] } = {}
       const monitorUnitServerRes = await monitor.monitor.getMonitorUnitCeph({
@@ -249,7 +249,7 @@ onUnmounted(() => {
                           <div class="text-subtitle1">{{ i18n.global.locale === 'zh' ? org.name : org.name_en }}</div>
                           <div>{{ org?.abbreviation }}</div>
                         </div>
-                        <div class="text-h6 text-primary">{{ countObj[org.id] }}</div>
+                        <div class="text-h6 text-primary">{{ store.tables.dataCenterTable.byId[org.id]?.cephUnit }}</div>
                       </div>
                     </q-item-section>
                   </template>

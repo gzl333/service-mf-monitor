@@ -19,7 +19,7 @@ const store = useStore()
 // const route = useRoute()
 // const router = useRouter()
 const { tc } = i18n.global
-const organizations = computed(() => store.getAllMonitoringOrganization())
+const organizations = computed(() => store.getAllMonitoringOrganization('server'))
 const serverUnitsObj = ref<Record<string, ServiceUnitInterface[]>>({})
 // 用于备份所有的单元，模糊搜索时用到
 const allServerUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
@@ -34,7 +34,7 @@ const isIntervalOpen = ref(false)
 const isDisable = ref(true)
 // 用于判断刷新按钮显示和不显示 每一个子组件对应对象里的一个值
 const renovateShow = ref<Record<string, boolean>>({})
-const countObj = ref<Record<string, number>>({})
+// const countObj = ref<Record<string, number>>({})
 const filterSelection = ref({
   label: '每30s刷新',
   labelEn: 'Refresh every 30 seconds',
@@ -92,19 +92,19 @@ const getServerQuery = async (monitor_unit_id: string) => {
 }
 const getAllUnit = async () => {
   for (const organization of organizations.value) {
-    const monitorUnitServer = await monitor.monitor.getMonitorUnitServer({
-      query: {
-        page: 1,
-        page_size: 9999,
-        organization_id: organization.id
-      }
-    })
-    if (monitorUnitServer.status === 200) {
-      countObj.value[organization.id] = monitorUnitServer.data.count
-    }
+    // const monitorUnitServer = await monitor.monitor.getMonitorUnitServer({
+    //   query: {
+    //     page: 1,
+    //     page_size: 9999,
+    //     organization_id: organization.id
+    //   }
+    // })
+    // if (monitorUnitServer.status === 200) {
+    //   countObj.value[organization.id] = monitorUnitServer.data.count
+    // }
     // 获取机构下所有单元
     const unitArr: ServiceUnitInterface[] = []
-    const numberRequest = Math.ceil(countObj.value[organization.id] / 100)
+    const numberRequest = Math.ceil(store.tables.dataCenterTable.byId[organization.id].serverUnit / 100)
     for (let i = 0; i < numberRequest; i++) {
       const unitObj: { [key: string]: ServiceUnitInterface[] } = {}
       const monitorUnitServerRes = await monitor.monitor.getMonitorUnitServer({
@@ -246,7 +246,8 @@ onUnmounted(() => {
                           <div class="text-subtitle1">{{ i18n.global.locale === 'zh' ? item.name : item.name_en }}</div>
                           <div>{{ item?.abbreviation }}</div>
                         </div>
-                        <div class="text-h6 text-primary">{{ countObj[item.id] }}</div>
+<!--                        <div class="text-h6 text-primary">{{ countObj[item.id] }}</div>-->
+                        <div class="text-h6 text-primary">{{ store.tables.dataCenterTable.byId[item.id]?.serverUnit }}</div>
                       </div>
                     </q-item-section>
                   </template>

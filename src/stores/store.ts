@@ -9,25 +9,29 @@ import WebTaskReviseDialog from 'components/web/WebTaskReviseDialog.vue'
 const { tc } = i18n.global
 export interface DataCenterInterface {
   // 来自registry接口
-  id: string
-  name: string
-  name_en: string
-  endpoint_vms: string
-  endpoint_object: never // null 待细化
+  abbreviation: string
+  creation_time: string
+  desc: string
   endpoint_compute: never // null 待细化
   endpoint_monitor: never // null 待细化
-  creation_time: string
+  endpoint_object: never // null 待细化
+  endpoint_vms: string
+  id: string
+  longitude: number
+  latitude: number
+  name: string
+  name_en: string
+  sort_weight: number
   status: {
     code: number
     message: string
   },
-  desc: string
-  longitude: number
-  latitude: number
-
   // 来自service接口
   services: string[] // 全部services汇总
   // personalServices: string[] // 用户可用services汇总
+  serverUnit: number
+  cephUnit: number
+  tidbUnit: number
 }
 
 export interface ServiceInterface {
@@ -42,6 +46,26 @@ export interface ServiceInterface {
   data_center: string
   longitude: number
   latitude: number
+}
+
+export interface ServiceUnitInterface {
+  creation: string
+  dashboard_url: string
+  grafana_url: string
+  id: string
+  job_tag: string
+  name: string
+  name_en: string
+  organization: {
+    abbreviation: string
+    creation: string
+    id: string
+    name: string
+    name_en: string
+    sort_weight: string
+  }
+  remark: string
+  sort_weight: string
 }
 
 export interface StatusArrayInterface {
@@ -75,26 +99,6 @@ export interface EndPointInterface {
 
 export interface StartPointInterface {
   name: string
-}
-
-export interface ServiceUnitInterface {
-  creation: string
-  dashboard_url: string
-  grafana_url: string
-  id: string
-  job_tag: string
-  name: string
-  name_en: string
-  organization: {
-  abbreviation: string
-  creation: string
-  id: string
-  name: string
-  name_en: string
-  sort_weight: string
-}
-  remark: string
-  sort_weight: string
 }
 
 export interface DetectionPointInterface {
@@ -151,12 +155,49 @@ export const useStore = defineStore('monitor', {
     }
   }),
   getters: {
-    getAllMonitoringOrganization: state => (): DataCenterInterface[] => {
+    getAllMonitoringOrganization: state => (type: string): DataCenterInterface[] => {
       const allOrganizations: DataCenterInterface[] = []
-      state.tables.dataCenterTable.allIds.forEach(id => {
-        const organization = state.tables.dataCenterTable.byId[id]
-        allOrganizations.unshift(organization)
-      })
+      let sort = 0
+      if (type === 'server') {
+        state.tables.dataCenterTable.allIds.forEach(id => {
+          if (state.tables.dataCenterTable.byId[id].serverUnit > 0) {
+            const organization = state.tables.dataCenterTable.byId[id]
+            if (state.tables.dataCenterTable.byId[id].sort_weight > sort) {
+              allOrganizations.push(organization)
+              sort = state.tables.dataCenterTable.byId[id].sort_weight
+            } else {
+              allOrganizations.unshift(organization)
+              sort = state.tables.dataCenterTable.byId[id].sort_weight
+            }
+          }
+        })
+      } else if (type === 'ceph') {
+        state.tables.dataCenterTable.allIds.forEach(id => {
+          if (state.tables.dataCenterTable.byId[id].cephUnit > 0) {
+            const organization = state.tables.dataCenterTable.byId[id]
+            if (state.tables.dataCenterTable.byId[id].sort_weight > sort) {
+              allOrganizations.push(organization)
+              sort = state.tables.dataCenterTable.byId[id].sort_weight
+            } else {
+              allOrganizations.unshift(organization)
+              sort = state.tables.dataCenterTable.byId[id].sort_weight
+            }
+          }
+        })
+      } else {
+        state.tables.dataCenterTable.allIds.forEach(id => {
+          if (state.tables.dataCenterTable.byId[id].tidbUnit > 0) {
+            const organization = state.tables.dataCenterTable.byId[id]
+            if (state.tables.dataCenterTable.byId[id].sort_weight > sort) {
+              allOrganizations.push(organization)
+              sort = state.tables.dataCenterTable.byId[id].sort_weight
+            } else {
+              allOrganizations.unshift(organization)
+              sort = state.tables.dataCenterTable.byId[id].sort_weight
+            }
+          }
+        })
+      }
       return allOrganizations
     },
     getDetectionPointTable: state => (): {value: string, label: string, labelEn: string}[] => {
@@ -186,6 +227,7 @@ export const useStore = defineStore('monitor', {
     loadAllTables () {
       if (!this.tables.dataCenterTable.isLoaded) {
         void this.loadDataCenterTable().then(() => { // 1. 基础依赖
+          void this.loadUnitDataCenter()
           if (!this.tables.serviceTable.isLoaded) {
             void this.loadServiceTable()
           }
@@ -216,6 +258,49 @@ export const useStore = defineStore('monitor', {
         this.tables.dataCenterTable.allIds = [...new Set(this.tables.dataCenterTable.allIds)]
       })
       this.tables.dataCenterTable.isLoaded = true
+    },
+    loadUnitDataCenter () {
+      for (const id of this.tables.dataCenterTable.allIds) {
+        monitor.monitor.getMonitorUnitServer({
+          query: {
+            page: 1,
+            page_size: 10,
+            organization_id: id
+          }
+        }).then((res) => {
+          if (res.data.results.length > 0) {
+            this.tables.dataCenterTable.byId[id].serverUnit = res.data.count
+          } else {
+            this.tables.dataCenterTable.byId[id].serverUnit = 0
+          }
+        })
+        monitor.monitor.getMonitorUnitCeph({
+          query: {
+            page: 1,
+            page_size: 10,
+            organization_id: id
+          }
+        }).then((res) => {
+          if (res.data.results.length > 0) {
+            this.tables.dataCenterTable.byId[id].cephUnit = res.data.count
+          } else {
+            this.tables.dataCenterTable.byId[id].cephUnit = 0
+          }
+        })
+        monitor.monitor.getMonitorUnitTidb({
+          query: {
+            page: 1,
+            page_size: 10,
+            organization_id: id
+          }
+        }).then((res) => {
+          if (res.data.results.length > 0) {
+            this.tables.dataCenterTable.byId[id].tidbUnit = res.data.count
+          } else {
+            this.tables.dataCenterTable.byId[id].tidbUnit = 0
+          }
+        })
+      }
     },
     async loadServiceTable () {
       this.tables.serviceTable = {

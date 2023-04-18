@@ -87,7 +87,7 @@ console.log('table', store.tables)
               active-class="active-item"
             >
               <q-item-section class="column items-center">
-                <q-icon name="las la-table" size="lg"/>
+                <q-icon name="las la-digital-tachograph" size="lg"/>
                 <div class="active-text text-center">Ceph</div>
               </q-item-section>
             </q-item>

@@ -19,14 +19,13 @@ import monitor from 'src/api/monitor'
 // const router = useRouter()
 const { tc } = i18n.global
 const store = useStore()
-const organizations = computed(() => store.getAllMonitoringOrganization())
+const organizations = computed(() => store.getAllMonitoringOrganization('tibd'))
 const storageUnitsObj = ref<Record<string, ServiceUnitInterface[]>>({})
 // 用于备份所有的单元，模糊搜索时用到
 const allStorageUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
 const allExpendUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
 // 传输给子组件的数据
 const propsUnitData = ref<Record<string, unknown>>({})
-const countObj = ref<Record<string, number>>({})
 let timer: NodeJS.Timer | null
 const keyword = ref('')
 // 用于判断是否可点击
@@ -69,18 +68,6 @@ const filterOptions = [
 ]
 // 获取数据
 const getStorageQuery = async (monitor_unit_id: string) => {
-  // ('pd_nodes', 'pd节点'),
-  // ('tidb_nodes', 'tidb节点'),
-  // ('tikv_nodes', 'tivk节点'),
-  // ('connections_count', '连接数'),
-  // ('qps', '每秒请求数'),
-  // ('region_count', '副本数量'),
-  // ('region_health', '副本状态'),
-  // ('storage_capacity', '存储总容量'),
-  // ('current_storage_size', '当前存储容量'),
-  // ('server_cpu_usage', '主机CPU使用率'),
-  // ('server_mem_usage', '主机内存使用率'),
-  // ('server_disk_usage', '主机硬盘使用率')
   const storageQuery: string[] = ['pd_nodes', 'tidb_nodes', 'tikv_nodes', 'region_count', 'region_health', 'storage_capacity', 'current_storage_size', 'storage', 'connections_count', 'qps', 'server_cpu_usage', 'server_mem_usage', 'server_disk_usage']
   const config = {
     query: {
@@ -125,19 +112,9 @@ const getStorageQuery = async (monitor_unit_id: string) => {
 }
 const getAllUnit = async () => {
   for (const organization of organizations.value) {
-    const monitorUnitTiDb = await monitor.monitor.getMonitorUnitTidb({
-      query: {
-        page: 1,
-        page_size: 9999,
-        organization_id: organization.id
-      }
-    })
-    if (monitorUnitTiDb.status === 200) {
-      countObj.value[organization.id] = monitorUnitTiDb.data.count
-    }
     // 获取机构下所有单元
     const unitArr: ServiceUnitInterface[] = []
-    const numberRequest = Math.ceil(countObj.value[organization.id] / 100)
+    const numberRequest = Math.ceil(store.tables.dataCenterTable.byId[organization.id].tidbUnit / 100)
     for (let i = 0; i < numberRequest; i++) {
       const unitObj: { [key: string]: ServiceUnitInterface[] } = {}
       const monitorUnitTidbRes = await monitor.monitor.getMonitorUnitTidb({
@@ -269,7 +246,7 @@ onUnmounted(() => {
                           <div class="text-subtitle1">{{ i18n.global.locale === 'zh' ? org.name : org.name_en }}</div>
                           <div>{{ org?.abbreviation }}</div>
                         </div>
-                        <div class="text-h6 text-primary">{{ countObj[org.id] }}</div>
+                        <div class="text-h6 text-primary">{{ store.tables.dataCenterTable.byId[org.id]?.tidbUnit }}</div>
                       </div>
                     </q-item-section>
                   </template>
