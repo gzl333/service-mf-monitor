@@ -111,7 +111,7 @@ const goBack = () => {
         <div class="row">
           <div class="col-2 q-mt-sm text-subtitle1 text-grey">{{ tc('监控地址') }}</div>
           <div class="col-10 row">
-            <q-select class="col-2" outlined dense v-model="realm" :options="options" label="请选择" />
+            <q-select class="col-2" outlined dense v-model="realm" :options="options" :label="tc('请选择')" />
             <q-input class="col-10" outlined dense clearable v-model="webUrl" :label="tc('请输入监控地址')" lazy-rules="ondemand" :rules="[val => val && val.length > 0 || tc('监控地址不能为空')]"
             />
           </div>

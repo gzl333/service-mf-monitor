@@ -72,7 +72,7 @@ const onCancelClick = onDialogCancel
           <div class="row q-mt-xs">
             <div class="col-2 q-mt-sm text-grey">{{ tc('监控地址') }}</div>
             <div class="col-10 row">
-              <q-select class="col-auto" outlined dense v-model="realm" :options="options" label="请选择" />
+              <q-select class="col-auto" outlined dense v-model="realm" :options="options" :label="tc('请选择')" />
               <q-input class="col" outlined dense clearable v-model="webUrl" lazy-rules="ondemand"
                        :rules="[val => val && val.length > 0 || tc('监控地址不能为空')]"
               />

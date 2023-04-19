@@ -128,8 +128,14 @@ const getAllUnit = async () => {
         }
       })
       if (monitorUnitServerRes.status === 200) {
+        let sort = 0
         monitorUnitServerRes.data.results.forEach((unit: ServiceUnitInterface) => {
-          unitArr.unshift(unit)
+          if (unit.sort_weight >= sort) {
+            unitArr.push(unit)
+          } else {
+            unitArr.unshift(unit)
+          }
+          sort = unit.sort_weight
         })
         if (i + 1 === numberRequest) {
           unitObj[organization.id] = unitArr
@@ -260,7 +266,7 @@ onUnmounted(() => {
                           <div class="text-subtitle1 text-weight-bold q-ml-sm">
                             {{ i18n.global.locale === 'zh' ? monitor.name : monitor.name_en }}
                           </div>
-                          <q-icon class="q-mr-sm" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]" @click="refreshUint(monitor.id)"/>
+                          <q-icon class="q-mr-sm cursor-pointer" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]" @click="refreshUint(monitor.id)"/>
                         </div>
                         <storage-cluster :unit-ceph-data="propsUnitData[monitor.id]" :unit-id="monitor.id" :grafana-url="monitor.grafana_url"></storage-cluster>
                       </div>

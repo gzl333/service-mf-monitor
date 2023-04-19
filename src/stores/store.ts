@@ -62,10 +62,10 @@ export interface ServiceUnitInterface {
     id: string
     name: string
     name_en: string
-    sort_weight: string
+    sort_weight: number
   }
   remark: string
-  sort_weight: string
+  sort_weight: number
 }
 
 export interface StatusArrayInterface {
@@ -162,7 +162,7 @@ export const useStore = defineStore('monitor', {
         state.tables.dataCenterTable.allIds.forEach(id => {
           if (state.tables.dataCenterTable.byId[id].serverUnit > 0) {
             const organization = state.tables.dataCenterTable.byId[id]
-            if (state.tables.dataCenterTable.byId[id].sort_weight > sort) {
+            if (state.tables.dataCenterTable.byId[id].sort_weight >= sort) {
               allOrganizations.push(organization)
               sort = state.tables.dataCenterTable.byId[id].sort_weight
             } else {
@@ -175,7 +175,7 @@ export const useStore = defineStore('monitor', {
         state.tables.dataCenterTable.allIds.forEach(id => {
           if (state.tables.dataCenterTable.byId[id].cephUnit > 0) {
             const organization = state.tables.dataCenterTable.byId[id]
-            if (state.tables.dataCenterTable.byId[id].sort_weight > sort) {
+            if (state.tables.dataCenterTable.byId[id].sort_weight >= sort) {
               allOrganizations.push(organization)
               sort = state.tables.dataCenterTable.byId[id].sort_weight
             } else {
@@ -188,7 +188,7 @@ export const useStore = defineStore('monitor', {
         state.tables.dataCenterTable.allIds.forEach(id => {
           if (state.tables.dataCenterTable.byId[id].tidbUnit > 0) {
             const organization = state.tables.dataCenterTable.byId[id]
-            if (state.tables.dataCenterTable.byId[id].sort_weight > sort) {
+            if (state.tables.dataCenterTable.byId[id].sort_weight >= sort) {
               allOrganizations.push(organization)
               sort = state.tables.dataCenterTable.byId[id].sort_weight
             } else {

@@ -5,7 +5,6 @@ import { useStore, ServiceUnitInterface } from 'stores/store'
 import TidbCluster from 'components/Federation/TidbCluster.vue'
 import { i18n } from 'boot/i18n'
 import monitor from 'src/api/monitor'
-
 // const props = defineProps({
 //   foo: {
 //     type: String,
@@ -125,8 +124,14 @@ const getAllUnit = async () => {
         }
       })
       if (monitorUnitTidbRes.status === 200) {
+        let sort = 0
         monitorUnitTidbRes.data.results.forEach((unit: ServiceUnitInterface) => {
-          unitArr.unshift(unit)
+          if (unit.sort_weight >= sort) {
+            unitArr.push(unit)
+          } else {
+            unitArr.unshift(unit)
+          }
+          sort = unit.sort_weight
         })
         if (i + 1 === numberRequest) {
           unitObj[organization.id] = unitArr
@@ -197,6 +202,9 @@ const keywordSearch = () => {
     })
   }
 }
+const gtToDetail = (url: string) => {
+  window.open(url)
+}
 watch(filterSelection, () => {
   clearInterval(Number(timer))
   timer = setInterval(() => {
@@ -257,9 +265,14 @@ onUnmounted(() => {
                           <div class="text-subtitle1 text-weight-bold q-ml-sm">
                             {{ i18n.global.locale === 'zh' ? monitor.name : monitor.name_en }}
                           </div>
-                          <q-icon class="q-mr-sm" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]" @click="refreshUint(monitor.id)"/>
+                          <div>
+                            <q-icon class="q-mr-md cursor-pointer" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]" @click="refreshUint(monitor.id)"/>
+                            <span class="text-primary q-mr-md cursor-pointer" @click="gtToDetail(monitor.grafana_url)">grafana</span>
+                            <span class="text-primary q-mr-sm cursor-pointer" @click="gtToDetail(monitor.dashboard_url)">dashboard</span>
+                          </div>
+
                         </div>
-                        <tidb-cluster :unit-servers-data="propsUnitData[monitor.id]" :unit-id="monitor.id"></tidb-cluster>
+                        <tidb-cluster :unit-servers-data="propsUnitData[monitor.id]"></tidb-cluster>
                       </div>
                     </div>
                     <div v-else>
