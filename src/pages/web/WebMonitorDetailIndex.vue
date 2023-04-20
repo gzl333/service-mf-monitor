@@ -225,7 +225,7 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
                     // connect为底部一段柱状图
                     // 其他区间的柱状图label返回空
                     if (val.seriesId.indexOf('transfer') !== -1) {
-                      if (val.name === maxFormattedTime) {
+                      if (val.name === maxFormattedTime || val.name === minFormattedTime) {
                         // return (Number(durationTotalArr[detectId][val.dataIndex][1]) * 1000).toFixed(2)
                         return ''
                       } else {

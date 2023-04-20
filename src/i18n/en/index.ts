@@ -128,6 +128,7 @@ export default {
   实时网站监控汇总图: 'Summary Of Real-Time Website Monitoring',
   毫秒: 'ms',
   总耗时: 'Total Time Spent',
+  状态码: 'Status',
   请求耗时: 'Request Time Consuming',
   '正在获取监控数据中,大约一分钟后会产生监控数据': 'Obtaining monitoring data. Monitoring data will be generated in about one minute.'
 }

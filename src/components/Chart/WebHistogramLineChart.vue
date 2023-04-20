@@ -113,7 +113,7 @@ onMounted(() => {
             if (i >= 0 && i % 5 === 0) {
               const dId = params[i].seriesId.slice(0, params[i].seriesId.lastIndexOf('-'))
               relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('状态码') + ':' +
-              props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + (totalArr[i / 5]).toFixed(2) + tc('毫秒')}</span><br/>
+              props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + ':' + (totalArr[i / 5]).toFixed(2) + tc('毫秒')}</span><br/>
               ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${params[i].value + tc('毫秒')}`
             } else {
               if ((i + 1) % 5 === 0) {
@@ -155,7 +155,7 @@ onMounted(() => {
         type: 'value',
         name: tc('请求耗时'),
         scale: true,
-        max: 10000,
+        max: 3000,
         min: -1000,
         boundaryGap: [0.2, 0.2],
         splitLine: {
@@ -170,10 +170,10 @@ onMounted(() => {
         axisLabel: {
           formatter: function (value: number) {
             if (value >= 0) {
-              return value + '毫秒'
+              return value + tc('毫秒')
             }
             if (value < 0) {
-              return value * -1 + '毫秒'
+              return value * -1 + tc('毫秒')
             }
           }
         }
