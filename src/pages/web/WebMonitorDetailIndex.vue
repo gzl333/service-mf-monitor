@@ -41,18 +41,22 @@ const taskId = route.params.webMonitorTaskId as string
 const nowTime = new Date().getTime()
 const startTimeStamp = Math.round(nowTime / 1000 - 1800)
 // const durationTotalArr: {[key: string]: [number, string][] | string} = {}
-const durationTotalArr: Record<string, any> = {}
 const xAxis = ref<string[]>([])
 const chartSeries = ref<Record<string, unknown>[]>([])
 const statusObj = ref<Record<string, any>>({})
-const lastTimeStamp = ref()
 const renovateTime = ref(60)
 const isNewCreate = ref(true)
 const isHaveChange = ref(false)
 const tab = ref('recent')
 const chartStatus = ref<'normal' | 'error'>('normal')
+const durationTotalArr: Record<string, any> = {}
+let dynamicRefreshTimer: NodeJS.Timer | null
+let countDownTimer: NodeJS.Timer | null
 // 存在x轴时间戳数组
 let xTimeStamp: number[] = []
+let lastTimeStamp: number
+let maxFormattedTime: string
+let minFormattedTime: string
 const normalColor = ['#8085e9', '#a5c2d5', '#73C0DE', '#8AC070', '#5470C6']
 const errorColor = ['#EE6666', '#FD7F55', '#c12c44', '#FFC936', '#FEA147']
 const getXAxis = (start: number, step: number) => {
@@ -71,7 +75,25 @@ const getXAxis = (start: number, step: number) => {
     time += step
   }
   // lastTimeStamp为x轴最后一次时间，用于计算下一次刷新的时间
-  lastTimeStamp.value = xTimeStamp[xTimeStamp.length - 1]
+  lastTimeStamp = xTimeStamp[xTimeStamp.length - 1]
+}
+const calcMaxMin = (id: string) => {
+  let max = 0
+  let maxTime = 0
+  let min = 100
+  let minTime = 0
+  durationTotalArr[id].forEach((item: [number, string]) => {
+    if (Number(item[1]) > max) {
+      max = Number(item[1])
+      maxTime = item[0]
+    }
+    if (Number(item[1]) < min) {
+      min = Number(item[1])
+      minTime = item[0]
+    }
+  })
+  maxFormattedTime = date.formatDate(maxTime * 1000, 'HH:mm:ss')
+  minFormattedTime = date.formatDate(minTime * 1000, 'HH:mm:ss')
 }
 const getWebMonitoringData = async (detectId: string, name: string, start: number, step:number, index: number) => {
   // 先请求获取状态码，再去请求获取耗时，因为图表通过正负区分方向，状态码异常时需要 * -1，所以需要先获取状态码之后再去请求耗时
@@ -117,11 +139,26 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
     }
     const durationResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_duration_seconds', start, detection_point_id: detectId, step }, path: { id: taskId } })
     if (durationResp.status === 200 && durationResp.data.length > 0) {
+      calcMaxMin(detectId)
+      const sortDurationResp: WebMonitorInterface[] = []
       // 存放耗时数据数组
       let durationSeriesData: string[] = []
       // 用于给每段柱形添加不同的name，echarts要求多柱形堆加name需不一致
       let stageName = ''
-      durationResp.data.forEach((duration: WebMonitorInterface, durationIndex: number) => {
+      durationResp.data.forEach((item: WebMonitorInterface) => {
+        if (item.metric.phase === 'resolve') {
+          sortDurationResp[0] = item
+        } else if (item.metric.phase === 'connect') {
+          sortDurationResp[1] = item
+        } else if (item.metric.phase === 'tls') {
+          sortDurationResp[2] = item
+        } else if (item.metric.phase === 'processing') {
+          sortDurationResp[3] = item
+        } else {
+          sortDurationResp[4] = item
+        }
+      })
+      sortDurationResp.forEach((duration: WebMonitorInterface, durationIndex: number) => {
         durationSeriesData = []
         let data: [number, string][]
         if (duration.values.length <= 30) {
@@ -136,27 +173,25 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
               // if (xTimeIndex === 1) {
               //   durationSeriesData.push('120000000.11')
               // } else {
-              durationSeriesData.push((Number(data[index][1]) * 100000).toFixed(2))
+              durationSeriesData.push((Number(data[index][1]) * 1000).toFixed(2))
               // }
             } else {
-              durationSeriesData.push((Number(data[index][1]) / 100).toFixed(8))
+              durationSeriesData.push((Number(data[index][1]) * 1000 * -1).toFixed(2))
             }
           } else {
             if (statusObj.value[detectId][xTimeIndex][1] !== '200' && statusObj.value[detectId][xTimeIndex][1] !== '') {
-              durationSeriesData.push('0.1')
-            } else {
               durationSeriesData.push('')
             }
           }
         })
-        if (duration.metric.phase === 'connect') {
-          stageName = 'TCP连接建立耗时'
-        } else if (duration.metric.phase === 'processing') {
-          stageName = '处理请求耗时'
-        } else if (duration.metric.phase === 'resolve') {
+        if (duration.metric.phase === 'resolve') {
           stageName = 'DNS解析耗时'
+        } else if (duration.metric.phase === 'connect') {
+          stageName = 'TCP连接建立耗时'
         } else if (duration.metric.phase === 'tls') {
           stageName = 'TLS连接协商耗时'
+        } else if (duration.metric.phase === 'processing') {
+          stageName = '建立连接与接收响应第一个字节耗时'
         } else {
           stageName = '转移响应耗时'
         }
@@ -183,15 +218,20 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
                   show: true,
                   fontSize: 12,
                   distance: 5,
-                  position: duration.metric.phase === 'transfer' ? 'top' : duration.metric.phase === 'tls' ? 'inside' : 'bottom',
+                  position: duration.metric.phase === 'transfer' ? 'top' : duration.metric.phase === 'resolve' ? 'bottom' : 'inside',
                   // 自定义顶部文字写判断
                   formatter: function (val: Record<string, any>) {
                     // transfer为最顶部一段柱状图，echarts label不能控制单独某一段，只能控制一个整体
                     // connect为底部一段柱状图
                     // 其他区间的柱状图label返回空
                     if (val.seriesId.indexOf('transfer') !== -1) {
-                      return (Number(durationTotalArr[detectId][val.dataIndex][1]) * 1000).toFixed(2)
-                    } else if (val.seriesId.indexOf('connect') !== -1) {
+                      if (val.name === maxFormattedTime) {
+                        // return (Number(durationTotalArr[detectId][val.dataIndex][1]) * 1000).toFixed(2)
+                        return ''
+                      } else {
+                        return ''
+                      }
+                    } else if (val.seriesId.indexOf('resolve') !== -1) {
                       if (val.seriesIndex === 0) {
                         return `${val.seriesIndex + 1}`
                       } else if (val.seriesIndex > 0 && val.seriesIndex % 5 === 0) {
@@ -214,7 +254,7 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
                   }
                 },
                 color: function (val: Record<string, any>) {
-                  if (val.value > 1) {
+                  if (val.value > 0) {
                     return normalColor[durationIndex]
                   } else {
                     return errorColor[durationIndex]
@@ -254,7 +294,7 @@ const getWebMonitoringLastData = async (id: string, name: string, start: number)
       } else {
         statusObj.value[id] = statusResp.data[0].values[statusResp.data[0].values.length - 1]
       }
-      lastTimeStamp.value = statusResp.data[0].values[statusResp.data[0].values.length - 1][0]
+      lastTimeStamp = statusResp.data[0].values[statusResp.data[0].values.length - 1][0]
     }
   }
   if (isHaveChange.value) {
@@ -282,22 +322,23 @@ const getWebMonitoringLastData = async (id: string, name: string, start: number)
             if (duration.metric.phase === bar.id.slice(bar.id.lastIndexOf('-') + 1, bar.id.length)) {
               // 刷新时因为存在时间误差，后端可能返回一个值或两个值
               if (statusObj.value[id][statusObj.value[id].length - 1][1] === '200') {
-                bar.data.push((Number(duration.values[duration.values.length - 1][1]) * 100000).toFixed(2))
+                bar.data.push((Number(duration.values[duration.values.length - 1][1]) * 1000).toFixed(2))
               } else {
-                bar.data.push((Number(duration.values[duration.values.length - 1][1]) / 100).toFixed(8))
+                bar.data.push((Number(duration.values[duration.values.length - 1][1]) * -1000).toFixed(2))
               }
             }
           })
         }
       })
     }
+    calcMaxMin(id)
   }
 }
 const refreshData = async () => {
   isHaveChange.value = false
-  const formattedString = date.formatDate((lastTimeStamp.value + 60) * 1000, 'HH:mm:ss')
+  const formattedString = date.formatDate((lastTimeStamp + 60) * 1000, 'HH:mm:ss')
   for (const detect of detectionPoints.value) {
-    await getWebMonitoringLastData(detect.value, detect.label, lastTimeStamp.value)
+    await getWebMonitoringLastData(detect.value, detect.label, lastTimeStamp)
   }
   if (isHaveChange.value) {
     // 动态删除添加x轴的值
@@ -360,8 +401,6 @@ const changeChatTab = (val: string) => {
     refreshData()
   }, 60000)
 }
-let dynamicRefreshTimer: NodeJS.Timer | null
-let countDownTimer: NodeJS.Timer | null
 const goBack = () => {
   router.go(-1)
 }

@@ -76,25 +76,29 @@ onMounted(() => {
         const totalArr = []
         let num = 0
         for (let i = 0, l = params.length; i < l; i++) {
-          if (params[i].value !== '' && params[i].value > 1) {
+          if (params[i].value !== '' || params[i].value > 0) {
             if ((i + 1) % 5 === 0) {
               num += Number(params[i].value)
-              totalArr.push(num.toFixed(2))
+              totalArr.push(num)
               num = 0
             } else {
               num += Number(params[i].value)
             }
-          } else if (params[i].value !== '' && params[i].value < 1) {
+          } else if (params[i].value === '' || params[i].value < 0) {
             if (params.length > 1) {
               if ((i + 1) % 5 === 0) {
-                num += params[i].value * 100000
+                if (params[i].value !== '') {
+                  num += Number(params[i].value)
+                }
                 totalArr.push(num)
                 num = 0
               } else {
-                num += params[i].value * 100000
+                if (params[i].value !== '') {
+                  num += Number(params[i].value)
+                }
               }
             } else {
-              totalArr.push(params[i].value * 100000)
+              totalArr.push(params[i].value)
             }
           }
         }
@@ -105,38 +109,34 @@ onMounted(() => {
           relVal = year + '-' + params[0].name
         }
         for (let i = 0, l = params.length; i < l; i++) {
-          if (params[i].value !== '' && params[i].value > 1) {
+          if (params[i].value !== '' && params[i].value > 0) {
             if (i >= 0 && i % 5 === 0) {
               const dId = params[i].seriesId.slice(0, params[i].seriesId.lastIndexOf('-'))
               relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('状态码') + ':' +
-              props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + (Number(totalArr[i / 5]) / 100).toFixed(2) + tc('毫秒')}</span><br/>
-              ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${(params[i].value / 100).toFixed(2) + tc('毫秒')}`
+              props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + (totalArr[i / 5]).toFixed(2) + tc('毫秒')}</span><br/>
+              ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${params[i].value + tc('毫秒')}`
             } else {
               if ((i + 1) % 5 === 0) {
-                relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + (params[i].value / 100).toFixed(2) + tc('毫秒') +
+                relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value + tc('毫秒') +
                     '<br/>' + '<hr/>'
               } else {
-                relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + (params[i].value / 100).toFixed(2) + tc('毫秒')
+                relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value + tc('毫秒')
               }
             }
-          } else if (params[i].value !== '' && params[i].value < 1) {
+          } else if (params[i].value !== '' && params[i].value < 0) {
             if (i >= 0 && i % 5 === 0) {
               const dId = params[i].seriesId.slice(0, params[i].seriesId.lastIndexOf('-'))
               relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('状态码') + ':' +
-              props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + Number(totalArr[i / 5]).toFixed(2) + tc('毫秒')}</span><br/>
-              ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${(params[i].value * 100000).toFixed(2) + tc('毫秒')}`
+              props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + (totalArr[i / 5] * -1).toFixed(2) + tc('毫秒')}</span><br/>
+              ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${params[i].value * -1 + tc('毫秒')}`
             } else {
               if ((i + 1) % 5 === 0) {
-                relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + (params[i].value * 100000).toFixed(2) + tc('毫秒') +
+                relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value * -1 + tc('毫秒') +
                   '<br/>' + '<hr/>'
               } else {
-                relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + (params[i].value * 100000).toFixed(2) + tc('毫秒')
+                relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value * -1 + tc('毫秒')
               }
             }
-            // const dId = params[i].seriesId.slice(0, params[i].seriesId.lastIndexOf('-'))
-            // relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('状态码') + ':' +
-            // props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + totalArr[i] + tc('毫秒')}</span><br/>
-            //   ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${(params[i].value * 100000).toFixed(2) + tc('毫秒')}`
           }
         }
         return relVal
@@ -152,42 +152,28 @@ onMounted(() => {
     ],
     yAxis: [
       {
-        type: 'log',
+        type: 'value',
         name: tc('请求耗时'),
         scale: true,
-        logBase: 10,
-        max: 1000000,
+        max: 10000,
+        min: -1000,
         boundaryGap: [0.2, 0.2],
         splitLine: {
-          show: false
+          show: true
         },
         axisLine: {
           show: true
         },
         axisTick: {
-          show: false
+          show: true
         },
         axisLabel: {
           formatter: function (value: number) {
-            if (value > 1) {
-              if (value / 100 > 1) {
-                return value / 100 + '毫秒'
-              } else if (value / 100 === 1) {
-                return '1毫秒'
-              } else {
-                return '0.5毫秒'
-              }
-              // return Math.sqrt(value) + '毫秒'
-            } else if (value === 1) {
-              return '0毫秒'
-            } else {
-              const x = String(value).indexOf('.') + 1// 得到小数点的位置
-              const y = String(value).length - x// 小数点的位数
-              if (value * Math.pow(10, 2 * y) / 100 >= 1) {
-                return parseInt(String(value * Math.pow(10, 2 * y))) / 100 + '毫秒'
-              } else {
-                return '0.5毫秒'
-              }
+            if (value >= 0) {
+              return value + '毫秒'
+            }
+            if (value < 0) {
+              return value * -1 + '毫秒'
             }
           }
         }
@@ -225,7 +211,7 @@ onMounted(() => {
 
 <template>
   <div class="HistogramChart" style="width: 100%">
-    <div ref="container" :style="{ width: '100%', height: '650px' }"></div>
+    <div ref="container" :style="{ width: '100%', height: '700px' }"></div>
   </div>
 </template>
 
