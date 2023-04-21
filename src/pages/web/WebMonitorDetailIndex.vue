@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-// import { navigateToUrl } from 'single-spa'
 import { useStore } from 'stores/store'
 import { useRoute, useRouter } from 'vue-router'
 import monitor from 'src/api/monitor'
@@ -39,26 +38,36 @@ const { tc } = i18n.global
 const detectionPoints = computed(() => store.getDetectionPointTable())
 const taskId = route.params.webMonitorTaskId as string
 const nowTime = new Date().getTime()
+// 请求起始时间戳
 const startTimeStamp = Math.round(nowTime / 1000 - 1800)
-// const durationTotalArr: {[key: string]: [number, string][] | string} = {}
+// 用与存储x轴坐标时间
 const xAxis = ref<string[]>([])
+// 图表数据
 const chartSeries = ref<Record<string, unknown>[]>([])
-const statusObj = ref<Record<string, any>>({})
+// 用与存储状态判断政府
+const statusObj = ref<Record<string, Array<[number, string]>>>({})
+// 用于判断图表状态，后端有坏数据无法显示
+const chartStatus = ref<'normal' | 'error'>('normal')
+// 刷新时间
 const renovateTime = ref(60)
+// 用于判断该任务是否是新创建第一页进入页面
 const isNewCreate = ref(true)
+// 用于判断刷新时是否有最新数据
 const isHaveChange = ref(false)
 const tab = ref('recent')
-const chartStatus = ref<'normal' | 'error'>('normal')
-const durationTotalArr: Record<string, any> = {}
+// 用于存储总耗时
+const durationTotalArr: Record<string, Array<[number, string]>> = {}
 let dynamicRefreshTimer: NodeJS.Timer | null
 let countDownTimer: NodeJS.Timer | null
 // 存在x轴时间戳数组
 let xTimeStamp: number[] = []
+// 最后一条数据的时间，用于计算下次刷新时间
 let lastTimeStamp: number
 let maxFormattedTime: string
 let minFormattedTime: string
 const normalColor = ['#8085e9', '#a5c2d5', '#73C0DE', '#8AC070', '#5470C6']
 const errorColor = ['#EE6666', '#FD7F55', '#c12c44', '#FFC936', '#FEA147']
+// 获取x轴，不依据后端返回数据，固定30条数据，无数据则为空
 const getXAxis = (start: number, step: number) => {
   xAxis.value = []
   xTimeStamp = []
@@ -95,48 +104,54 @@ const calcMaxMin = (id: string) => {
   maxFormattedTime = date.formatDate(maxTime * 1000, 'HH:mm:ss')
   minFormattedTime = date.formatDate(minTime * 1000, 'HH:mm:ss')
 }
+// 获取数据
 const getWebMonitoringData = async (detectId: string, name: string, start: number, step:number, index: number) => {
   // 先请求获取状态码，再去请求获取耗时，因为图表通过正负区分方向，状态码异常时需要 * -1，所以需要先获取状态码之后再去请求耗时
-  // 一次请求数据时间段为十分钟
+  // 固定30条数据，根据传入的步长请求数据
   const statusResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_status_code', start, detection_point_id: detectId, step }, path: { id: taskId } })
+  // item.metric.monitor === 'example' 为后端出现坏数据时的条件判断，数据出现问题时返回数据中的monitor字段为‘example’
   if (statusResp.status === 200 && statusResp.data.length > 0 && statusResp.data.findIndex((item: WebMonitorInterface) => item.metric.monitor === 'example') === -1) {
     // 存放状态元组
-    let seriesData: [number, string][]
-    const stagingStatusData: Array<[number, string] | ''> = []
+    let statusSeriesData: [number, string][]
+    const stagingStatusData: Array<[number, string]> = []
+    // 固定30条数据，因存在时间误差后端可能返回31条数据
     if (statusResp.data[0].values.length <= 30) {
-      seriesData = statusResp.data[0].values
+      statusSeriesData = statusResp.data[0].values
     } else {
-      seriesData = statusResp.data[0].values.slice(0, -1)
+      statusSeriesData = statusResp.data[0].values.slice(0, -1)
     }
     // seriesData[10][1] = '0'
     xTimeStamp.forEach((xTime, xTimeIndex) => {
-      const index = seriesData.findIndex(item => item[0] === xTime)
+      // 判断此时间是否有数据
+      const index = statusSeriesData.findIndex(item => item[0] === xTime)
       if (index !== -1) {
-        stagingStatusData.push(seriesData[index])
+        stagingStatusData.push(statusSeriesData[index])
       } else {
         stagingStatusData.push([xTimeStamp[xTimeIndex], ''])
       }
     })
     statusObj.value[detectId] = stagingStatusData
+    // 获取总耗时
     const durationTotalResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'duration_seconds', start, detection_point_id: detectId, step }, path: { id: taskId } })
     if (durationTotalResp.status === 200 && durationTotalResp.data.length > 0) {
-      let seriesData: [number, string][]
-      const stagingTotalData: Array<[number, string] | ''> = []
+      let durationTotalData: [number, string][]
+      const stagingTotalData: Array<[number, string]> = []
       if (durationTotalResp.data[0].values.length <= 30) {
-        seriesData = durationTotalResp.data[0].values
+        durationTotalData = durationTotalResp.data[0].values
       } else {
-        seriesData = durationTotalResp.data[0].values.slice(0, -1)
+        durationTotalData = durationTotalResp.data[0].values.slice(0, -1)
       }
       xTimeStamp.forEach((xTime, xTimeIndex) => {
-        const index = seriesData.findIndex(item => item[0] === xTime)
+        const index = durationTotalData.findIndex(item => item[0] === xTime)
         if (index !== -1) {
-          stagingTotalData.push(seriesData[index])
+          stagingTotalData.push(durationTotalData[index])
         } else {
           stagingTotalData.push([xTimeStamp[xTimeIndex], ''])
         }
       })
       durationTotalArr[detectId] = stagingTotalData
     }
+    // 获取各个阶段的耗时
     const durationResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_duration_seconds', start, detection_point_id: detectId, step }, path: { id: taskId } })
     if (durationResp.status === 200 && durationResp.data.length > 0) {
       calcMaxMin(detectId)
@@ -145,6 +160,7 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
       let durationSeriesData: string[] = []
       // 用于给每段柱形添加不同的name，echarts要求多柱形堆加name需不一致
       let stageName = ''
+      // 根据顺序对后端返回的数据按照阶段排序
       durationResp.data.forEach((item: WebMonitorInterface) => {
         if (item.metric.phase === 'resolve') {
           sortDurationResp[0] = item
@@ -160,28 +176,26 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
       })
       sortDurationResp.forEach((duration: WebMonitorInterface, durationIndex: number) => {
         durationSeriesData = []
-        let data: [number, string][]
+        let durationData: [number, string][]
         if (duration.values.length <= 30) {
-          data = duration.values
+          durationData = duration.values
         } else {
-          data = duration.values.slice(0, -1)
+          durationData = duration.values.slice(0, -1)
         }
         xTimeStamp.forEach((xTime, xTimeIndex) => {
-          const index = data.findIndex(item => item[0] === xTime)
+          const index = durationData.findIndex(item => item[0] === xTime)
           if (index !== -1) {
             if (statusObj.value[detectId][xTimeIndex][1] === '200') {
               // if (xTimeIndex === 1) {
               //   durationSeriesData.push('120000000.11')
               // } else {
-              durationSeriesData.push((Number(data[index][1]) * 1000).toFixed(2))
+              durationSeriesData.push((Number(durationData[index][1]) * 1000).toFixed(2))
               // }
             } else {
-              durationSeriesData.push((Number(data[index][1]) * 1000 * -1).toFixed(2))
+              durationSeriesData.push((Number(durationData[index][1]) * 1000 * -1).toFixed(2))
             }
           } else {
-            if (statusObj.value[detectId][xTimeIndex][1] !== '200' && statusObj.value[detectId][xTimeIndex][1] !== '') {
-              durationSeriesData.push('')
-            }
+            durationSeriesData.push('')
           }
         })
         if (duration.metric.phase === 'resolve') {
@@ -196,16 +210,6 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
           stageName = '转移响应耗时'
         }
         // chartSeries为echarts图表数据
-        // let type
-        // if (step === 60) {
-        //   type = 'recent'
-        // } else if (step === 2880) {
-        //   type = 'day'
-        // } else if (step === 20160) {
-        //   type = 'week'
-        // } else {
-        //   type = 'month'
-        // }
         chartSeries.value.push(
           {
             name: name + '-' + stageName,
@@ -219,10 +223,10 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
                   fontSize: 12,
                   distance: 5,
                   position: duration.metric.phase === 'transfer' ? 'top' : duration.metric.phase === 'resolve' ? 'bottom' : 'inside',
-                  // 自定义顶部文字写判断
+                  // 自定义顶部文字判断
                   formatter: function (val: Record<string, any>) {
                     // transfer为最顶部一段柱状图，echarts label不能控制单独某一段，只能控制一个整体
-                    // connect为底部一段柱状图
+                    // resolve为底部一段柱状图
                     // 其他区间的柱状图label返回空
                     if (val.seriesId.indexOf('transfer') !== -1) {
                       if (val.name === maxFormattedTime || val.name === minFormattedTime) {
@@ -266,11 +270,9 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
           }
         )
       })
+      // 如新创建的任务，此时已经存在数据，则变量修改为false
       if (isNewCreate.value === true) {
         isNewCreate.value = false
-        chartStatus.value = 'normal'
-      } else {
-        chartStatus.value = 'normal'
       }
     }
   } else if (statusResp.data.length > 0 && statusResp.data.findIndex((item: WebMonitorInterface) => item.metric.monitor === 'example') !== -1) {
@@ -281,14 +283,14 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
 const getWebMonitoringLastData = async (id: string, name: string, start: number) => {
   const statusResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_status_code', start, detection_point_id: id, step: 60 }, path: { id: taskId } })
   if (statusResp.status === 200 && statusResp.data.length > 0) {
+    // 判断最新数据的时间是否等于当前数据的最后一条数据时间，一致的话则数据没有变化
     if (statusResp.data[0].values[statusResp.data[0].values.length - 1][0] !== xTimeStamp[xTimeStamp.length - 1]) {
       isHaveChange.value = true
+      // echarts动态变化数据需要手动删除第一个元素，在数组末尾添加新元素
       xTimeStamp.shift()
       xTimeStamp.push(statusResp.data[0].values[statusResp.data[0].values.length - 1][0])
       // 将数组中最早时间第一个值删除，向数组最后添加最新时刻的数据
-      if (statusObj.value[id] && statusObj.value[id].length >= 30) {
-        statusObj.value[id].shift()
-      }
+      statusObj.value[id].shift()
       if (statusObj.value[id]) {
         statusObj.value[id].push(statusResp.data[0].values[statusResp.data[0].values.length - 1])
       } else {
@@ -346,6 +348,7 @@ const refreshData = async () => {
       xAxis.value.shift()
     }
     xAxis.value.push(formattedString)
+    // 刷新后清空定时器，重新赋值
     clearInterval(Number(dynamicRefreshTimer))
     dynamicRefreshTimer = setInterval(() => {
       if (!isNewCreate.value) {
