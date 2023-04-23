@@ -54,11 +54,10 @@ const renovateTime = ref(60)
 const isNewCreate = ref(true)
 // 用于判断刷新时是否有最新数据
 const isHaveChange = ref(false)
+const isEmpty = ref(false)
 const tab = ref('recent')
 // 用于存储总耗时
 const durationTotalArr: Record<string, Array<[number, string]>> = {}
-let dynamicRefreshTimer: NodeJS.Timer | null
-let countDownTimer: NodeJS.Timer | null
 // 存在x轴时间戳数组
 let xTimeStamp: number[] = []
 // 最后一条数据的时间，用于计算下次刷新时间
@@ -86,24 +85,24 @@ const getXAxis = (start: number, step: number) => {
   // lastTimeStamp为x轴最后一次时间，用于计算下一次刷新的时间
   lastTimeStamp = xTimeStamp[xTimeStamp.length - 1]
 }
-const calcMaxMin = (id: string) => {
-  let max = 0
-  let maxTime = 0
-  let min = 100
-  let minTime = 0
-  durationTotalArr[id].forEach((item: [number, string]) => {
-    if (Number(item[1]) > max) {
-      max = Number(item[1])
-      maxTime = item[0]
-    }
-    if (Number(item[1]) < min) {
-      min = Number(item[1])
-      minTime = item[0]
-    }
-  })
-  maxFormattedTime = date.formatDate(maxTime * 1000, 'HH:mm:ss')
-  minFormattedTime = date.formatDate(minTime * 1000, 'HH:mm:ss')
-}
+// const calcMaxMin = (id: string) => {
+//   let max = 0
+//   let maxTime = 0
+//   let min = 100
+//   let minTime = 0
+//   durationTotalArr[id].forEach((item: [number, string]) => {
+//     if (Number(item[1]) > max) {
+//       max = Number(item[1])
+//       maxTime = item[0]
+//     }
+//     if (Number(item[1]) < min) {
+//       min = Number(item[1])
+//       minTime = item[0]
+//     }
+//   })
+//   maxFormattedTime = date.formatDate(maxTime * 1000, 'HH:mm:ss')
+//   minFormattedTime = date.formatDate(minTime * 1000, 'HH:mm:ss')
+// }
 // 获取数据
 const getWebMonitoringData = async (detectId: string, name: string, start: number, step:number, index: number) => {
   // 先请求获取状态码，再去请求获取耗时，因为图表通过正负区分方向，状态码异常时需要 * -1，所以需要先获取状态码之后再去请求耗时
@@ -154,7 +153,7 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
     // 获取各个阶段的耗时
     const durationResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_duration_seconds', start, detection_point_id: detectId, step }, path: { id: taskId } })
     if (durationResp.status === 200 && durationResp.data.length > 0) {
-      calcMaxMin(detectId)
+      // calcMaxMin(detectId)
       const sortDurationResp: WebMonitorInterface[] = []
       // 存放耗时数据数组
       let durationSeriesData: string[] = []
@@ -282,21 +281,22 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
 // 每一分钟刷新获取数据方法
 const getWebMonitoringLastData = async (id: string, name: string, start: number) => {
   const statusResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_status_code', start, detection_point_id: id, step: 60 }, path: { id: taskId } })
-  if (statusResp.status === 200 && statusResp.data.length > 0) {
-    // 判断最新数据的时间是否等于当前数据的最后一条数据时间，一致的话则数据没有变化
-    if (statusResp.data[0].values[statusResp.data[0].values.length - 1][0] !== xTimeStamp[xTimeStamp.length - 1]) {
-      isHaveChange.value = true
-      // echarts动态变化数据需要手动删除第一个元素，在数组末尾添加新元素
-      xTimeStamp.shift()
-      xTimeStamp.push(statusResp.data[0].values[statusResp.data[0].values.length - 1][0])
-      // 将数组中最早时间第一个值删除，向数组最后添加最新时刻的数据
-      statusObj.value[id].shift()
-      if (statusObj.value[id]) {
-        statusObj.value[id].push(statusResp.data[0].values[statusResp.data[0].values.length - 1])
-      } else {
-        statusObj.value[id] = statusResp.data[0].values[statusResp.data[0].values.length - 1]
+  if (statusResp.status === 200) {
+    if (statusResp.data.length > 0) {
+      // 判断最新数据的时间是否等于当前数据的最后一条数据时间，一致的话则数据没有变化
+      if (statusResp.data[0].values[statusResp.data[0].values.length - 1][0] !== xTimeStamp[xTimeStamp.length - 1]) {
+        isHaveChange.value = true
+        // 将数组中最早时间第一个值删除，向数组最后添加最新时刻的数据
+        if (statusObj.value[id]) {
+          statusObj.value[id].shift()
+          statusObj.value[id].push(statusResp.data[0].values[statusResp.data[0].values.findIndex((item: [number, string]) => item[0] === lastTimeStamp + 60)])
+        } else {
+          statusObj.value[id] = statusResp.data[0].values[statusResp.data[0].values.findIndex((item: [number, string]) => item[0] === lastTimeStamp + 60)]
+        }
+        // lastTimeStamp = statusResp.data[0].values[statusResp.data[0].values.length - 1][0]
       }
-      lastTimeStamp = statusResp.data[0].values[statusResp.data[0].values.length - 1][0]
+    } else {
+      isEmpty.value = true
     }
   }
   if (isHaveChange.value) {
@@ -306,9 +306,9 @@ const getWebMonitoringLastData = async (id: string, name: string, start: number)
         if (durationTotalArr[id].length >= 30) {
           durationTotalArr[id].shift()
         }
-        durationTotalArr[id].push(durationTotalResp.data[0].values[durationTotalResp.data[0].values.length - 1])
+        durationTotalArr[id].push(durationTotalResp.data[0].values[durationTotalResp.data[0].values.findIndex((item: [number, string]) => item[0] === lastTimeStamp + 60)])
       } else {
-        durationTotalArr[id] = durationTotalResp.data[0].values[durationTotalResp.data[0].values.length - 1]
+        durationTotalArr[id] = durationTotalResp.data[0].values[durationTotalResp.data[0].values.findIndex((item: [number, string]) => item[0] === lastTimeStamp + 60)]
       }
     }
     const durationResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_duration_seconds', start, detection_point_id: id, step: 60 }, path: { id: taskId } })
@@ -324,26 +324,45 @@ const getWebMonitoringLastData = async (id: string, name: string, start: number)
             if (duration.metric.phase === bar.id.slice(bar.id.lastIndexOf('-') + 1, bar.id.length)) {
               // 刷新时因为存在时间误差，后端可能返回一个值或两个值
               if (statusObj.value[id][statusObj.value[id].length - 1][1] === '200') {
-                bar.data.push((Number(duration.values[duration.values.length - 1][1]) * 1000).toFixed(2))
+                bar.data.push((Number(duration.values[duration.values.findIndex((item: [number, string]) => item[0] === lastTimeStamp + 60)][1]) * 1000).toFixed(2))
               } else {
-                bar.data.push((Number(duration.values[duration.values.length - 1][1]) * -1000).toFixed(2))
+                bar.data.push((Number(duration.values[duration.values.findIndex((item: [number, string]) => item[0] === lastTimeStamp + 60)][1]) * -1000).toFixed(2))
               }
             }
           })
         }
       })
     }
-    calcMaxMin(id)
+    // calcMaxMin(id)
   }
 }
+let countDownTimer: NodeJS.Timer | null = setInterval(() => {
+  if (renovateTime.value > 0) {
+    renovateTime.value--
+  }
+}, 1000)
+let dynamicRefreshTimer: NodeJS.Timer | null = setInterval(() => {
+  if (isNewCreate.value) {
+    const refreshNowTime = new Date().getTime()
+    const startTime = Math.round(refreshNowTime / 1000 - 1800)
+    refreshAll(startTime, 60)
+    renovateTime.value = 60
+  } else {
+    refreshData()
+  }
+}, 60000)
 const refreshData = async () => {
   isHaveChange.value = false
-  const formattedString = date.formatDate((lastTimeStamp + 60) * 1000, 'HH:mm:ss')
+  // echarts动态变化数据需要手动删除第一个元素，在数组末尾添加新元素
   for (const detect of detectionPoints.value) {
     await getWebMonitoringLastData(detect.value, detect.label, lastTimeStamp)
   }
-  if (isHaveChange.value) {
+  lastTimeStamp += 60
+  if (isHaveChange.value || isEmpty.value) {
+    const formattedString = date.formatDate(lastTimeStamp * 1000, 'HH:mm:ss')
     // 动态删除添加x轴的值
+    xTimeStamp.shift()
+    xTimeStamp.push(lastTimeStamp)
     if (xAxis.value.length >= 30) {
       xAxis.value.shift()
     }
@@ -351,11 +370,8 @@ const refreshData = async () => {
     // 刷新后清空定时器，重新赋值
     clearInterval(Number(dynamicRefreshTimer))
     dynamicRefreshTimer = setInterval(() => {
-      if (!isNewCreate.value) {
-        refreshData()
-      }
+      refreshData()
     }, 60000)
-    renovateTime.value = 60
   } else {
     Notify.create({
       message: tc('已是最新数据'),
@@ -365,6 +381,7 @@ const refreshData = async () => {
       multiLine: false
     })
   }
+  renovateTime.value = 60
 }
 const refreshAll = async (time: number, step: number) => {
   getXAxis(time, step)
@@ -377,20 +394,20 @@ const changeChatTab = (val: string) => {
   clearInterval(Number(countDownTimer))
   chartSeries.value = []
   statusObj.value = {}
-  const nowTime = new Date().getTime()
+  const changNowTime = new Date().getTime()
   if (val === 'recent') {
-    const startTime = Math.round(nowTime / 1000 - 1800)
+    const startTime = Math.round(changNowTime / 1000 - 1800)
     refreshAll(startTime, 60)
   } else if (val === 'day') {
-    const startTime = Math.round(nowTime / 1000 - 86400)
+    const startTime = Math.round(changNowTime / 1000 - 86400)
     const step = 2880
     refreshAll(startTime, step)
   } else if (val === 'week') {
-    const startTime = Math.round(nowTime / 1000 - 604800)
+    const startTime = Math.round(changNowTime / 1000 - 604800)
     const step = 20160
     refreshAll(startTime, step)
   } else {
-    const startTime = Math.round(nowTime / 1000 - 2592000)
+    const startTime = Math.round(changNowTime / 1000 - 2592000)
     const step = 86400
     refreshAll(startTime, step)
   }
@@ -407,28 +424,28 @@ const changeChatTab = (val: string) => {
 const goBack = () => {
   router.go(-1)
 }
-const firstRefreshTimer = setTimeout(() => {
-  if (isNewCreate.value) {
-    const startTime = Math.round(nowTime / 1000 - 1800)
-    refreshAll(startTime, 60)
-  }
-}, 90000)
-watch(isNewCreate, () => {
-  if (!isNewCreate.value) {
-    countDownTimer = setInterval(() => {
-      if (renovateTime.value > 0) {
-        renovateTime.value--
-      }
-    }, 1000)
-    dynamicRefreshTimer = setInterval(() => {
-      refreshData()
-    }, 60000)
-  } else {
-    clearInterval(Number(dynamicRefreshTimer))
-    clearInterval(Number(countDownTimer))
-    renovateTime.value = 60
-  }
-})
+// const firstRefreshTimer = setTimeout(() => {
+//   if (isNewCreate.value) {
+//     const startTime = Math.round(nowTime / 1000 - 1800)
+//     refreshAll(startTime, 60)
+//   }
+// }, 90000)
+// watch(isNewCreate, () => {
+//   if (!isNewCreate.value) {
+//     countDownTimer = setInterval(() => {
+//       if (renovateTime.value > 0) {
+//         renovateTime.value--
+//       }
+//     }, 1000)
+//     dynamicRefreshTimer = setInterval(() => {
+//       refreshData()
+//     }, 60000)
+//   } else {
+//     clearInterval(Number(dynamicRefreshTimer))
+//     clearInterval(Number(countDownTimer))
+//     renovateTime.value = 60
+//   }
+// })
 watch(detectionPoints, () => {
   if (detectionPoints.value.length > 0) {
     getXAxis(startTimeStamp, 60)
@@ -448,7 +465,7 @@ onMounted(() => {
 onUnmounted(() => {
   clearInterval(Number(dynamicRefreshTimer))
   clearInterval(Number(countDownTimer))
-  clearTimeout(firstRefreshTimer)
+  // clearTimeout(firstRefreshTimer)
 })
 </script>
 
@@ -481,7 +498,7 @@ onUnmounted(() => {
       <div>
         <div v-for="(item, index) in detectionPoints" :key="item.value">{{ `${tc('探针')}${index + 1}：${ i18n.global.locale === 'zh' ? item.label : item.labelEn}` }}</div>
       </div>
-      <div class="row items-center" v-if="!isNewCreate">
+      <div class="row items-center">
         <div class="text-grey-7">{{ tc('剩余更新时间') }}</div>
         <q-circular-progress
           show-value
@@ -496,7 +513,7 @@ onUnmounted(() => {
         </q-circular-progress>
         <q-btn flat no-caps color="primary" :label="tc('更新数据')" @click="refreshData"/>
       </div>
-      <div v-else>{{ tc('请稍后，等待刷新中') }}</div>
+<!--      <div v-else>{{ tc('请稍后，等待刷新中') }}</div>-->
     </div>
     <div>
       <div class="col-auto">

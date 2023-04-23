@@ -193,6 +193,7 @@ onMounted(() => {
     }
   }
   watch(props, () => {
+    // console.log(props)
     if (props.status === 'normal') {
       chart.setOption(option.value, true)
     } else {
