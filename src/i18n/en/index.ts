@@ -125,7 +125,7 @@ export default {
   修改监控任务: 'Modify Monitoring Tasks',
   正在修改中: 'Modifying',
   // WebHistogramLineChart
-  实时网站监控汇总图: 'Summary Of Real-Time Website Monitoring',
+  网站监控汇总图: 'Summary Of Website Monitoring',
   毫秒: 'ms',
   总耗时: 'Total Time Spent',
   状态码: 'Status',

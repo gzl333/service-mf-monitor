@@ -50,7 +50,7 @@ onMounted(() => {
   const chart = echarts.init(container.value!)
   const option = computed(() => ({
     title: {
-      text: tc('实时网站监控汇总图'),
+      text: tc('网站监控汇总图'),
       left: 'center'
     },
     grid: {
@@ -73,24 +73,25 @@ onMounted(() => {
         const month = date.getMonth() + 1
         const day = date.getDate()
         const today = year + '-' + month + '-' + day
-        const totalArr = []
+        const totalArr: Record<string, string> = {}
         let num = 0
         for (let i = 0, l = params.length; i < l; i++) {
-          if (params[i].value !== '' || params[i].value > 0) {
+          const dId = params[i].seriesId.slice(0, params[i].seriesId.lastIndexOf('-'))
+          if (params[i].value !== '' && Number(params[i].value) > 0) {
             if ((i + 1) % 5 === 0) {
               num += Number(params[i].value)
-              totalArr.push(num)
+              totalArr[dId] = num.toFixed(2)
               num = 0
             } else {
               num += Number(params[i].value)
             }
-          } else if (params[i].value === '' || params[i].value < 0) {
-            if (params.length > 1) {
+          } else if (params[i].value !== '' && Number(params[i].value) < 0) {
+            if (params.length % 5 === 0) {
               if ((i + 1) % 5 === 0) {
                 if (params[i].value !== '') {
                   num += Number(params[i].value)
                 }
-                totalArr.push(num)
+                totalArr[dId] = (num * -1).toFixed(2)
                 num = 0
               } else {
                 if (params[i].value !== '') {
@@ -98,7 +99,7 @@ onMounted(() => {
                 }
               }
             } else {
-              totalArr.push(params[i].value)
+              totalArr[dId] = (Number(params[i].value) * -1).toFixed(2)
             }
           }
         }
@@ -109,11 +110,11 @@ onMounted(() => {
           relVal = year + '-' + params[0].name
         }
         for (let i = 0, l = params.length; i < l; i++) {
+          const dId = params[i].seriesId.slice(0, params[i].seriesId.lastIndexOf('-'))
           if (params[i].value !== '' && params[i].value > 0) {
             if (i >= 0 && i % 5 === 0) {
-              const dId = params[i].seriesId.slice(0, params[i].seriesId.lastIndexOf('-'))
               relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('状态码') + ':' +
-              props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + ':' + (totalArr[i / 5]).toFixed(2) + tc('毫秒')}</span><br/>
+              props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + ':' + totalArr[dId] + tc('毫秒')}</span><br/>
               ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${params[i].value + tc('毫秒')}`
             } else {
               if ((i + 1) % 5 === 0) {
@@ -124,18 +125,23 @@ onMounted(() => {
               }
             }
           } else if (params[i].value !== '' && params[i].value < 0) {
-            if (i >= 0 && i % 5 === 0) {
-              const dId = params[i].seriesId.slice(0, params[i].seriesId.lastIndexOf('-'))
-              relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('状态码') + ':' +
-              props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + (totalArr[i / 5] * -1).toFixed(2) + tc('毫秒')}</span><br/>
+            if (params.length % 5 === 0) {
+              if (i >= 0 && i % 5 === 0) {
+                relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('状态码') + ':' +
+                props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + totalArr[dId] + tc('毫秒')}</span><br/>
               ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${params[i].value * -1 + tc('毫秒')}`
-            } else {
-              if ((i + 1) % 5 === 0) {
-                relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value * -1 + tc('毫秒') +
-                  '<br/>' + '<hr/>'
               } else {
-                relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value * -1 + tc('毫秒')
+                if ((i + 1) % 5 === 0) {
+                  relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value * -1 + tc('毫秒') +
+                    '<br/>' + '<hr/>'
+                } else {
+                  relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value * -1 + tc('毫秒')
+                }
               }
+            } else {
+              relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('状态码') + ':' +
+              props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + totalArr[dId] + tc('毫秒')}</span><br/>
+              ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${params[i].value * -1 + tc('毫秒')}`
             }
           }
         }

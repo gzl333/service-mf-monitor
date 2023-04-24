@@ -172,6 +172,7 @@ const closePanel = (organization_id: string) => {
   }
 }
 const refreshAllUnit = () => {
+  propsUnitData.value = {}
   isDisable.value = true
   Object.keys(allExpendUnitsObjData).forEach((org, orgIndex) => {
     allExpendUnitsObjData[org].forEach((unit, unitIndex) => {
@@ -187,6 +188,7 @@ const refreshAllUnit = () => {
   })
 }
 const refreshUint = (unitId: string) => {
+  propsUnitData.value[unitId] = {}
   renovateShow.value[unitId] = false
   getStorageQuery(unitId).then((res) => {
     propsUnitData.value[unitId] = res

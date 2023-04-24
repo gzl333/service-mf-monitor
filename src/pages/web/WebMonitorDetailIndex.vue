@@ -31,6 +31,10 @@ interface WebMonitorInterface {
   },
   values: [number, string][]
 }
+interface MaxInterface {
+  maxTime: string
+  minTime: string
+}
 const store = useStore()
 const route = useRoute()
 const router = useRouter()
@@ -55,15 +59,16 @@ const isNewCreate = ref(true)
 // 用于判断刷新时是否有最新数据
 const isHaveChange = ref(false)
 const isEmpty = ref(false)
+const isCurrent = ref(true)
 const tab = ref('recent')
 // 用于存储总耗时
 const durationTotalArr: Record<string, Array<[number, string]>> = {}
+// 存放最大值最小值对应的x轴时间
+const maxMinObj: Record<string, MaxInterface> = {}
 // 存在x轴时间戳数组
 let xTimeStamp: number[] = []
 // 最后一条数据的时间，用于计算下次刷新时间
 let lastTimeStamp: number
-let maxFormattedTime: string
-let minFormattedTime: string
 const normalColor = ['#8085e9', '#a5c2d5', '#73C0DE', '#8AC070', '#5470C6']
 const errorColor = ['#EE6666', '#FD7F55', '#c12c44', '#FFC936', '#FEA147']
 // 获取x轴，不依据后端返回数据，固定30条数据，无数据则为空
@@ -85,24 +90,36 @@ const getXAxis = (start: number, step: number) => {
   // lastTimeStamp为x轴最后一次时间，用于计算下一次刷新的时间
   lastTimeStamp = xTimeStamp[xTimeStamp.length - 1]
 }
-// const calcMaxMin = (id: string) => {
-//   let max = 0
-//   let maxTime = 0
-//   let min = 100
-//   let minTime = 0
-//   durationTotalArr[id].forEach((item: [number, string]) => {
-//     if (Number(item[1]) > max) {
-//       max = Number(item[1])
-//       maxTime = item[0]
-//     }
-//     if (Number(item[1]) < min) {
-//       min = Number(item[1])
-//       minTime = item[0]
-//     }
-//   })
-//   maxFormattedTime = date.formatDate(maxTime * 1000, 'HH:mm:ss')
-//   minFormattedTime = date.formatDate(minTime * 1000, 'HH:mm:ss')
-// }
+const calcMaxMin = (id: string, step: number) => {
+  let max = 0
+  let maxTimeStamp = 0
+  let min = 100
+  let minTimeStamp = 0
+  const obj = {
+    maxTime: '',
+    minTime: ''
+  }
+  durationTotalArr[id].forEach((item: [number, string]) => {
+    if (item[1] !== '') {
+      if (Number(item[1]) > max) {
+        max = Number(item[1])
+        maxTimeStamp = item[0]
+      }
+      if (Number(item[1]) < min) {
+        min = Number(item[1])
+        minTimeStamp = item[0]
+      }
+    }
+  })
+  if (step === 60) {
+    obj.maxTime = date.formatDate(maxTimeStamp * 1000, 'HH:mm:ss')
+    obj.minTime = date.formatDate(minTimeStamp * 1000, 'HH:mm:ss')
+  } else {
+    obj.maxTime = date.formatDate(maxTimeStamp * 1000, 'MM-DD HH:mm')
+    obj.minTime = date.formatDate(minTimeStamp * 1000, 'MM-DD HH:mm')
+  }
+  maxMinObj[id] = obj
+}
 // 获取数据
 const getWebMonitoringData = async (detectId: string, name: string, start: number, step:number, index: number) => {
   // 先请求获取状态码，再去请求获取耗时，因为图表通过正负区分方向，状态码异常时需要 * -1，所以需要先获取状态码之后再去请求耗时
@@ -119,7 +136,7 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
     } else {
       statusSeriesData = statusResp.data[0].values.slice(0, -1)
     }
-    // seriesData[10][1] = '0'
+    // statusSeriesData[10][1] = '0'
     xTimeStamp.forEach((xTime, xTimeIndex) => {
       // 判断此时间是否有数据
       const index = statusSeriesData.findIndex(item => item[0] === xTime)
@@ -153,7 +170,6 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
     // 获取各个阶段的耗时
     const durationResp = await monitor.monitor.getMonitorWebsiteQueryRange({ query: { query: 'http_duration_seconds', start, detection_point_id: detectId, step }, path: { id: taskId } })
     if (durationResp.status === 200 && durationResp.data.length > 0) {
-      // calcMaxMin(detectId)
       const sortDurationResp: WebMonitorInterface[] = []
       // 存放耗时数据数组
       let durationSeriesData: string[] = []
@@ -173,6 +189,7 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
           sortDurationResp[4] = item
         }
       })
+      calcMaxMin(detectId, step)
       sortDurationResp.forEach((duration: WebMonitorInterface, durationIndex: number) => {
         durationSeriesData = []
         let durationData: [number, string][]
@@ -228,9 +245,8 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
                     // resolve为底部一段柱状图
                     // 其他区间的柱状图label返回空
                     if (val.seriesId.indexOf('transfer') !== -1) {
-                      if (val.name === maxFormattedTime || val.name === minFormattedTime) {
-                        // return (Number(durationTotalArr[detectId][val.dataIndex][1]) * 1000).toFixed(2)
-                        return ''
+                      if (val.name === maxMinObj[val.seriesId.slice(0, val.seriesId.lastIndexOf('-'))].maxTime || val.name === maxMinObj[val.seriesId.slice(0, val.seriesId.lastIndexOf('-'))].minTime) {
+                        return (Number(durationTotalArr[detectId][val.dataIndex][1]) * 1000).toFixed(2)
                       } else {
                         return ''
                       }
@@ -240,6 +256,8 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
                       } else if (val.seriesIndex > 0 && val.seriesIndex % 5 === 0) {
                         // seriesIndex为按照顺序叠加的每一段柱状图的索引，每个整体为5段，所以seriesIndex为5的倍数，用于判断第几个探针
                         return `${val.seriesIndex / 5 + 1}`
+                      } else if (val.seriesIndex > 0 && val.seriesIndex % 5 !== 0) {
+                        return `${val.seriesIndex + 1}`
                       }
                     } else {
                       return ''
@@ -333,7 +351,7 @@ const getWebMonitoringLastData = async (id: string, name: string, start: number)
         }
       })
     }
-    // calcMaxMin(id)
+    calcMaxMin(id, 60)
   }
 }
 let countDownTimer: NodeJS.Timer | null = setInterval(() => {
@@ -398,28 +416,32 @@ const changeChatTab = (val: string) => {
   if (val === 'recent') {
     const startTime = Math.round(changNowTime / 1000 - 1800)
     refreshAll(startTime, 60)
+    renovateTime.value = 60
+    isCurrent.value = true
+    countDownTimer = setInterval(() => {
+      if (renovateTime.value > 0) {
+        renovateTime.value--
+      }
+    }, 1000)
+    dynamicRefreshTimer = setInterval(() => {
+      refreshData()
+    }, 60000)
   } else if (val === 'day') {
+    isCurrent.value = false
     const startTime = Math.round(changNowTime / 1000 - 86400)
     const step = 2880
     refreshAll(startTime, step)
   } else if (val === 'week') {
+    isCurrent.value = false
     const startTime = Math.round(changNowTime / 1000 - 604800)
     const step = 20160
     refreshAll(startTime, step)
   } else {
+    isCurrent.value = false
     const startTime = Math.round(changNowTime / 1000 - 2592000)
     const step = 86400
     refreshAll(startTime, step)
   }
-  renovateTime.value = 60
-  countDownTimer = setInterval(() => {
-    if (renovateTime.value > 0) {
-      renovateTime.value--
-    }
-  }, 1000)
-  dynamicRefreshTimer = setInterval(() => {
-    refreshData()
-  }, 60000)
 }
 const goBack = () => {
   router.go(-1)
@@ -495,14 +517,14 @@ onUnmounted(() => {
       </div>
     </div>
     <div class="row justify-between items-center">
-      <div>
+      <div class="q-py-md">
         <div v-for="(item, index) in detectionPoints" :key="item.value">{{ `${tc('探针')}${index + 1}：${ i18n.global.locale === 'zh' ? item.label : item.labelEn}` }}</div>
       </div>
-      <div class="row items-center">
-        <div class="text-grey-7">{{ tc('剩余更新时间') }}</div>
+      <div class="row items-center" v-show="isCurrent">
+        <div class="text-grey-7 q-mr-md">{{ tc('剩余更新时间') }}</div>
         <q-circular-progress
           show-value
-          class="text-light-blue q-ma-md"
+          class="text-light-blue"
           :value="renovateTime"
           size="50px"
           max="60"
