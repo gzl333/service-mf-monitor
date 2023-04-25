@@ -17,14 +17,14 @@ const props = defineProps({
 
 // const emits = defineEmits(['is-emit'])
 const { tc } = i18n.global
-const goToGrafana = () => {
-  window.open(props.grafanaUrl)
-}
+// const goToGrafana = () => {
+//   window.open(props.grafanaUrl)
+// }
 </script>
 
 <template>
-  <div class="StorageCluster">
-    <div class="row justify-between q-mt-sm q-pb-sm">
+  <div class="CephCluster">
+    <div class="row justify-between q-pb-sm">
         <div class="col-6 row q-col-gutter-xs">
           <div class="col">
             <q-card flat class="my-card no-border-radius boxRightBorder" style="height: 190px">
@@ -70,8 +70,8 @@ const goToGrafana = () => {
             </q-card>
           </div>
         </div>
-        <div class="col-5">
-          <q-card flat bordered class="no-border-radius" style="height: 190px">
+        <div class="col-6">
+          <q-card flat class="no-border-radius boxLeftBorder" style="height: 190px">
             <div class="text-center">{{ tc('OSD状态') }}</div>
             <div class="row justify-evenly q-mt-md">
               <q-card flat bordered class="col-5 no-border-radius" style="height: 60px">
@@ -125,23 +125,23 @@ const goToGrafana = () => {
             </div>
           </q-card>
         </div>
-        <div class="col-1">
-          <q-card flat class="no-border-radius boxLeftBorder" style="height: 190px">
-            <div class="text-center q-mt-xl">
-              <div class="text-primary cursor-pointer text-subtitle1" @click="goToGrafana">
-                <div>Go To</div>
-                <div>Grafana</div>
-              </div>
-              <div class="q-mt-sm">{{ tc('查看详细信息') }}</div>
-            </div>
-          </q-card>
-        </div>
+<!--        <div class="col-1">-->
+<!--          <q-card flat class="no-border-radius boxLeftBorder" style="height: 190px">-->
+<!--            <div class="text-center q-mt-xl">-->
+<!--              <div class="text-primary cursor-pointer text-subtitle1" @click="goToGrafana">-->
+<!--                <div>Go To</div>-->
+<!--                <div>Grafana</div>-->
+<!--              </div>-->
+<!--              <div class="q-mt-sm">{{ tc('查看详细信息') }}</div>-->
+<!--            </div>-->
+<!--          </q-card>-->
+<!--        </div>-->
       </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.StoragePage {
+.CephCluster {
   .boxRightBorder {
     border-top: 1px solid #DDDDDD;
     border-bottom: 1px solid #DDDDDD;

@@ -272,7 +272,6 @@ onUnmounted(() => {
                             <span class="text-primary q-mr-md cursor-pointer" @click="gtToDetail(monitor.grafana_url)">grafana</span>
                             <span class="text-primary q-mr-sm cursor-pointer" @click="gtToDetail(monitor.dashboard_url)">dashboard</span>
                           </div>
-
                         </div>
                         <tidb-cluster :unit-servers-data="propsUnitData[monitor.id]"></tidb-cluster>
                       </div>

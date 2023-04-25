@@ -2,7 +2,7 @@
 import { ref, watch, onUnmounted, computed } from 'vue'
 import { useStore, ServiceUnitInterface } from 'stores/store'
 // import { useRoute, useRouter } from 'vue-router'
-import StorageCluster from 'components/Federation/StorageCluster.vue'
+import CephCluster from 'components/Federation/CephCluster.vue'
 import { i18n } from 'boot/i18n'
 import monitor from 'src/api/monitor'
 
@@ -176,6 +176,7 @@ const closePanel = (organization_id: string) => {
   }
 }
 const refreshAllUnit = () => {
+  propsUnitData.value = {}
   isDisable.value = true
   Object.keys(allExpendUnitsObjData).forEach((org, orgIndex) => {
     allExpendUnitsObjData[org].forEach((unit, unitIndex) => {
@@ -191,6 +192,7 @@ const refreshAllUnit = () => {
   })
 }
 const refreshUint = (unitId: string) => {
+  propsUnitData.value[unitId] = {}
   renovateShow.value[unitId] = false
   getStorageQuery(unitId).then((res) => {
     propsUnitData.value[unitId] = res
@@ -205,6 +207,9 @@ const keywordSearch = () => {
       storageUnitsObj.value[item] = allExpendUnitsObjData[item].filter(state => state.name.indexOf(keyword.value.trim()) > -1 || state.name_en.indexOf(keyword.value.trim()) > -1)
     })
   }
+}
+const gtToDetail = (url: string) => {
+  window.open(url)
 }
 watch(filterSelection, () => {
   clearInterval(Number(timer))
@@ -223,7 +228,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="StoragePage" style="min-width: 1000px">
+  <div class="CephPage" style="min-width: 1000px">
     <div class="column">
       <div class="row justify-center">
         <div class="content-fixed-width">
@@ -239,7 +244,7 @@ onUnmounted(() => {
               <q-select class="col-7" :disable="isDisable" outlined dense v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')" />
             </div>
           </div>
-          <div class="q-mt-lg">
+          <div class="q-mt-lg"  >
             <q-list bordered>
               <div v-for="org in organizations" :key="org.id">
                 <q-expansion-item
@@ -262,13 +267,16 @@ onUnmounted(() => {
                   <q-card>
                     <div v-if="storageUnitsObj[org.id]?.length > 0">
                       <div v-for="monitor in storageUnitsObj[org.id]" :key="monitor.id">
-                        <div class="row justify-between items-center q-mt-md">
+                        <div class="row justify-between items-center q-py-md">
                           <div class="text-subtitle1 text-weight-bold q-ml-sm">
                             {{ i18n.global.locale === 'zh' ? monitor.name : monitor.name_en }}
                           </div>
-                          <q-icon class="q-mr-sm cursor-pointer" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]" @click="refreshUint(monitor.id)"/>
+                          <div>
+                            <q-icon class="q-mr-sm cursor-pointer" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]" @click="refreshUint(monitor.id)"/>
+                            <span class="text-primary q-mr-sm cursor-pointer" @click="gtToDetail(monitor.grafana_url)">grafana</span>
+                          </div>
                         </div>
-                        <storage-cluster :unit-ceph-data="propsUnitData[monitor.id]" :unit-id="monitor.id" :grafana-url="monitor.grafana_url"></storage-cluster>
+                        <ceph-cluster :unit-ceph-data="propsUnitData[monitor.id]" :unit-id="monitor.id" :grafana-url="monitor.grafana_url"></ceph-cluster>
                       </div>
                     </div>
                     <div v-else>

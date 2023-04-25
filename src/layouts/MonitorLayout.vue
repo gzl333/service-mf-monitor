@@ -82,8 +82,8 @@ console.log('table', store.tables)
 
             <q-item
               clickable
-              :active="activeItem === 'storage'"
-              @click="activeItem = 'storage'; navigateToUrl('/my/monitor/storage')"
+              :active="activeItem === 'ceph'"
+              @click="activeItem = 'ceph'; navigateToUrl('/my/monitor/ceph')"
               active-class="active-item"
             >
               <q-item-section class="column items-center">

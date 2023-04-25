@@ -167,6 +167,7 @@ const closePanel = (organization_id: string) => {
 }
 // 刷新展开的所有单元
 const refreshAllUnit = () => {
+  propsUnitData.value = {}
   isDisable.value = true
   Object.keys(allExpendUnitsObjData).forEach((org, orgIndex) => {
     allExpendUnitsObjData[org].forEach((unit, unitIndex) => {
@@ -184,6 +185,7 @@ const refreshAllUnit = () => {
 }
 // 刷新单个单元
 const refreshUint = (unitId: string) => {
+  propsUnitData.value[unitId] = {}
   renovateShow.value[unitId] = false
   getServerQuery(unitId).then((res) => {
     propsUnitData.value[unitId] = res
@@ -199,6 +201,9 @@ const keywordSearch = () => {
       serverUnitsObj.value[item] = allExpendUnitsObjData[item].filter(state => state.name.indexOf(keyword.value.trim()) > -1 || state.name_en.indexOf(keyword.value.trim()) > -1)
     })
   }
+}
+const gtToDetail = (url: string) => {
+  window.open(url)
 }
 watch(filterSelection, () => {
   clearInterval(Number(timer))
@@ -260,12 +265,15 @@ onUnmounted(() => {
                   <q-card>
                     <div v-if="serverUnitsObj[item.id]?.length > 0">
                       <div v-for="monitor in serverUnitsObj[item.id]" :key="monitor.id">
-                        <div class="row justify-between items-center q-mt-md">
+                        <div class="row justify-between items-center q-py-md">
                           <div class="text-subtitle1 text-weight-bold q-ml-sm">
                             {{ i18n.global.locale === 'zh' ? monitor.name : monitor.name_en }}
                           </div>
-                          <q-icon class="q-mr-sm cursor-pointer" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]"
-                                  @click="refreshUint(monitor.id)"/>
+                          <div>
+                            <q-icon class="q-mr-sm cursor-pointer" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]"
+                                    @click="refreshUint(monitor.id)"/>
+                            <span class="text-primary q-mr-sm cursor-pointer" @click="gtToDetail(monitor.grafana_url)">grafana</span>
+                          </div>
                         </div>
                         <server-cluster :unit-servers-data="propsUnitData[monitor.id]" :unit-id="monitor.id"
                                         :grafana-url="monitor.grafana_url"></server-cluster>

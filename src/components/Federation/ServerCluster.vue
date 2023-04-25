@@ -18,14 +18,14 @@ const props = defineProps({
 })
 // const emits = defineEmits(['is-emit', 'is-back'])
 const { tc } = i18n.global
-const goToGrafana = () => {
-  window.open(props.grafanaUrl)
-}
+// const goToGrafana = () => {
+//   window.open(props.grafanaUrl)
+// }
 </script>
 
 <template>
   <div class="ServerCluster">
-    <div class="row q-mt-sm q-pb-sm q-gutter-x-xs">
+    <div class="row q-pb-sm q-gutter-x-xs">
       <div class="col">
         <q-card flat class="no-border-radius boxRightBorder" style="height: 120px">
           <div class="text-center">{{ tc('主机数') }}</div>
@@ -193,7 +193,7 @@ const goToGrafana = () => {
         </q-card>
       </div>
       <div class="col">
-        <q-card flat bordered class="no-border-radius" style="height: 120px">
+        <q-card flat class="no-border-radius boxLeftBorder" style="height: 120px">
           <div class="text-center">{{ tc('平均硬盘使用率') }}</div>
           <div v-if="props.unitServersData?.disk_usage">
             <div class="text-center text-h4 q-mt-md">
@@ -210,7 +210,7 @@ const goToGrafana = () => {
             />
           </div>
         </q-card>
-        <q-card flat bordered class="no-border-radius q-mt-xs row" style="height: 85px">
+        <q-card flat class="no-border-radius q-mt-xs row boxLeftBorder" style="height: 85px">
           <div class="col">
               <div class="text-center">{{ tc('最大') }}</div>
               <div v-if="props.unitServersData?.max_disk_usage"
@@ -244,17 +244,17 @@ const goToGrafana = () => {
             </div>
         </q-card>
       </div>
-      <div class="col-1">
-        <q-card flat class="no-border-radius boxLeftBorder" style="height: 209px">
-          <div class="text-center q-mt-xl">
-            <div class="text-primary cursor-pointer" @click="goToGrafana">
-              <div>Go To</div>
-              <div>Grafana</div>
-            </div>
-            <div class="q-mt-sm">{{ tc('查看详细信息') }}</div>
-          </div>
-        </q-card>
-      </div>
+<!--      <div class="col-1">-->
+<!--        <q-card flat class="no-border-radius boxLeftBorder" style="height: 209px">-->
+<!--          <div class="text-center q-mt-xl">-->
+<!--            <div class="text-primary cursor-pointer" @click="goToGrafana">-->
+<!--              <div>Go To</div>-->
+<!--              <div>Grafana</div>-->
+<!--            </div>-->
+<!--            <div class="q-mt-sm">{{ tc('查看详细信息') }}</div>-->
+<!--          </div>-->
+<!--        </q-card>-->
+<!--      </div>-->
     </div>
   </div>
 </template>

@@ -5,7 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import monitor from 'src/api/monitor'
 import { i18n } from 'boot/i18n'
 import { date, Notify } from 'quasar'
-import WebHistogramLineChart from 'components/Chart/WebHistogramLineChart.vue'
+import WebHistogramChart from 'components/Chart/WebHistogramChart.vue'
 
 // const props = defineProps({
 //   foo: {
@@ -580,7 +580,7 @@ onUnmounted(() => {
             <div class="row q-mt-lg">
               <div class="col-12">
                 <q-card flat bordered class="no-border-radius">
-                  <web-histogram-line-chart :status-obj="statusObj" :x-axis-time="xAxis" :chart-series="chartSeries" :status="chartStatus"/>
+                  <web-histogram-chart :status-obj="statusObj" :x-axis-time="xAxis" :chart-series="chartSeries" :status="chartStatus"/>
                 </q-card>
               </div>
             </div>
@@ -589,7 +589,7 @@ onUnmounted(() => {
             <div class="row q-mt-lg">
               <div class="col-12">
                 <q-card flat bordered class="no-border-radius">
-                  <web-histogram-line-chart :status-obj="statusObj" :x-axis-time="xAxis" :chart-series="chartSeries" :status="chartStatus"/>
+                  <web-histogram-chart :status-obj="statusObj" :x-axis-time="xAxis" :chart-series="chartSeries" :status="chartStatus"/>
                 </q-card>
               </div>
             </div>
@@ -598,7 +598,7 @@ onUnmounted(() => {
             <div class="row q-mt-lg">
               <div class="col-12">
                 <q-card flat bordered class="no-border-radius">
-                  <web-histogram-line-chart :status-obj="statusObj" :x-axis-time="xAxis" :chart-series="chartSeries" :status="chartStatus"/>
+                  <web-histogram-chart :status-obj="statusObj" :x-axis-time="xAxis" :chart-series="chartSeries" :status="chartStatus"/>
                 </q-card>
               </div>
             </div>
@@ -607,7 +607,7 @@ onUnmounted(() => {
             <div class="row q-mt-lg">
               <div class="col-12">
                 <q-card flat bordered class="no-border-radius">
-                  <web-histogram-line-chart :status-obj="statusObj" :x-axis-time="xAxis" :chart-series="chartSeries" :status="chartStatus"/>
+                  <web-histogram-chart :status-obj="statusObj" :x-axis-time="xAxis" :chart-series="chartSeries" :status="chartStatus"/>
                 </q-card>
               </div>
             </div>

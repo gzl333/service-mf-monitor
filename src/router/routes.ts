@@ -35,8 +35,8 @@ const routes: RouteRecordRaw[] = [
         component: () => import('pages/ServerPage.vue')
       },
       {
-        path: 'storage',
-        component: () => import('pages/StoragePage.vue')
+        path: 'ceph',
+        component: () => import('pages/CephPage.vue')
       },
       {
         path: 'tidb',
