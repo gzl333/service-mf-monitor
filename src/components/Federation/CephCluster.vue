@@ -1,8 +1,19 @@
 <script setup lang="ts">
 import { i18n } from 'boot/i18n'
+
+interface UnitCephInterface {
+  cluster_total_bytes: string
+  cluster_total_used_bytes: string
+  health_status: string
+  osd_down: string
+  osd_in: string
+  osd_out: string
+  osd_up: string
+}
+
 const props = defineProps({
   unitCephData: {
-    type: Object,
+    type: Object as () => UnitCephInterface,
     required: false
   },
   unitId: {

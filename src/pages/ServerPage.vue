@@ -25,6 +25,7 @@ const serverUnitsObj = ref<Record<string, ServiceUnitInterface[]>>({})
 const allServerUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
 const allExpendUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
 let timer: NodeJS.Timer | null
+let countDownTimer: NodeJS.Timer | null
 // 传输给子组件的数据
 const propsUnitData = ref<Record<string, unknown>>({})
 const keyword = ref('')
@@ -32,6 +33,7 @@ const keyword = ref('')
 const isIntervalOpen = ref(false)
 // 用于判断是否可点击
 const isDisable = ref(true)
+const renovateTime = ref(30)
 // 用于判断刷新按钮显示和不显示 每一个子组件对应对象里的一个值
 const renovateShow = ref<Record<string, boolean>>({})
 // const countObj = ref<Record<string, number>>({})
@@ -148,6 +150,11 @@ const openPanel = async (organization_id: string) => {
     })
     // 判断是否添加计时器,打开第一个面板时添加计时器,后面再次打开不再添加计时器
     if (!isIntervalOpen.value) {
+      countDownTimer = setInterval(() => {
+        if (renovateTime.value > 0) {
+          renovateTime.value--
+        }
+      }, 1000)
       timer = setInterval(() => {
         refreshAllUnit()
       }, filterSelection.value.value * 1000)
@@ -161,6 +168,8 @@ const closePanel = (organization_id: string) => {
   // 判断面板是否全部关闭,若全部关闭清空计时器
   if (Object.keys(allExpendUnitsObjData).length === 0) {
     clearInterval(Number(timer))
+    clearInterval(Number(countDownTimer))
+    renovateTime.value = filterSelection.value.value
     isIntervalOpen.value = false
     isDisable.value = true
   }
@@ -178,6 +187,7 @@ const refreshAllUnit = () => {
         // 如果最后一个请求请求成功后 将isDisable赋值为false
         if (orgIndex === Object.keys(allExpendUnitsObjData).length - 1 && unitIndex === allExpendUnitsObjData[org].length - 1) {
           isDisable.value = false
+          renovateTime.value = filterSelection.value.value
         }
       })
     })
@@ -206,6 +216,7 @@ const gtToDetail = (url: string) => {
   window.open(url)
 }
 watch(filterSelection, () => {
+  renovateTime.value = filterSelection.value.value
   clearInterval(Number(timer))
   timer = setInterval(() => {
     refreshAllUnit()
@@ -218,6 +229,7 @@ watch(organizations, () => {
 })
 onUnmounted(() => {
   clearInterval(Number(timer))
+  clearInterval(Number(countDownTimer))
 })
 </script>
 
@@ -229,14 +241,28 @@ onUnmounted(() => {
           <div class="text-h6 q-pt-lg">
             {{ tc('服务器') }}
           </div>
-          <div class="row items-center q-mt-lg">
-            <div class="row col-8">
-              <q-input class="col-5" outlined dense clearable :disable="isDisable" v-model="keyword"
+          <div class="row items-center justify-between q-mt-lg">
+            <div class="col-4">
+              <q-input outlined dense clearable :disable="isDisable" v-model="keyword"
                        :label="tc('输入关键字搜索')" @update:model-value="keywordSearch"/>
             </div>
-            <div class="col-4 row justify-end items-center">
-              <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="!isDisable" @click="refreshAllUnit"/>
-              <q-select class="col-7" outlined dense :disable="isDisable" v-model="filterSelection"
+            <div class="col-6 row justify-end items-center">
+              <div v-show="!isDisable" class="col-5 row items-center justify-end">
+                <q-icon class="q-mr-sm" name="refresh" size="lg" @click="refreshAllUnit"/>
+                <div class="text-grey-7 q-mr-md">{{ tc('剩余刷新时间') }}</div>
+                <q-circular-progress
+                  show-value
+                  class="text-light-blue q-mr-md"
+                  :value="renovateTime"
+                  size="40px"
+                  :max="filterSelection.value"
+                  color="light-blue"
+                  track-color="grey-3"
+                >
+                  {{ renovateTime }}s
+                </q-circular-progress>
+              </div>
+              <q-select class="col-5" outlined dense :disable="isDisable" v-model="filterSelection"
                         :options="filterOptions"
                         :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')"/>
             </div>

@@ -2,9 +2,23 @@
 import LineChart from 'components/Chart/LineChart.vue'
 import { i18n } from 'boot/i18n'
 
+interface UnitServersInterface {
+  cpu_usage: string
+  disk_usage: string
+  health_status: string
+  host_count: string
+  host_up_count: string
+  max_cpu_usage: string
+  max_disk_usage: string
+  max_mem_usage: string
+  mem_usage: string
+  min_cpu_usage: string
+  min_disk_usage: string
+  min_mem_usage: string
+}
 const props = defineProps({
   unitServersData: {
-    type: Object,
+    type: Object as () => UnitServersInterface,
     required: false
   },
   unitId: {

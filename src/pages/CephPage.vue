@@ -28,9 +28,11 @@ const allExpendUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
 const propsUnitData = ref<Record<string, unknown>>({})
 // const countObj = ref<Record<string, number>>({})
 let timer: NodeJS.Timer | null
+let countDownTimer: NodeJS.Timer | null
 const keyword = ref('')
 // 用于判断是否可点击
 const isDisable = ref(true)
+const renovateTime = ref(30)
 // 用于判断是否存在计时器
 const isIntervalOpen = ref(false)
 // 用于判断刷新按钮显示和不显示 每一个子组件对应对象里的一个值
@@ -159,6 +161,11 @@ const openPanel = async (organization_id: string) => {
       })
     })
     if (!isIntervalOpen.value) {
+      countDownTimer = setInterval(() => {
+        if (renovateTime.value > 0) {
+          renovateTime.value--
+        }
+      }, 1000)
       timer = setInterval(() => {
         refreshAllUnit()
       }, filterSelection.value.value * 1000)
@@ -171,6 +178,8 @@ const closePanel = (organization_id: string) => {
   Reflect.deleteProperty(allExpendUnitsObjData, organization_id)
   if (Object.keys(allExpendUnitsObjData).length === 0) {
     clearInterval(Number(timer))
+    clearInterval(Number(countDownTimer))
+    renovateTime.value = filterSelection.value.value
     isIntervalOpen.value = false
     isDisable.value = true
   }
@@ -186,6 +195,7 @@ const refreshAllUnit = () => {
         renovateShow.value[unit.id] = true
         if (orgIndex === Object.keys(allExpendUnitsObjData).length - 1 && unitIndex === allExpendUnitsObjData[org].length - 1) {
           isDisable.value = false
+          renovateTime.value = filterSelection.value.value
         }
       })
     })
@@ -212,6 +222,7 @@ const gtToDetail = (url: string) => {
   window.open(url)
 }
 watch(filterSelection, () => {
+  renovateTime.value = filterSelection.value.value
   clearInterval(Number(timer))
   timer = setInterval(() => {
     refreshAllUnit()
@@ -224,6 +235,7 @@ watch(organizations, () => {
 })
 onUnmounted(() => {
   clearInterval(Number(timer))
+  clearInterval(Number(countDownTimer))
 })
 </script>
 
@@ -235,13 +247,27 @@ onUnmounted(() => {
           <div class="text-h6 q-pt-lg">
             Ceph
           </div>
-          <div class="row q-mt-lg">
-            <div class="col-8 row">
-              <q-input class="col-5" :disable="isDisable" outlined dense clearable v-model="keyword" :label="tc('输入关键字搜索')" @update:model-value="keywordSearch"/>
+          <div class="row q-mt-lg justify-between items-center">
+            <div class="col-4">
+              <q-input :disable="isDisable" outlined dense clearable v-model="keyword" :label="tc('输入关键字搜索')" @update:model-value="keywordSearch"/>
             </div>
-            <div class="col-4 row justify-end items-center">
-              <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="!isDisable" @click="refreshAllUnit"/>
-              <q-select class="col-7" :disable="isDisable" outlined dense v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')" />
+            <div class="col-6 row justify-end items-center">
+              <div v-show="!isDisable" class="col-5 row items-center justify-end">
+                <q-icon class="q-mr-sm" name="refresh" size="lg" @click="refreshAllUnit"/>
+                <div class="text-grey-7 q-mr-md">{{ tc('剩余刷新时间') }}</div>
+                <q-circular-progress
+                  show-value
+                  class="text-light-blue q-mr-md"
+                  :value="renovateTime"
+                  size="40px"
+                  :max="filterSelection.value"
+                  color="light-blue"
+                  track-color="grey-3"
+                >
+                  {{ renovateTime }}s
+                </q-circular-progress>
+              </div>
+              <q-select class="col-5" :disable="isDisable" outlined dense v-model="filterSelection" :options="filterOptions" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" :label="tc('刷新时间')" />
             </div>
           </div>
           <div class="q-mt-lg"  >

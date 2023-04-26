@@ -35,6 +35,7 @@ let searchFilterData: any[] = []
 // 刷新相关数据
 const isRefresh = ref(true)
 const disable = ref(false)
+const renovateTime = ref(30)
 // 搜索条件
 const searchQuery = ref({
   status: '2',
@@ -457,25 +458,39 @@ void initialization()
 const filterStatus = (val: Record<string, string>) => {
   searchQuery.value.status = val.value
 }
+let countDownTimer = setInterval(() => {
+  if (renovateTime.value > 0) {
+    renovateTime.value--
+  }
+}, 1000)
+let timer = setInterval(() => {
+  void refresh()
+}, refreshSelection.value.value * 1000)
 const openOrCloseRefresh = () => {
   disable.value = !disable.value
   if (disable.value === true) {
     clearInterval(timer)
+    clearInterval(countDownTimer)
   } else {
+    renovateTime.value = refreshSelection.value.value
     timer = setInterval(() => {
       void refresh()
     }, refreshSelection.value.value * 1000)
+    countDownTimer = setInterval(() => {
+      if (renovateTime.value > 0) {
+        renovateTime.value--
+      }
+    }, 1000)
   }
 }
-const refresh = () => {
+const refresh = async () => {
   coordinateData = {}
   nationalNodeData = []
-  void initialization()
+  void await initialization()
+  renovateTime.value = refreshSelection.value.value
 }
-let timer = setInterval(() => {
-  void refresh()
-}, refreshSelection.value.value * 1000)
 watch(refreshSelection, () => {
+  renovateTime.value = refreshSelection.value.value
   clearInterval(timer)
   timer = setInterval(() => {
     void refresh()
@@ -491,6 +506,7 @@ watch(tableData, () => {
 })
 onUnmounted(() => {
   clearInterval(timer)
+  clearInterval(countDownTimer)
 })
 </script>
 
@@ -513,9 +529,21 @@ onUnmounted(() => {
               </q-input>
             </div>
             <div class="col-6 row justify-end items-center">
-              <q-icon class="q-mr-lg" name="refresh" size="lg" v-show="isRefresh" @click="refresh"/>
+              <q-icon class="q-mr-md" name="refresh" size="lg" v-show="isRefresh" @click="refresh"/>
               <q-btn no-caps unelevated class="q-mr-md" color="primary" :label="disable === true ? tc('打开自动刷新') : tc('关闭自动刷新')" @click="openOrCloseRefresh" />
-              <q-select outlined dense v-model="refreshSelection" :disable="disable" :options="refreshOptions" :label="tc('刷新时间')" class="col-5" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" />
+              <q-select outlined dense v-model="refreshSelection" :disable="disable" :options="refreshOptions" :label="tc('刷新时间')" class="col-5 q-mr-md" :option-label="i18n.global.locale ==='zh'? 'label':'labelEn'" />
+              <div class="text-grey-7 q-mr-md">{{ tc('剩余刷新时间') }}</div>
+              <q-circular-progress
+                show-value
+                class="text-light-blue"
+                :value="renovateTime"
+                size="50px"
+                :max="refreshSelection.value"
+                color="light-blue"
+                track-color="grey-3"
+              >
+                {{ renovateTime }}s
+              </q-circular-progress>
             </div>
           </div>
           <q-table
