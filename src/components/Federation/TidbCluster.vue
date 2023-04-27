@@ -33,7 +33,7 @@ interface UnitTidbInterface {
   pd_nodes: any[]
   qps: any[]
   region_count: any[]
-  region_health: any[]
+  region_health: any
   server_cpu_usage: any[]
   server_cpu_usage_max: string
   server_disk_usage: any[]
@@ -70,7 +70,7 @@ const { tc } = i18n.global
             <div v-if="props.unitServersData?.pd_nodes">
               <div v-if="props.unitServersData?.pd_nodes.length > 0" class="text-h4">
                 <span
-                  class="text-negative">{{ props.unitServersData?.pd_nodes.filter(item => item.value[1] !== '1').length }}</span>
+                  :class="props.unitServersData?.pd_nodes.filter(item => item.value[1] === '1').length === props.unitServersData?.pd_nodes.length ? '' : 'text-negative'">{{ props.unitServersData?.pd_nodes.filter(item => item.value[1] === '1').length }}</span>
                 <span>{{ '/' + props.unitServersData?.pd_nodes.length }}</span>
               </div>
               <div v-else class="text-h5">
@@ -106,7 +106,7 @@ const { tc } = i18n.global
             <div v-if="props.unitServersData?.tidb_nodes">
               <div v-if="props.unitServersData?.tidb_nodes.length > 0" class="text-h4">
                 <span
-                  class="text-negative">{{ props.unitServersData?.tidb_nodes.filter(item => item.value[1] !== '1').length }}</span>
+                  :class="props.unitServersData?.tidb_nodes.filter(item => item.value[1] === '1').length === props.unitServersData?.tidb_nodes.length ? '' : 'text-negative'">{{ props.unitServersData?.tidb_nodes.filter(item => item.value[1] === '1').length }}</span>
                 <span>{{ '/' + props.unitServersData?.tidb_nodes.length }}</span>
               </div>
               <div v-else class="text-h5">
@@ -142,7 +142,7 @@ const { tc } = i18n.global
             <div class="text-h4" v-if="props.unitServersData?.tikv_nodes">
               <div v-if="props.unitServersData?.tikv_nodes.length > 0" class="text-h4">
                 <span
-                  class="text-negative">{{ props.unitServersData?.tikv_nodes.filter(item => item.value[1] !== '1').length }}</span>
+                  :class="props.unitServersData?.tikv_nodes.filter(item => item.value[1] === '1').length === props.unitServersData?.tikv_nodes.length ? '' : 'text-negative'">{{ props.unitServersData?.tikv_nodes.filter(item => item.value[1] === '1').length }}</span>
                 <span>{{ '/' + props.unitServersData?.tikv_nodes.length }}</span>
               </div>
               <div v-else class="text-h5">
@@ -183,37 +183,37 @@ const { tc } = i18n.global
                 <div>good</div>
               </div>
               <div class="col">
-                <div class="text-h5 text-negative">
+                <div :class="props.unitServersData?.region_health.find(item => item.metric.type.includes('down')).value[1] === '0' ? 'text-h5 text-positive' : 'text-h5 text-negative'">
                   {{ props.unitServersData?.region_health.find(item => item.metric.type.includes('down')).value[1] }}
                 </div>
                 <div>down</div>
               </div>
               <div class="col">
-                <div class="text-h5 text-negative">
+                <div :class="props.unitServersData?.region_health.find(item => item.metric.type.includes('empty')).value[1] === '0' ? 'text-h5 text-positive' : 'text-h5 text-negative'">
                   {{ props.unitServersData?.region_health.find(item => item.metric.type.includes('empty')).value[1] }}
                 </div>
                 <div>empty</div>
               </div>
               <div class="col">
-                <div class="text-h5 text-grey">
+                <div :class="props.unitServersData?.region_health.find(item => item.metric.type.includes('extra')).value[1] === '0' ? 'text-h5 text-positive' : 'text-h5 text-negative'">
                   {{ props.unitServersData?.region_health.find(item => item.metric.type.includes('extra')).value[1] }}
                 </div>
                 <div>extra</div>
               </div>
               <div class="col">
-                <div class="text-h5 text-grey">
+                <div :class="props.unitServersData?.region_health.find(item => item.metric.type.includes('miss')).value[1] === '0' ? 'text-h5 text-positive' : 'text-h5 text-negative'">
                   {{ props.unitServersData?.region_health.find(item => item.metric.type.includes('miss')).value[1] }}
                 </div>
                 <div>miss</div>
               </div>
               <div class="col">
-                <div class="text-h5 text-grey">
+                <div :class="props.unitServersData?.region_health.find(item => item.metric.type.includes('pending')).value[1] === '0' ? 'text-h5 text-positive' : 'text-h5 text-negative'">
                   {{ props.unitServersData?.region_health.find(item => item.metric.type.includes('pending')).value[1] }}
                 </div>
                 <div>pending</div>
               </div>
               <div class="col">
-                <div class="text-h5 text-grey">{{
+                <div :class="props.unitServersData?.region_health.find(item => item.metric.type.includes('oversized')).value[1] === '0' ? 'text-h5 text-positive' : 'text-h5 text-negative'">{{
                     props.unitServersData?.region_health.find(item => item.metric.type.includes('oversized')).value[1]
                   }}
                 </div>

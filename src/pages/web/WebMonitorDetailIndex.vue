@@ -215,15 +215,15 @@ const getWebMonitoringData = async (detectId: string, name: string, start: numbe
           }
         })
         if (duration.metric.phase === 'resolve') {
-          stageName = 'DNS解析耗时'
+          stageName = 'DNS解析（毫秒）'
         } else if (duration.metric.phase === 'connect') {
-          stageName = 'TCP连接建立耗时'
+          stageName = 'TCP连接（毫秒）'
         } else if (duration.metric.phase === 'tls') {
-          stageName = 'TLS连接协商耗时'
+          stageName = 'TLS连接（毫秒）'
         } else if (duration.metric.phase === 'processing') {
-          stageName = '建立连接与接收响应第一个字节耗时'
+          stageName = '连接成功到收到响应（毫秒）'
         } else {
-          stageName = '转移响应耗时'
+          stageName = '本次响应内容传输（毫秒）'
         }
         // chartSeries为echarts图表数据
         chartSeries.value.push(

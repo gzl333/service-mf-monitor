@@ -77,7 +77,7 @@ onMounted(() => {
         let num = 0
         for (let i = 0, l = params.length; i < l; i++) {
           const dId = params[i].seriesId.slice(0, params[i].seriesId.lastIndexOf('-'))
-          if (params[i].value !== '' && Number(params[i].value) > 0) {
+          if (Number(params[i].value) > 0) {
             if ((i + 1) % 5 === 0) {
               num += Number(params[i].value)
               totalArr[dId] = num.toFixed(2)
@@ -85,7 +85,7 @@ onMounted(() => {
             } else {
               num += Number(params[i].value)
             }
-          } else if (params[i].value !== '' && Number(params[i].value) < 0) {
+          } else if (params[i].value === '' || Number(params[i].value) <= 0) {
             if (params.length % 5 === 0) {
               if ((i + 1) % 5 === 0) {
                 if (params[i].value !== '') {
@@ -113,35 +113,55 @@ onMounted(() => {
           const dId = params[i].seriesId.slice(0, params[i].seriesId.lastIndexOf('-'))
           if (params[i].value !== '' && params[i].value > 0) {
             if (i >= 0 && i % 5 === 0) {
-              relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('状态码') + ':' +
-              props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + ':' + totalArr[dId] + tc('毫秒')}</span><br/>
-              ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${params[i].value + tc('毫秒')}`
+              if (i === 0) {
+                relVal += `<hr/><div>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="q-ml-md">${tc('状态')}：</span><span class="text-positive text-weight-bold">${props.statusObj[dId][params[i].dataIndex][1]}</span></div>
+<div class="row justify-between"><div>${tc('总耗时（毫秒）')}：</div><div class="text-subtitle1 text-weight-bold text-positive">${totalArr[dId]}</div></div>
+<div class="row justify-between"><div>${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div class="text-weight-regular" style="color: ${params[i].color}">${params[i].value}</div></div>`
+              } else {
+                relVal += `<div>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="q-ml-md">${tc('状态')}：</span><span class="text-positive text-weight-bold">${props.statusObj[dId][params[i].dataIndex][1]}</span></div>
+<div class="row justify-between"><div>${tc('总耗时（毫秒）')}：</div><div class="text-subtitle1 text-weight-bold text-positive">${totalArr[dId]}</div></div>
+<div class="row justify-between"><div>${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div class="text-weight-regular" style="color: ${params[i].color}">${params[i].value}</div></div>`
+              }
             } else {
               if ((i + 1) % 5 === 0) {
-                relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value + tc('毫秒') +
-                    '<br/>' + '<hr/>'
+                relVal += `<div class="row justify-between"><div>${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div style="color: ${params[i].color}">${params[i].value}</div></div>
+<div class="row"><div class="col-10"><hr></div></div>`
               } else {
-                relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value + tc('毫秒')
+                relVal += `<div class="row justify-between"><div>${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div style="color: ${params[i].color}">${params[i].value}</div></div>`
               }
             }
           } else if (params[i].value !== '' && params[i].value < 0) {
             if (params.length % 5 === 0) {
               if (i >= 0 && i % 5 === 0) {
-                relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('状态码') + ':' +
-                props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + totalArr[dId] + tc('毫秒')}</span><br/>
-              ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${params[i].value * -1 + tc('毫秒')}`
+                if (i === 0) {
+                  relVal += `<hr/><div>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="q-ml-md">${tc('状态')}：</span><span class="text-negative text-weight-bold">${props.statusObj[dId][params[i].dataIndex][1]}</span></div>
+<div class="row justify-between"><div>${tc('总耗时（毫秒）')}：</div><div class="text-subtitle1 text-weight-bold text-positive">${totalArr[dId]}</div></div>
+<div class="row justify-between"><div>${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div class="text-weight-regular" style="color: ${params[i].color}">${params[i].value * -1}</div></div>`
+                } else {
+                  relVal += `<div>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="q-ml-md">${tc('状态')}：</span><span class="text-negative text-weight-bold">${props.statusObj[dId][params[i].dataIndex][1]}</span></div>
+<div class="row justify-between"><div>${tc('总耗时（毫秒）')}：</div><div class="text-subtitle1 text-weight-bold text-positive">${totalArr[dId]}</div></div>
+<div class="row justify-between"><div>${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div class="text-weight-regular" style="color: ${params[i].color}">${params[i].value * -1}</div></div>`
+                }
               } else {
                 if ((i + 1) % 5 === 0) {
-                  relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value * -1 + tc('毫秒') +
-                    '<br/>' + '<hr/>'
+                  relVal += `<div class="row justify-between"><div>${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div style="color: ${params[i].color}">${params[i].value * -1}</div></div>
+<div class="row"><div class="col-10"><hr></div></div>`
                 } else {
-                  relVal += '<br/>' + params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1) + ' : ' + params[i].value * -1 + tc('毫秒')
+                  relVal += `<div class="row justify-between"><div>${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div style="color: ${params[i].color}">${params[i].value * -1}</div></div>`
                 }
               }
             } else {
-              relVal += `<br/>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="text-primary text-weight-bold"> ${tc('状态码') + ':' +
-              props.statusObj[dId][params[i].dataIndex][1] + ' ' + tc('总耗时') + totalArr[dId] + tc('毫秒')}</span><br/>
-              ${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：${params[i].value * -1 + tc('毫秒')}`
+              if (i === 0) {
+                relVal += `<hr/><div>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="q-ml-md">${tc('状态')}：</span><span class="text-negative text-weight-bold">${props.statusObj[dId][params[i].dataIndex][1]}</span></div>
+<div class="row justify-between"><div>${tc('总耗时（毫秒）')}：</div><div class="text-subtitle1 text-weight-bold text-positive">${totalArr[dId]}</div></div>
+<div class="row justify-between"><div>${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div class="text-weight-regular" style="color: ${params[i].color}">${params[i].value * -1}</div></div>
+<div class="row"><div class="col-10"><hr></div></div>`
+              } else {
+                relVal += `<div>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="q-ml-md">${tc('状态')}：</span><span class="text-negative text-weight-bold">${props.statusObj[dId][params[i].dataIndex][1]}</span></div>
+<div class="row justify-between"><div>${tc('总耗时（毫秒）')}：</div><div class="text-subtitle1 text-weight-bold text-positive">${totalArr[dId]}</div></div>
+<div class="row justify-between"><div>${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div class="text-weight-regular" style="color: ${params[i].color}">${params[i].value * -1}</div></div>
+<div class="row"><div class="col-10"><hr></div></div>`
+              }
             }
           }
         }
