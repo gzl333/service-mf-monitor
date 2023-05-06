@@ -183,37 +183,37 @@ const { tc } = i18n.global
                 <div>good</div>
               </div>
               <div class="col">
-                <div :class="props.unitServersData?.region_health.find(item => item.metric.type.includes('down')).value[1] === '0' ? 'text-h5 text-positive' : 'text-h5 text-negative'">
+                <div :class="props.unitServersData?.region_health.find(item => item.metric.type.includes('down')).value[1] === '0' ? 'text-h5 text-grey' : 'text-h5 text-negative'">
                   {{ props.unitServersData?.region_health.find(item => item.metric.type.includes('down')).value[1] }}
                 </div>
                 <div>down</div>
               </div>
               <div class="col">
-                <div :class="props.unitServersData?.region_health.find(item => item.metric.type.includes('empty')).value[1] === '0' ? 'text-h5 text-positive' : 'text-h5 text-negative'">
+                <div :class="props.unitServersData?.region_health.find(item => item.metric.type.includes('empty')).value[1] === '0' ? 'text-h5 text-grey' : 'text-h5 text-negative'">
                   {{ props.unitServersData?.region_health.find(item => item.metric.type.includes('empty')).value[1] }}
                 </div>
                 <div>empty</div>
               </div>
               <div class="col">
-                <div :class="props.unitServersData?.region_health.find(item => item.metric.type.includes('extra')).value[1] === '0' ? 'text-h5 text-positive' : 'text-h5 text-negative'">
+                <div :class="props.unitServersData?.region_health.find(item => item.metric.type.includes('extra')).value[1] === '0' ? 'text-h5 text-grey' : 'text-h5 text-negative'">
                   {{ props.unitServersData?.region_health.find(item => item.metric.type.includes('extra')).value[1] }}
                 </div>
                 <div>extra</div>
               </div>
               <div class="col">
-                <div :class="props.unitServersData?.region_health.find(item => item.metric.type.includes('miss')).value[1] === '0' ? 'text-h5 text-positive' : 'text-h5 text-negative'">
+                <div :class="props.unitServersData?.region_health.find(item => item.metric.type.includes('miss')).value[1] === '0' ? 'text-h5 text-grey' : 'text-h5 text-negative'">
                   {{ props.unitServersData?.region_health.find(item => item.metric.type.includes('miss')).value[1] }}
                 </div>
                 <div>miss</div>
               </div>
               <div class="col">
-                <div :class="props.unitServersData?.region_health.find(item => item.metric.type.includes('pending')).value[1] === '0' ? 'text-h5 text-positive' : 'text-h5 text-negative'">
+                <div :class="props.unitServersData?.region_health.find(item => item.metric.type.includes('pending')).value[1] === '0' ? 'text-h5 text-grey' : 'text-h5 text-negative'">
                   {{ props.unitServersData?.region_health.find(item => item.metric.type.includes('pending')).value[1] }}
                 </div>
                 <div>pending</div>
               </div>
               <div class="col">
-                <div :class="props.unitServersData?.region_health.find(item => item.metric.type.includes('oversized')).value[1] === '0' ? 'text-h5 text-positive' : 'text-h5 text-negative'">{{
+                <div :class="props.unitServersData?.region_health.find(item => item.metric.type.includes('oversized')).value[1] === '0' ? 'text-h5 text-grey' : 'text-h5 text-negative'">{{
                     props.unitServersData?.region_health.find(item => item.metric.type.includes('oversized')).value[1]
                   }}
                 </div>
