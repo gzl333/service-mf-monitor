@@ -116,18 +116,18 @@ onMounted(() => {
               if (i === 0) {
                 relVal += `<hr/><div>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="q-ml-md">${tc('状态')}：</span><span class="text-positive text-weight-bold">${props.statusObj[dId][params[i].dataIndex][1]}</span></div>
 <div class="row justify-between"><div>${tc('总耗时（毫秒）')}：</div><div class="text-subtitle1 text-weight-bold text-positive">${totalArr[dId]}</div></div>
-<div class="row justify-between"><div>${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div class="text-weight-regular" style="color: ${params[i].color}">${params[i].value}</div></div>`
+<div class="row justify-between"><div style="color: ${params[i].color}">${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div class="text-weight-regular">${params[i].value}</div></div>`
               } else {
                 relVal += `<div>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="q-ml-md">${tc('状态')}：</span><span class="text-positive text-weight-bold">${props.statusObj[dId][params[i].dataIndex][1]}</span></div>
 <div class="row justify-between"><div>${tc('总耗时（毫秒）')}：</div><div class="text-subtitle1 text-weight-bold text-positive">${totalArr[dId]}</div></div>
-<div class="row justify-between"><div>${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div class="text-weight-regular" style="color: ${params[i].color}">${params[i].value}</div></div>`
+<div class="row justify-between"><div style="color: ${params[i].color}">${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div class="text-weight-regular">${params[i].value}</div></div>`
               }
             } else {
               if ((i + 1) % 5 === 0) {
-                relVal += `<div class="row justify-between"><div>${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div style="color: ${params[i].color}">${params[i].value}</div></div>
+                relVal += `<div class="row justify-between"><div style="color: ${params[i].color}">${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div>${params[i].value}</div></div>
 <div class="row"><div class="col-10"><hr></div></div>`
               } else {
-                relVal += `<div class="row justify-between"><div>${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div style="color: ${params[i].color}">${params[i].value}</div></div>`
+                relVal += `<div class="row justify-between"><div style="color: ${params[i].color}">${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div>${params[i].value}</div></div>`
               }
             }
           } else if (params[i].value !== '' && params[i].value < 0) {
@@ -136,30 +136,30 @@ onMounted(() => {
                 if (i === 0) {
                   relVal += `<hr/><div>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="q-ml-md">${tc('状态')}：</span><span class="text-negative text-weight-bold">${props.statusObj[dId][params[i].dataIndex][1]}</span></div>
 <div class="row justify-between"><div>${tc('总耗时（毫秒）')}：</div><div class="text-subtitle1 text-weight-bold text-positive">${totalArr[dId]}</div></div>
-<div class="row justify-between"><div>${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div class="text-weight-regular" style="color: ${params[i].color}">${params[i].value * -1}</div></div>`
+<div class="row justify-between"><div style="color: ${params[i].color}">${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div class="text-weight-regular">${params[i].value * -1}</div></div>`
                 } else {
                   relVal += `<div>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="q-ml-md">${tc('状态')}：</span><span class="text-negative text-weight-bold">${props.statusObj[dId][params[i].dataIndex][1]}</span></div>
 <div class="row justify-between"><div>${tc('总耗时（毫秒）')}：</div><div class="text-subtitle1 text-weight-bold text-positive">${totalArr[dId]}</div></div>
-<div class="row justify-between"><div>${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div class="text-weight-regular" style="color: ${params[i].color}">${params[i].value * -1}</div></div>`
+<div class="row justify-between"><div style="color: ${params[i].color}">${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div class="text-weight-regular">${params[i].value * -1}</div></div>`
                 }
               } else {
                 if ((i + 1) % 5 === 0) {
-                  relVal += `<div class="row justify-between"><div>${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div style="color: ${params[i].color}">${params[i].value * -1}</div></div>
+                  relVal += `<div class="row justify-between"><div style="color: ${params[i].color}">${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div>${params[i].value * -1}</div></div>
 <div class="row"><div class="col-10"><hr></div></div>`
                 } else {
-                  relVal += `<div class="row justify-between"><div>${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div style="color: ${params[i].color}">${params[i].value * -1}</div></div>`
+                  relVal += `<div class="row justify-between"><div style="color: ${params[i].color}">${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div>${params[i].value * -1}</div></div>`
                 }
               }
             } else {
               if (i === 0) {
                 relVal += `<hr/><div>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="q-ml-md">${tc('状态')}：</span><span class="text-negative text-weight-bold">${props.statusObj[dId][params[i].dataIndex][1]}</span></div>
 <div class="row justify-between"><div>${tc('总耗时（毫秒）')}：</div><div class="text-subtitle1 text-weight-bold text-positive">${totalArr[dId]}</div></div>
-<div class="row justify-between"><div>${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div class="text-weight-regular" style="color: ${params[i].color}">${params[i].value * -1}</div></div>
+<div class="row justify-between"><div style="color: ${params[i].color}">${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div class="text-weight-regular">${params[i].value * -1}</div></div>
 <div class="row"><div class="col-10"><hr></div></div>`
               } else {
                 relVal += `<div>${params[i].seriesName.slice(0, params[i].seriesName.indexOf('-'))}<span class="q-ml-md">${tc('状态')}：</span><span class="text-negative text-weight-bold">${props.statusObj[dId][params[i].dataIndex][1]}</span></div>
 <div class="row justify-between"><div>${tc('总耗时（毫秒）')}：</div><div class="text-subtitle1 text-weight-bold text-positive">${totalArr[dId]}</div></div>
-<div class="row justify-between"><div>${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div class="text-weight-regular" style="color: ${params[i].color}">${params[i].value * -1}</div></div>
+<div class="row justify-between"><div style="color: ${params[i].color}">${params[i].marker + params[i].seriesName.slice(params[i].seriesName.indexOf('-') + 1)}：</div><div class="text-weight-regular">${params[i].value * -1}</div></div>
 <div class="row"><div class="col-10"><hr></div></div>`
               }
             }

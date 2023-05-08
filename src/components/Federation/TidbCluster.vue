@@ -237,18 +237,18 @@ const { tc } = i18n.global
           <q-card-section>
             <div class="text-subtitle1">{{ tc('集群存储容量') }}</div>
           </q-card-section>
-          <q-card-section>
+          <div class="q-pt-md">
             <div v-if="props.unitServersData?.storage_capacity && props.unitServersData?.current_storage_size">
               <div
                 v-if="props.unitServersData?.storage_capacity.length > 0 && props.unitServersData?.current_storage_size.length > 0"
                 class="row justify-between">
-                <div>
+                <div class="col">
                   <div class="text-h5">
                     {{ (props.unitServersData?.storage_capacity[0].value[1] / 1024 / 1024 / 1024 / 1024).toFixed(2) }}TB
                   </div>
                   <div>total</div>
                 </div>
-                <div>
+                <div class="col">
                   <div class="text-h5 text-positive">
                     {{ (props.unitServersData?.current_storage_size[0].value[1] / 1024 / 1024 / 1024).toFixed(2) }}GB
                   </div>
@@ -265,7 +265,7 @@ const { tc } = i18n.global
                 size="2em"
               />
             </div>
-          </q-card-section>
+          </div>
         </q-card>
         <q-card flat class="my-card col-2 text-center no-border-radius boxLeftBorder">
           <q-card-section>
