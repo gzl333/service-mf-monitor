@@ -19,9 +19,9 @@ import monitor from 'src/api/monitor'
 const { tc } = i18n.global
 const store = useStore()
 const organizations = computed(() => store.getAllMonitoringOrganization('tibd'))
-const storageUnitsObj = ref<Record<string, ServiceUnitInterface[]>>({})
+const tidbUnitsObj = ref<Record<string, ServiceUnitInterface[]>>({})
 // 用于备份所有的单元，模糊搜索时用到
-const allStorageUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
+const allTidbUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
 const allExpendUnitsObjData: Record<string, ServiceUnitInterface[]> = {}
 // 传输给子组件的数据
 const propsUnitData = ref<Record<string, unknown>>({})
@@ -67,50 +67,6 @@ const filterOptions = [
     value: 3600
   }
 ]
-// 获取数据
-const getStorageQuery = async (monitor_unit_id: string) => {
-  const storageQuery: string[] = ['pd_nodes', 'tidb_nodes', 'tikv_nodes', 'region_count', 'region_health', 'storage_capacity', 'current_storage_size', 'storage', 'connections_count', 'qps', 'server_cpu_usage', 'server_mem_usage', 'server_disk_usage']
-  const config = {
-    query: {
-      monitor_unit_id,
-      query: ''
-    }
-  }
-  const storageObject: {[key: string]: any[] | number | string } = {}
-  for (const query of storageQuery) {
-    config.query.query = query
-    const MonitorCephQuery = await monitor.monitor.getMonitorTidbQuery(config)
-    if (MonitorCephQuery.status === 200 && MonitorCephQuery.data.length > 0) {
-      if (query === 'connections_count') {
-        let totalConnect = 0
-        MonitorCephQuery.data.forEach((item: Record<string, string>) => {
-          totalConnect += Number(item.value[1])
-        })
-        storageObject['totalConnect' as keyof typeof storageObject] = totalConnect
-      }
-      if (query === 'qps') {
-        let totalQbs = 0
-        MonitorCephQuery.data.forEach((item: Record<string, string>) => {
-          totalQbs += Math.round(Number(item.value[1]))
-        })
-        storageObject['totalQbs' as keyof typeof storageObject] = totalQbs
-      }
-      if (query === 'server_cpu_usage' || query === 'server_mem_usage' || query === 'server_disk_usage') {
-        let max = 0
-        MonitorCephQuery.data.forEach((item: Record<string, string>) => {
-          if (Number(item.value[1]) > max) {
-            max = Number(item.value[1])
-          }
-        })
-        storageObject[query + '_max' as keyof typeof storageObject] = max.toFixed(2)
-      }
-      storageObject[query as keyof typeof storageObject] = MonitorCephQuery.data
-    } else if (MonitorCephQuery.status === 200 && MonitorCephQuery.data.length === 0) {
-      storageObject[query as keyof typeof storageObject] = []
-    }
-  }
-  return storageObject
-}
 const getAllUnit = async () => {
   for (const organization of organizations.value) {
     // 获取机构下所有单元
@@ -127,6 +83,7 @@ const getAllUnit = async () => {
       })
       if (monitorUnitTidbRes.status === 200) {
         let sort = 0
+        // 按照sort_weight排序
         monitorUnitTidbRes.data.results.forEach((unit: ServiceUnitInterface) => {
           if (unit.sort_weight >= sort) {
             unitArr.push(unit)
@@ -137,25 +94,74 @@ const getAllUnit = async () => {
         })
         if (i + 1 === numberRequest) {
           unitObj[organization.id] = unitArr
-          Object.assign(storageUnitsObj.value, unitObj)
-          Object.assign(allStorageUnitsObjData, unitObj)
+          Object.assign(tidbUnitsObj.value, unitObj)
+          Object.assign(allTidbUnitsObjData, unitObj)
         }
       }
     }
   }
 }
 getAllUnit()
+// 获取数据
+const getTidbQuery = async (monitor_unit_id: string) => {
+  const tidbQuery: string[] = ['pd_nodes', 'tidb_nodes', 'tikv_nodes', 'region_count', 'region_health', 'storage_capacity', 'current_storage_size', 'storage', 'connections_count', 'qps', 'server_cpu_usage', 'server_mem_usage', 'server_disk_usage']
+  const config = {
+    query: {
+      monitor_unit_id,
+      query: ''
+    }
+  }
+  const tidbObject: {[key: string]: any[] | number | string } = {}
+  for (const query of tidbQuery) {
+    config.query.query = query
+    const monitorCephQuery = await monitor.monitor.getMonitorTidbQuery(config)
+    if (monitorCephQuery.status === 200 && monitorCephQuery.data.length > 0) {
+      // 连接数计算总和
+      if (query === 'connections_count') {
+        let totalConnect = 0
+        monitorCephQuery.data.forEach((item: Record<string, string>) => {
+          totalConnect += Number(item.value[1])
+        })
+        tidbObject['totalConnect' as keyof typeof tidbObject] = totalConnect
+      }
+      // qps计算总和
+      if (query === 'qps') {
+        let totalQps = 0
+        monitorCephQuery.data.forEach((item: Record<string, string>) => {
+          totalQps += Math.round(Number(item.value[1]))
+        })
+        tidbObject['totalQbs' as keyof typeof tidbObject] = totalQps
+      }
+      // 利用率计算最大值
+      if (query === 'server_cpu_usage' || query === 'server_mem_usage' || query === 'server_disk_usage') {
+        let max = 0
+        monitorCephQuery.data.forEach((item: Record<string, string>) => {
+          if (Number(item.value[1]) > max) {
+            max = Number(item.value[1])
+          }
+        })
+        tidbObject[query + '_max' as keyof typeof tidbObject] = max.toFixed(2)
+      }
+      tidbObject[query as keyof typeof tidbObject] = monitorCephQuery.data
+    } else if (monitorCephQuery.status === 200 && monitorCephQuery.data.length === 0) {
+      tidbObject[query as keyof typeof tidbObject] = []
+    }
+  }
+  return tidbObject
+}
 const openPanel = async (organization_id: string) => {
-  if (allStorageUnitsObjData[organization_id] && allStorageUnitsObjData[organization_id].length > 0) {
+  // 打开面板获取数据
+  if (allTidbUnitsObjData[organization_id] && allTidbUnitsObjData[organization_id].length > 0) {
     const unitObj: { [key: string]: unknown } = {}
-    unitObj[organization_id] = allStorageUnitsObjData[organization_id]
+    unitObj[organization_id] = allTidbUnitsObjData[organization_id]
     Object.assign(allExpendUnitsObjData, unitObj)
-    allStorageUnitsObjData[organization_id].forEach(unit => {
-      getStorageQuery(unit.id).then((res) => {
+    allTidbUnitsObjData[organization_id].forEach(unit => {
+      getTidbQuery(unit.id).then((res) => {
         propsUnitData.value[unit.id] = res
         renovateShow.value[unit.id] = true
       })
     })
+    // 开启定时器
     if (!isIntervalOpen.value) {
       countDownTimer = setInterval(() => {
         if (renovateTime.value > 0) {
@@ -173,6 +179,7 @@ const openPanel = async (organization_id: string) => {
 const closePanel = (organization_id: string) => {
   Reflect.deleteProperty(allExpendUnitsObjData, organization_id)
   if (Object.keys(allExpendUnitsObjData).length === 0) {
+    // 清空定时器
     clearInterval(Number(timer))
     clearInterval(Number(countDownTimer))
     renovateTime.value = filterSelection.value.value
@@ -180,13 +187,14 @@ const closePanel = (organization_id: string) => {
     isDisable.value = true
   }
 }
+// 全部刷新
 const refreshAllUnit = () => {
   propsUnitData.value = {}
   isDisable.value = true
   Object.keys(allExpendUnitsObjData).forEach((org, orgIndex) => {
     allExpendUnitsObjData[org].forEach((unit, unitIndex) => {
       renovateShow.value[unit.id] = false
-      getStorageQuery(unit.id).then((res) => {
+      getTidbQuery(unit.id).then((res) => {
         propsUnitData.value[unit.id] = res
         renovateShow.value[unit.id] = true
         if (orgIndex === Object.keys(allExpendUnitsObjData).length - 1 && unitIndex === allExpendUnitsObjData[org].length - 1) {
@@ -197,20 +205,21 @@ const refreshAllUnit = () => {
     })
   })
 }
+// 单个刷新
 const refreshUint = (unitId: string) => {
   propsUnitData.value[unitId] = {}
   renovateShow.value[unitId] = false
-  getStorageQuery(unitId).then((res) => {
+  getTidbQuery(unitId).then((res) => {
     propsUnitData.value[unitId] = res
     renovateShow.value[unitId] = true
   })
 }
 const keywordSearch = () => {
   if (keyword.value === '' || keyword.value === null) {
-    storageUnitsObj.value = { ...allStorageUnitsObjData }
+    tidbUnitsObj.value = { ...allTidbUnitsObjData }
   } else {
     Object.keys(allExpendUnitsObjData).forEach(item => {
-      storageUnitsObj.value[item] = allExpendUnitsObjData[item].filter(state => state.name.indexOf(keyword.value.trim()) > -1 || state.name_en.indexOf(keyword.value.trim()) > -1)
+      tidbUnitsObj.value[item] = allExpendUnitsObjData[item].filter(state => state.name.indexOf(keyword.value.trim()) > -1 || state.name_en.indexOf(keyword.value.trim()) > -1)
     })
   }
 }
@@ -231,6 +240,7 @@ watch(organizations, () => {
 })
 onUnmounted(() => {
   clearInterval(Number(timer))
+  clearInterval(Number(countDownTimer))
 })
 </script>
 
@@ -286,11 +296,12 @@ onUnmounted(() => {
                     </q-item-section>
                   </template>
                   <q-card>
-                    <div v-if="storageUnitsObj[org.id]?.length > 0">
-                      <div v-for="monitor in storageUnitsObj[org.id]" :key="monitor.id">
+                    <div v-if="tidbUnitsObj[org.id]?.length > 0">
+                      <div v-for="monitor in tidbUnitsObj[org.id]" :key="monitor.id">
                         <div class="row justify-between items-center q-mt-md">
-                          <div class="text-subtitle1 text-weight-bold q-ml-sm">
-                            {{ i18n.global.locale === 'zh' ? monitor.name : monitor.name_en }}
+                          <div class="q-ml-sm">
+                            <span class="text-subtitle1 text-weight-bold">{{ i18n.global.locale === 'zh' ? monitor.name : monitor.name_en }}</span>
+                            <span class="q-ml-lg">集群版本：{{ monitor.version === '' ? '暂无' : monitor.version }}</span>
                           </div>
                           <div>
                             <q-icon class="q-mr-md cursor-pointer" name="refresh" size="1.7rem" v-show="renovateShow[monitor.id]" @click="refreshUint(monitor.id)"/>

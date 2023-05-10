@@ -66,6 +66,7 @@ export interface ServiceUnitInterface {
   }
   remark: string
   sort_weight: number
+  version: string
 }
 
 export interface StatusArrayInterface {
