@@ -249,7 +249,7 @@ const { tc } = i18n.global
                   <div>total</div>
                 </div>
                 <div class="col">
-                  <div class="text-h5 text-positive">
+                  <div :class="(props.unitServersData?.current_storage_size[0].value[1] / 1024 / 1024 / 1024) / (props.unitServersData?.storage_capacity[0].value[1] / 1024 / 1024 / 1024) * 100 > 80 ? 'text-h5 text-negative' : 'text-h5 text-positive'">
                     {{ (props.unitServersData?.current_storage_size[0].value[1] / 1024 / 1024 / 1024).toFixed(2) }}GB
                   </div>
                   <div>current</div>
@@ -343,7 +343,7 @@ const { tc } = i18n.global
           <q-card-section>
             <div v-if="props.unitServersData?.server_cpu_usage">
               <div v-if="props.unitServersData?.server_cpu_usage.length > 0">
-                <div class="text-h5">
+                <div :class="props.unitServersData?.server_cpu_usage_max > 80 ? 'text-h5 text-negative' : 'text-h5'">
                   {{ props.unitServersData?.server_cpu_usage_max }}%
                 </div>
                 <div>current</div>
@@ -378,7 +378,7 @@ const { tc } = i18n.global
           <q-card-section>
             <div v-if="props.unitServersData?.server_mem_usage">
               <div v-if="props.unitServersData?.server_mem_usage.length > 0">
-                <div class="text-h5">
+                <div :class="props.unitServersData?.server_mem_usage_max > 80 ? 'text-h5 text-negative' : 'text-h5'">
                   {{ props.unitServersData?.server_mem_usage_max }}%
                 </div>
                 <div>current</div>
@@ -413,7 +413,7 @@ const { tc } = i18n.global
           <q-card-section>
             <div v-if="props.unitServersData?.server_disk_usage">
               <div v-if="props.unitServersData?.server_disk_usage.length > 0">
-                <div class="text-h5">
+                <div :class="props.unitServersData?.server_disk_usage_max > 80 ? 'text-h5 text-negative' : 'text-h5'">
                   {{ props.unitServersData?.server_disk_usage_max }}%
                 </div>
                 <div>current</div>
