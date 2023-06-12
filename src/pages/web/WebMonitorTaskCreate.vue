@@ -93,9 +93,9 @@ const goBack = () => {
 const changeDomain = () => {
   // webUrl.value = webUrl.value.split('/').filter(item => item !== '').join('/')
   if (query.value.hostname === '') {
-    queryUrl.value = query.value.uri
+    queryUrl.value = query.value.scheme + query.value.uri
   } else {
-    queryUrl.value = query.value.hostname + '/' + query.value.uri
+    queryUrl.value = query.value.scheme + query.value.hostname + '/' + query.value.uri
   }
 }
 // lazy-rules="ondemand" :rules="[val => val && val.length > 0 || tc('监控地址不能为空'), val => urlReg.test(val) || tc('地址不合法，请输入http://或者https://开头的地址')]"
@@ -130,8 +130,7 @@ const changeDomain = () => {
           <div class="col-10">
             <div>
               <span>完整地址：</span>
-              <span class="text-primary">{{query.scheme}}</span>
-              <span>{{ queryUrl }}</span>
+              <span class="text-primary">{{ queryUrl }}</span>
             </div>
             <div class="row">
               <div class="col-6 row">
