@@ -114,9 +114,15 @@ export interface DetectionPointInterface {
 
 export interface WebMonitorInterface {
   creation: string
+  hostname: string
   id: string
+  is_attention: boolean
+  is_tamper_resistant: boolean
+  modification: string
   name: string
   remark: string
+  scheme: string
+  uri: string
   url: string
   url_hash: string
   user: {
@@ -357,11 +363,14 @@ export const useStore = defineStore('monitor', {
       })
       this.tables.webMonitorTable.isLoaded = true
     },
-    async modifyMonitorTask (payload: { id: string; data: { name: string; url: string; remark?: string } }) {
+    async modifyMonitorTask (payload: { id: string; data: { name: string; scheme: string; hostname: string; uri: string; is_tamper_resistant?: boolean; remark?: string } }) {
       monitor.monitor.putMonitorWebsite({ body: payload.data, path: { id: payload.id } }).then((res) => {
         if (res.status === 200) {
           this.tables.webMonitorTable.byId[payload.id].name = res.data.name
-          this.tables.webMonitorTable.byId[payload.id].url = res.data.url
+          this.tables.webMonitorTable.byId[payload.id].scheme = res.data.scheme
+          this.tables.webMonitorTable.byId[payload.id].hostname = res.data.hostname
+          this.tables.webMonitorTable.byId[payload.id].uri = res.data.uri
+          this.tables.webMonitorTable.byId[payload.id].is_tamper_resistant = res.data.is_tamper_resistant
           this.tables.webMonitorTable.byId[payload.id].remark = res.data.remark
           Notify.create({
             classes: 'notification-positive shadow-15',
