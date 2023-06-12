@@ -21,18 +21,22 @@ const store = useStore()
 const router = useRouter()
 const query = ref({
   name: '',
-  url: '',
+  scheme: 'https://',
+  hostname: '',
+  uri: '',
+  is_tamper_resistant: false,
   remark: ''
 })
 const visible = ref(false)
-const realm = ref('https://')
 const options = [
   'https://', 'http://'
 ]
 // const urlReg = /^([hH][tT]{2}[pP]:\/\/|[hH][tT]{2}[pP][sS]:\/\/)(([A-Za-z0-9-~]+).)+([A-Za-z0-9-~/])+$/
-const webUrl = ref('')
+const queryUrl = ref('https://')
 const onSubmit = async () => {
-  query.value.url = realm.value + webUrl.value
+  if (query.value.uri.slice(0, 1) !== '/') {
+    query.value.uri = '/' + query.value.uri
+  }
   visible.value = true
   monitor.monitor.postMonitorWebsite({ body: query.value }).then((res) => {
     if (res.status === 200) {
@@ -50,7 +54,10 @@ const onSubmit = async () => {
       })
       query.value = {
         name: '',
-        url: '',
+        scheme: '',
+        hostname: '',
+        uri: '',
+        is_tamper_resistant: false,
         remark: ''
       }
       visible.value = false
@@ -73,14 +80,24 @@ const onSubmit = async () => {
 const onReset = () => {
   query.value = {
     name: '',
-    url: '',
+    scheme: '',
+    hostname: '',
+    uri: '',
+    is_tamper_resistant: false,
     remark: ''
   }
 }
 const goBack = () => {
   router.go(-1)
 }
-
+const changeDomain = () => {
+  // webUrl.value = webUrl.value.split('/').filter(item => item !== '').join('/')
+  if (query.value.hostname === '') {
+    queryUrl.value = query.value.scheme + query.value.uri
+  } else {
+    queryUrl.value = query.value.scheme + query.value.hostname + '/' + query.value.uri
+  }
+}
 // lazy-rules="ondemand" :rules="[val => val && val.length > 0 || tc('监控地址不能为空'), val => urlReg.test(val) || tc('地址不合法，请输入http://或者https://开头的地址')]"
 </script>
 
@@ -95,7 +112,7 @@ const goBack = () => {
     </div>
     <q-card flat class="q-pa-md row">
       <q-form
-        class="q-gutter-md col-7"
+        class="q-gutter-md col-8"
         no-error-focus
         no-reset-focus
         @submit="onSubmit"
@@ -108,12 +125,23 @@ const goBack = () => {
           />
           </div>
         </div>
-        <div class="row">
-          <div class="col-2 q-mt-sm text-subtitle1 text-grey">{{ tc('监控地址') }}</div>
-          <div class="col-10 row">
-            <q-select class="col-2" outlined dense v-model="realm" :options="options" :label="tc('请选择')" />
-            <q-input class="col-10" outlined dense clearable v-model="webUrl" :label="tc('请输入监控地址')" lazy-rules="ondemand" :rules="[val => val && val.length > 0 || tc('监控地址不能为空')]"
-            />
+        <div class="row items-center">
+          <div class="col-2 text-subtitle1 text-grey">{{ tc('监控地址') }}</div>
+          <div class="col-10">
+            <div>
+              <span>完整链接：</span>
+              <span>{{ queryUrl }}</span>
+            </div>
+            <div class="row">
+              <div class="col-6 row">
+                <q-select class="col-4" outlined dense v-model="query.scheme" :options="options" :label="tc('请选择')" @update:model-value="changeDomain"/>
+                <q-input class="col-8" outlined dense v-model.trim="query.hostname" :label="tc('请输入域名')" lazy-rules="ondemand" :rules="[val => val && val.length > 0 || tc('域名不能为空')]" @update:model-value="changeDomain"/>
+              </div>
+              <div class="col-1 text-center q-mt-sm">/</div>
+              <div class="col-5">
+                <q-input outlined dense v-model.trim="query.uri" :label="tc('请输入路径')" lazy-rules="ondemand" @update:model-value="changeDomain" />
+              </div>
+            </div>
           </div>
         </div>
         <div class="row">
@@ -121,6 +149,10 @@ const goBack = () => {
           <div class="col-10">
             <q-input outlined dense clearable v-model="query.remark" :label="tc('请输入备注')"/>
           </div>
+        </div>
+        <div class="row">
+          <div class="col-2 q-mt-sm text-subtitle1 text-grey">{{ tc('是否防篡改检查') }}</div>
+          <q-checkbox v-model="query.is_tamper_resistant" />
         </div>
         <div class="row">
           <div class="col-2">

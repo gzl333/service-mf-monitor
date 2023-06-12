@@ -64,7 +64,7 @@ export default {
       }
       return axiosMonitor.get('/monitor/website', config)
     },
-    postMonitorWebsite (payload: { body: { name: string; url: string; remark?: string } }) {
+    postMonitorWebsite (payload: { body: { name: string; scheme: string; hostname: string; uri: string; is_tamper_resistant?: boolean; remark?: string } }) {
       const data = payload.body
       return axiosMonitor.post('/monitor/website', data)
     },
