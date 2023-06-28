@@ -5,6 +5,7 @@ import { useStore } from 'stores/store'
 // import { useRoute, useRouter } from 'vue-router'
 import { date } from 'quasar'
 import { i18n } from 'boot/i18n'
+import monitor from 'src/api/monitor'
 
 // const props = defineProps({
 //   foo: {
@@ -19,7 +20,8 @@ const store = useStore()
 // const route = useRoute()
 // const router = useRouter()
 const { tc } = i18n.global
-const webMonitorTaskRow = computed(() => store.getWebMonitorTaskTable())
+// const webMonitorTaskRow = computed(() => store.getWebMonitorTaskTable())
+const webMonitorTaskRow = ref([])
 const columns = computed(() => [
   { name: 'id', label: (() => tc('任务id'))(), align: 'center', field: 'id' },
   { name: 'name', label: (() => tc('任务名称'))(), align: 'center', field: 'name' },
@@ -29,6 +31,26 @@ const columns = computed(() => [
   { name: 'operation', label: (() => tc('操作'))(), field: 'operation', align: 'center' }
 ])
 const isLoad = ref(false)
+const taskCount = ref(0)
+const pageQuery = ref({
+  page: 1,
+  page_size: 50
+})
+const getMonitorList = async () => {
+  isLoad.value = true
+  const webMonitorRes = await monitor.monitor.getMonitorWebsite({ query: pageQuery.value })
+  taskCount.value = webMonitorRes.data.count
+  webMonitorTaskRow.value = webMonitorRes.data.results
+  isLoad.value = false
+}
+const changePageSize = () => {
+  pageQuery.value.page = 1
+  getMonitorList()
+}
+const changePage = () => {
+  getMonitorList()
+}
+getMonitorList()
 </script>
 
 <template>
@@ -41,7 +63,7 @@ const isLoad = ref(false)
               {{ tc('当前监控任务') }}
             </div>
             <div class="text-h5 q-mt-xs q-ml-lg">
-              {{ webMonitorTaskRow.length }}
+              {{ taskCount }}
             </div>
           </div>
           <div>
@@ -109,6 +131,25 @@ const isLoad = ref(false)
       </q-table>
     </div>
     <q-separator/>
+    <div class="q-py-md row justify-between">
+      <div class="row items-center">
+        <div>{{ tc('每页任务数') }}：</div>
+        <q-select color="grey" v-model="pageQuery.page_size" :options="[20, 50,100, 150, 200]" dense options-dense borderless @update:model-value="changePageSize">
+        </q-select>
+        <div>/{{ tc('页') }}</div>
+      </div>
+      <q-pagination
+        v-model="pageQuery.page"
+        :max="Math.ceil(taskCount/pageQuery.page_size)"
+        direction-links
+        boundary-links
+        icon-first="skip_previous"
+        icon-last="skip_next"
+        icon-prev="fast_rewind"
+        icon-next="fast_forward"
+        @update:model-value="changePage"
+      />
+    </div>
   </div>
 </template>
 

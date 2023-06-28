@@ -240,9 +240,9 @@ export const useStore = defineStore('monitor', {
           }
         })
       }
-      if (!this.tables.webMonitorTable.isLoaded) {
-        void this.loadWebMonitorTable()
-      }
+      // if (!this.tables.webMonitorTable.isLoaded) {
+      //   void this.loadWebMonitorTable()
+      // }
       if (!this.tables.detectionPointTable.isLoaded) {
         void this.loadDetectionPointTable()
       }
